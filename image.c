@@ -7,30 +7,11 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.9 2002/07/02 21:41:19 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.10 2002/07/02 22:17:25 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if 0
-static char *memstr(const char *haystack, size_t h_len, const char *needle, size_t n_len) {
-    const char *p;
-
-    if (n_len > h_len)
-    return NULL;
-
-    p = (const char*) memchr(haystack, *needle, h_len - n_len + 1);
-    while (p) {
-        if (!memcmp(p, needle, n_len))
-            return (char*)p;
-        else
-            p = (const char*)memchr(p + 1, *needle, h_len - n_len - (p - haystack));
-    }
-
-    return NULL;
-}
-#endif
 
 /* memstr:
  * Locate needle, of length n_len, in haystack, of length h_len, returning NULL.
