@@ -9,7 +9,7 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.16 2002/11/16 18:24:27 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.17 2003/06/13 15:51:44 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -29,7 +29,7 @@ static const char rcsid[] = "$Id: display.c,v 1.16 2002/11/16 18:24:27 chris Exp
 /* The border, in pixels, around images displayed in the window. */
 #define BORDER  6
 
-extern int verbose; /* in driftnet.c */
+extern int verbose, beep; /* in driftnet.c */
 
 static GtkWidget *window, *darea;
 static GdkWindow *drawable;
@@ -349,6 +349,9 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
                         add_image_rectangle(path, wrx, wry - h, w, h);
                         saveimg = 1;
+
+                        if (beep)
+                            write(1, "\a", 1);
 
                         update_window();
 

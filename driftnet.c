@@ -1,5 +1,5 @@
 /*
- * driftnet.c:
+ *. driftnet.c:
  * Pick out images from passing network traffic.
  *
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.28 2003/06/06 10:14:30 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.29 2003/06/13 15:51:44 chris Exp $";
 
 #undef NDEBUG
 
@@ -45,9 +45,10 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.28 2003/06/06 10:14:30 chris Ex
 connection *slots;
 unsigned int slotsused, slotsalloc;
 
-/* flags: verbose, adjunct mode, temporary directory to use, media types to extract. */
+/* flags: verbose, adjunct mode, temporary directory to use, media types to
+ * extract, beep on image. */
 int extract_images = 1;
-int verbose, adjunct;
+int verbose, adjunct, beep;
 int tmpdir_specified;
 char *tmpdir;
 int max_tmpfiles;
@@ -259,6 +260,7 @@ void usage(FILE *fp) {
 "\n"
 "  -h               Display this help message.\n"
 "  -v               Verbose operation.\n"
+"  -b               Beep when a new image is captured.\n"
 "  -i interface     Select the interface on which to listen (default: all\n"
 "                   interfaces).\n"
 "  -p               Do not put the listening interface into promiscuous mode.\n""  -a               Adjunct mode: do not display images on screen, but save\n"
@@ -461,7 +463,7 @@ void *packet_capture_thread(void *v) {
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:psSMvam:d:x:";
+char optstring[] = "hi:psSMvam:d:x:b";
 
 int main(int argc, char *argv[]) {
     char *interface = NULL, *filterexpr;
@@ -492,6 +494,13 @@ int main(int argc, char *argv[]) {
 
             case 'v':
                 verbose = 1;
+                break;
+
+            case 'b':
+                if (!isatty(1))
+                    fprintf(stderr, PROGNAME": can't beep unless standard output is a terminal\n");
+                else 
+                    beep = 1;
                 break;
 
             case 'p':
@@ -571,6 +580,9 @@ int main(int argc, char *argv[]) {
 
     if (max_tmpfiles && adjunct && verbose)
         fprintf(stderr, PROGNAME": a maximum of %d images will be buffered\n", max_tmpfiles);
+
+    if (beep && adjunct)
+        fprintf(stderr, PROGNAME": can't beep in adjunct mode\n");
 
     /* If a directory name has not been specified, then we need to create one.
      * Otherwise, check that it's a directory into which we may write files. */
