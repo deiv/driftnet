@@ -1,5 +1,5 @@
 TODO for driftnet
-$Id: TODO,v 1.5 2002/05/27 16:59:44 chris Exp $
+$Id: TODO,v 1.6 2002/05/28 20:19:09 chris Exp $
 
 * PNG files.
 
@@ -12,11 +12,13 @@ $Id: TODO,v 1.5 2002/05/27 16:59:44 chris Exp $
   truncated in a really bad way. An alternative is to store more state for
   JPEG files, and do special parsing when we know a connection has closed.
 
-* Drop privileges after starting up pcap.
-
 * More portability / bug fixes.
 
 * Web-based version. Server push? Feedback problems.
 
 * `Bogus image' problem after running for a while?
+
+* Safe(r) setuid operation.
+
+* Drop privileges after starting up pcap.
 

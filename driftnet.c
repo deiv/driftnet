@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.15 2002/05/28 00:23:55 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.16 2002/05/28 20:19:09 chris Exp $";
 
 #undef NDEBUG
 
@@ -42,7 +42,6 @@ int max_images;
 
 /* audio stuff. */
 int extract_audio;
-char *audio_mpeg_player = "mpg123";
 
 /* ugh. */
 pcap_t *pc;
@@ -63,6 +62,10 @@ int dpychld_fd;
 int dodisplay(int argc, char *argv[]);
 #endif /* !NO_DISPLAY_WINDOW */
 
+/* playaudio.c */
+void do_mpeg_player(void);
+void mpeg_submit_chunk(const unsigned char *data, const size_t len);
+
 /* count_temporary_files:
  * How many of our files remain in the temporary directory? We do this a
  * maximum of once every five seconds. */
@@ -78,7 +81,7 @@ static int count_temporary_files(void) {
             while ((de = readdir(d))) {
                 char *p;
                 p = strrchr(de->d_name, '.');
-                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0)))
+                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0)))
                     ++num;
             }
             closedir(d);
@@ -105,7 +108,7 @@ void clean_temporary_directory(void) {
         while ((de = readdir(d))) {
             char *p;
             p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0))) {
+            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0) || strcmp(p, ".mp3") == 0)) {
                 sprintf(s, "%s/%s", tmpdir, de->d_name);
                 unlink(s);
             }
@@ -243,14 +246,22 @@ void connection_harvest_audio(connection c) {
         ptr = find_mpeg_stream(ptr, c->len - (ptr - c->data), &audio, &alen);
 
         if (audio) {
-            char buf[PATH_MAX + 1];
-            int fd;
-            sprintf(buf, "%s/driftnet-%d.%d.mp3", tmpdir, (int)time(NULL), rand());
-            fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
-            write(fd, audio, alen);
-            close(fd);
-/*            image_notify(ilen, buf);*/
-            fprintf(stderr, "audio %s\n", buf);
+            if (!adjunct) {
+                /* Try to play audio. */
+                if (verbose)
+                    fprintf(stderr, PROGNAME": got %d bytes of MPEG audio\n", alen);
+                mpeg_submit_chunk(audio, alen);
+            } else {
+                /* Save it in a file. */
+                char buf[PATH_MAX + 1];
+                int fd;
+                sprintf(buf, "%s/driftnet-%d.%d.mp3", tmpdir, (int)time(NULL), rand());
+                fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
+                write(fd, audio, alen);
+                close(fd);
+                fprintf(stderr, PROGNAME": saved %d bytes of MPEG audio in %s\n", alen, buf);
+                printf("%s\n", buf);
+            }
         }
     }
 
@@ -294,6 +305,7 @@ void sweep_connections() {
             if ((now - c->last) > TIMEOUT) {
                 /* get any last images out of this one */
                 connection_harvest_images(c);
+                if (extract_audio) connection_harvest_audio(c);
                 connection_delete(c);
                 *C = NULL;
             }
@@ -397,9 +409,10 @@ void usage(FILE *fp) {
 "  -s               Attempt to extract streamed audio data from the network,\n"
 "                   in addition to images. At present this supports MPEG data\n"
 "                   only.\n"
+/*"  -S               Extract streamed audio but not images.\n"*/
 "  -M command       Use the given command to play MPEG audio data extracted\n"
-"                   with the -s option; the name of a file to play will be\n"
-"                   appended to the command line. Default: `mpg123'\n"
+"                   with the -s option; this should process MPEG frames\n"
+"                   supplied on standard input. Default: `mpg123 -'.\n"
 "  -v               Verbose operation.\n"
 "  -a               Adjunct mode: do not display images on screen, but save\n"
 "                   them to a temporary directory and announce their names on\n"
@@ -444,7 +457,7 @@ void terminate_on_signal(int s) {
         _exit(0);
     } else {
         close(dpychld_fd);
-        pcap_close(pc);
+        if (pc) pcap_close(pc);
         _exit(0);
     }
 #endif /* NO_DISPLAY_WINDOW */
@@ -458,7 +471,7 @@ void setup_signals(void) {
     int ignore_signals[] = {SIGPIPE, 0};
     /* Signals which mean we should quit, killing the display child if
      * applicable. */
-    int terminate_signals[] = {SIGTERM, SIGINT, SIGSEGV, SIGBUS, SIGCHLD, 0};
+    int terminate_signals[] = {SIGTERM, SIGINT, /*SIGSEGV,*/ SIGBUS, SIGCHLD, 0};
     struct sigaction sa;
 
     sa.sa_flags = SA_RESTART;
@@ -500,7 +513,8 @@ int main(int argc, char *argv[]) {
     const unsigned char *pkt;
     int pkt_offset;
     int c;
-    extern char *savedimgpfx;    /* in display.c */
+    extern char *savedimgpfx;       /* in display.c */
+    extern char *audio_mpeg_player; /* in playaudio.c */
     int newpfx = 0;
     int mpeg_player_specified = 0;
 
@@ -630,7 +644,6 @@ int main(int argc, char *argv[]) {
         filterexpr = calloc(l, 1);
         strcpy(filterexpr, "tcp and (");
         for (a = argv + optind; *a; ++a) {
-    printf("*a = %s\n", *a);
             strcat(filterexpr, *a);
             if (*(a + 1)) strcat(filterexpr, " ");
         }
@@ -640,11 +653,16 @@ int main(int argc, char *argv[]) {
     if (verbose)
         fprintf(stderr, PROGNAME": using filter expression `%s'\n", filterexpr);
     
-    setup_signals();
 
     if (verbose && newpfx && !adjunct)
         fprintf(stderr, PROGNAME": using saved image prefix `%s'\n", savedimgpfx);
 
+    setup_signals();
+    
+    /* Start up the audio player, if required. */
+    if (extract_audio && !adjunct)
+        do_mpeg_player();
+    
 #ifndef NO_DISPLAY_WINDOW
     /* Possibly fork to start the display child process */
     if (!adjunct) {
@@ -673,6 +691,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, PROGNAME": operating in adjunct mode\n");
 #endif /* !NO_DISPLAY_WINDOW */
  
+
     /* Start up pcap. */
     pc = pcap_open_live(interface, 262144, promisc, 1, ebuf);
     if (!pc) {
@@ -701,7 +720,6 @@ int main(int argc, char *argv[]) {
     pkt_offset = get_link_level_hdr_length(pcap_datalink(pc));
     if (verbose)
         fprintf(stderr, PROGNAME": link-level header length is %d bytes\n", pkt_offset);
-
 
     slotsused = 0;
     slotsalloc = 64;

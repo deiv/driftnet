@@ -5,11 +5,11 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.16 2002/05/28 00:23:55 chris Exp $
+# $Id: Makefile,v 1.17 2002/05/28 20:19:09 chris Exp $
 #
 
 # Driftnet version. Do not alter.
-VERSION = 0.1.5pre1
+VERSION = 0.1.5pre2
 
 # Compiler to use.
 #CC = gcc
@@ -26,8 +26,8 @@ CFLAGS += -I/usr/include/pcap
 # Required on Linux to get BSDish definitions of the TCP/IP structs.
 CFLAGS += -D_BSD_SOURCE
 
-# We always need the pcap library.
-LDLIBS += -lpcap
+# We always need the pcap and pthread libraries.
+LDLIBS += -lpcap -lpthread
 
 # Optional C compiler and linker flags. Typical driftnet builds have support
 # for displaying captured images in an X window, and need the following flags:
@@ -43,7 +43,8 @@ LDLIBS  += -ljpeg -lungif `gtk-config --libs`
 SUBDIRS = 
 
 TXTS = README TODO COPYING CHANGES CREDITS driftnet.1 driftnet.1.in
-SRCS = audio.c mpeghdr.c gif.c img.c jpeg.c png.c driftnet.c image.c display.c
+SRCS = audio.c mpeghdr.c gif.c img.c jpeg.c png.c driftnet.c image.c \
+       display.c playaudio.c
 HDRS = img.h driftnet.h mpeghdr.h
 BINS = driftnet
 

@@ -1,5 +1,5 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.8 2002/05/27 16:59:44 chris Exp $
+$Id: CHANGES,v 1.9 2002/05/28 20:19:09 chris Exp $
 
 0.1.5
 
@@ -14,6 +14,10 @@ Added the -a (adjunct) and various related options to make it easy to use
 driftnet as a back-end for some other program. It is now possible to compile
 a back-end only version of driftnet without any X11 support by using the
 NO_DISPLAY_WINDOW option at compile time.
+
+Added the -s option to extract MPEG audio data from network streams, along with
+a ghastly mess of threads and pipes to allow driftnet to play the data to play
+through mpg123 or similar.
 
 Changed some things to make driftnet a bit more portable to non-Linux systems.
 
