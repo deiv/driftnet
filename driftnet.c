@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.27 2002/11/16 18:24:27 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.28 2003/06/06 10:14:30 chris Exp $";
 
 #undef NDEBUG
 
@@ -231,7 +231,7 @@ int get_link_level_hdr_length(int type)
 
 #ifdef DLT_IEEE802_11           /* 802.11 wireless ethernet */
         case DLT_IEEE802_11:
-            return 44;
+            return 32; /* 20030606 email from Nikhil Bobb */ /*44; */
 #endif
             
         default:;
