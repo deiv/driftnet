@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.5 2002/06/01 17:39:11 chris Exp $
+ * $Id: driftnet.h,v 1.6 2002/06/03 22:10:02 chris Exp $
  *
  */
 
@@ -18,12 +18,23 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <stdio.h>
 
+/* enum mediatype:
+ * Characterise types of media which we can extract. */
+enum mediatype { m_image = 1, m_audio = 2 };
+
+#define NMEDIATYPES     3       /* keep up to date with media.c */
+
+/* struct datablock:
+ * Represents an extent in a captured stream. */
 struct datablock {
-    int off, len, done;
+    int off, len, moff[NMEDIATYPES], dirty;
     struct datablock *next;
 };
 
+/* connection:
+ * Object representing one half of a TCP stream connection. */
 typedef struct _connection {
     struct in_addr src, dst;
     short int sport, dport;
@@ -36,12 +47,21 @@ typedef struct _connection {
 } *connection;
 
 /* driftnet.c */
+char *connection_string(const struct in_addr s, const unsigned short s_port, const struct in_addr d, const unsigned short d_port);
+void dump_data(FILE *fp, const unsigned char *data, const unsigned int len);
+
+/* connection.c */
 connection connection_new(const struct in_addr *src, const struct in_addr *dst, const short int sport, const short int dport);
 void connection_delete(connection c);
 void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len);
 connection *alloc_connection(void);
 connection *find_connection(const struct in_addr *src, const struct in_addr *dst, const short int sport, const short int dport);
 
+/* media.c */
+void connection_extract_media(connection c, const enum mediatype T);
+
+/* struct pipemsg:
+ * Message we send to the display child to tell it to display an image. */
 struct pipemsg {
     int len;
     char filename[256]; /* ugh. */

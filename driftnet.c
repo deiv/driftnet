@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.20 2002/06/01 17:39:11 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.21 2002/06/03 22:10:02 chris Exp $";
 
 #undef NDEBUG
 
@@ -43,25 +43,17 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.20 2002/06/01 17:39:11 chris Ex
 connection *slots;
 unsigned int slotsused, slotsalloc;
 
-/* flags: verbose, adjunct mode, temporary directory to use. */
+/* flags: verbose, adjunct mode, temporary directory to use, media types to extract. */
 int extract_images = 1;
 int verbose, adjunct;
 int tmpdir_specified;
 char *tmpdir;
-int max_images;
+int max_tmpfiles;
 
-/* audio stuff. */
-int extract_audio;
+enum mediatype extract_type = m_image;
 
 /* ugh. */
 pcap_t *pc;
-
-/* image.c */
-unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen);
-unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsigned char **jpegdata, size_t *jpeglen);
-
-/* audio.c */
-unsigned char *find_mpeg_stream(const unsigned char *data, const size_t len, unsigned char **mpegdata, size_t *mpeglen);
 
 #ifndef NO_DISPLAY_WINDOW
 /* PID of display child and file descriptor on pipe to same. */
@@ -74,32 +66,6 @@ int dodisplay(int argc, char *argv[]);
 
 /* playaudio.c */
 void do_mpeg_player(void);
-void mpeg_submit_chunk(const unsigned char *data, const size_t len);
-
-/* count_temporary_files:
- * How many of our files remain in the temporary directory? We do this a
- * maximum of once every five seconds. */
-static int count_temporary_files(void) {
-    static int num;
-    static time_t last_counted;
-    if (last_counted < time(NULL) - 5) {
-        DIR *d;
-        struct dirent *de;
-        num = 0;
-        d = opendir(tmpdir);
-        if (d) {
-            while ((de = readdir(d))) {
-                char *p;
-                p = strrchr(de->d_name, '.');
-                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0)))
-                    ++num;
-            }
-            closedir(d);
-            last_counted = time(NULL);
-        }
-    }
-    return num;
-}
 
 /* clean_temporary_directory:
  * Ensure that our temporary directory is clear of any files. */
@@ -118,7 +84,7 @@ void clean_temporary_directory(void) {
         while ((de = readdir(d))) {
             char *p;
             p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
+            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
                 sprintf(s, "%s/%s", tmpdir, de->d_name);
                 unlink(s);
             }
@@ -130,203 +96,8 @@ void clean_temporary_directory(void) {
         fprintf(stderr, PROGNAME": rmdir(%s): %s\n", tmpdir, strerror(errno));
 }
 
-/* connection_new:
- * Allocate a new connection structure between the given addresses. */
-connection connection_new(const struct in_addr *src, const struct in_addr *dst, const short int sport, const short int dport) {
-    connection c = (connection)calloc(1, sizeof(struct _connection));
-    c->src = *src;
-    c->dst = *dst;
-    c->sport = sport;
-    c->dport = dport;
-    c->alloc = 16384;
-    c->data = c->gif = c->jpeg = c->mpeg = malloc(c->alloc);
-    c->last = time(NULL);
-    c->blocks = NULL;
-    return c;
-}
-
-/* connection_delete:
- * Free the named connection structure. */
-void connection_delete(connection c) {
-    free(c->data);
-    free(c);
-}
-
-/* connection_push:
- * Put some more data in a connection. */
-void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
-    size_t goff = c->gif - c->data, joff = c->jpeg - c->data, moff = c->mpeg - c->data;
-    struct datablock *B, *b, *bl;
-    int a;
-
-/*    printf("connection_push(%p, %p, %u, %u)\n", c, data, off, len);*/
-    assert(c->alloc > 0);
-    if (off + len > c->alloc) {
-        /* Allocate more memory. */
-        while (off + len > c->alloc) {
-            c->alloc *= 2;
-            c->data = (unsigned char*)realloc(c->data, c->alloc);
-        }
-    }
-    c->gif = c->data + goff;
-    c->jpeg = c->data + joff;
-    c->mpeg = c->data + moff;
-    memcpy(c->data + off, data, len);
-
-    if (off + len > c->len) c->len = off + len;
-    c->last = time(NULL);
-    
-    B = malloc(sizeof *B);
-    B->off = off;
-    B->len = len;
-    B->done = 0;
-    B->next = NULL;
-    
-    /* Insert the block into the sorted block list. */
-    for (b = c->blocks, bl = NULL; ; bl = b, b = b->next) {
-        if ((!b || off < b->off) && (!bl || off > bl->off)) {
-            B->next = b;
-            if (bl)
-                bl->next = B;
-            else
-                c->blocks = B;
-            break;
-        }
-    }
-
-    /* Now go through the list combining blocks. */
-    do {
-        a = 0;
-        for (b = c->blocks; b; b = b->next) {
-            if (b->next && b->off + b->len >= b->next->off) {
-                struct datablock *bb;
-                bb = b->next;
-                b->len = (bb->off + bb->len) - b->off;
-                b->next = bb->next;
-                free(bb);
-                ++a;
-            }
-        }
-    } while (a);
-/*
-        {
-            printf("%p: ", c);
-            for (b = c->blocks; b; b = b->next)
-                printf("[%d (%d) -> %d] ", b->off, b->len, b->off + b->len);
-            printf("\n");
-        }
-*/
-}
-
-
-/* image_notify:
- * Tell the display child about an image, or, if we are running in adjunct
- * mode, just write its name to standard output. */
-void image_notify(int len, char *filename) {
-    if (adjunct)
-        /* in adjunct mode, just write these to standard output */
-        printf("%s\n", filename);
-#ifndef NO_DISPLAY_WINDOW
-    else {
-        /* otherwise, send a suitably-formatted message to the display child. */
-        struct pipemsg m = {0};
-        m.len = len;
-        strcpy(m.filename, filename);
-        write(dpychld_fd, &m, sizeof(m));
-    }
-#endif /* !NO_DISPLAY_WINDOW */
-}
-
-/* connection_harvest_images:
- * Extract image data from a connection's buffer. */
-void connection_harvest_images(connection c) {
-    unsigned char *ptr, *oldptr, *img;
-    size_t ilen;
-
-    if (!c->blocks) return;
-    
-    /* look for GIF files */
-    ptr = c->gif;
-    oldptr = NULL;
-
-    while (ptr != oldptr) {
-        oldptr = ptr;
-        ptr = find_gif_image(ptr, (c->blocks->off + c->blocks->len) - (ptr - c->data), &img, &ilen);
-
-        if (img && (!max_images || count_temporary_files() < max_images)) {
-            char buf[PATH_MAX + 1];
-            int fd;
-            sprintf(buf, "%s/driftnet-%d.%d.gif", tmpdir, (int)time(NULL), rand());
-            fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
-            write(fd, img, ilen);
-            close(fd);
-            image_notify(ilen, buf);
-        }
-    }
-
-    c->gif = ptr;
-
-    /* look for JPEG files */
-    ptr = c->jpeg;
-    oldptr = NULL;
-    
-    while (ptr != oldptr) {
-        oldptr = ptr;
-        ptr = find_jpeg_image(ptr, (c->blocks->off + c->blocks->len) - (ptr - c->data), &img, &ilen);
-
-        if (img && (!max_images || count_temporary_files() < max_images)) {
-            char buf[PATH_MAX + 1];
-            int fd;
-            sprintf(buf, "%s/driftnet-%d.%d.jpg", tmpdir, (int)time(NULL), rand());
-            fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
-            write(fd, img, ilen);
-            close(fd);
-            image_notify(ilen, buf);
-        }
-    }
-
-    c->jpeg = ptr;
-}
-
-/* connection_harvest_audio:
- * Extract audio data from a connection's buffer. */
-void connection_harvest_audio(connection c) {
-    unsigned char *ptr, *oldptr, *audio;
-    size_t alen;
-
-    if (!c->blocks) return;
-
-    /* look for MPEG streams */
-    ptr = c->mpeg;
-    oldptr = NULL;
-
-    while (ptr != oldptr) {
-        oldptr = ptr;
-        ptr = find_mpeg_stream(ptr, (c->blocks->off + c->blocks->len) - (ptr - c->data), &audio, &alen);
-
-        if (audio) {
-            if (!adjunct) {
-                /* Try to play audio. */
-                if (verbose)
-                    fprintf(stderr, PROGNAME": got %d bytes of MPEG audio\n", alen);
-                mpeg_submit_chunk(audio, alen);
-            } else {
-                /* Save it in a file. */
-                char buf[PATH_MAX + 1];
-                int fd;
-                sprintf(buf, "%s/driftnet-%d.%d.mp3", tmpdir, (int)time(NULL), rand());
-                fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
-                write(fd, audio, alen);
-                close(fd);
-                fprintf(stderr, PROGNAME": saved %d bytes of MPEG audio in %s\n", alen, buf);
-                printf("%s\n", buf);
-            }
-        }
-    }
-
-    c->mpeg = ptr;
-}
-
+/* alloc_connection:
+ * Find a free slot in which to allocate a connection object. */
 connection *alloc_connection(void) {
     connection *C;
     for (C = slots; C < slots + slotsalloc; ++C) {
@@ -340,6 +111,8 @@ connection *alloc_connection(void) {
     return C;
 }
 
+/* find_connection:
+ * Find a connection running between the two named addresses. */
 connection *find_connection(const struct in_addr *src, const struct in_addr *dst, const short int sport, const short int dport) {
     connection *C;
     for (C = slots; C < slots + slotsalloc; ++C) {
@@ -352,9 +125,12 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
     return NULL;
 }
 
+
+/* sweep_connections:
+ * Free finished connection slots. */
 #define TIMEOUT 5
 
-void sweep_connections() {
+void sweep_connections(void) {
     time_t now;
     connection *C;
     now = time(NULL);
@@ -365,9 +141,7 @@ void sweep_connections() {
              * or for which a FIN has been seen and for which there are no
              * gaps in the stream. */
             if ((now - c->last) > TIMEOUT || (c->fin && (!c->blocks || !c->blocks->next))) {
-                /* get any last images out of this one */
-                connection_harvest_images(c);
-                if (extract_audio) connection_harvest_audio(c);
+                connection_extract_media(c, extract_type);
                 connection_delete(c);
                 *C = NULL;
             }
@@ -375,6 +149,8 @@ void sweep_connections() {
     }
 }
 
+/* dump_data:
+ * Print some binary data on a file descriptor. */
 void dump_data(FILE *fp, const unsigned char *data, const unsigned int len) {
     const unsigned char *p;
     for (p = data; p < data + len; ++p) {
@@ -478,7 +254,7 @@ void usage(FILE *fp) {
 "  -s               Attempt to extract streamed audio data from the network,\n"
 "                   in addition to images. At present this supports MPEG data\n"
 "                   only.\n"
-/*"  -S               Extract streamed audio but not images.\n"*/
+"  -S               Extract streamed audio but not images.\n"
 "  -M command       Use the given command to play MPEG audio data extracted\n"
 "                   with the -s option; this should process MPEG frames\n"
 "                   supplied on standard input. Default: `mpg123 -'.\n"
@@ -519,22 +295,6 @@ void terminate_on_signal(int s) {
         kill(mpeg_mgr_pid, s);
     foad = s;
 }
-
-#if 0
-    clean_temporary_directory();    /* ugh */
-#ifdef NO_DISPLAY_WINDOW
-    _exit(0);
-#else
-    if (dpychld == 0 || adjunct) {
-        _exit(0);
-    } else {
-        close(dpychld_fd);
-        if (pc) pcap_close(pc);
-        _exit(0);
-    }
-#endif /* NO_DISPLAY_WINDOW */
-}
-#endif
 
 /* setup_signals:
  * Set up signal handlers. */
@@ -623,7 +383,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
         c->isn = htonl(tcp.seq);
 #endif
 
-    if (tcp.th_flags & TH_RST){
+    if (tcp.th_flags & TH_RST) {
         /* Looks like this connection is bogus, and so might be a
          * connection going the other way. */
         if (verbose)
@@ -660,20 +420,17 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
                 fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
         } else {
             connection_push(c, pkt + off, offset, len);
-            connection_harvest_images(c);
-            if (extract_audio) connection_harvest_audio(c);
+            connection_extract_media(c, extract_type);
         }
     }
     if (tcp.th_flags & TH_FIN) {
-        /* Connection closing. */
+        /* Connection closing; mark it as closed, but let sweep_connections
+         * free it if appropriate. */
         if (verbose)
             fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
         c->fin = 1;
-/*        connection_harvest_images(c);
-        if (extract_audio) connection_harvest_audio(c);
-        connection_delete(c);
-        *C = NULL;*/
     }
+
     /* sweep out old connections */
     sweep_connections();
 }
@@ -689,7 +446,7 @@ void *packet_capture_thread(void *v) {
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:psMvam:d:x:";
+char optstring[] = "hi:psSMvam:d:x:";
 
 int main(int argc, char *argv[]) {
     char *interface = NULL, *filterexpr;
@@ -724,7 +481,11 @@ int main(int argc, char *argv[]) {
                 break;
 
             case 's':
-                extract_audio = 1;
+                extract_type |= m_audio;
+                break;
+
+            case 'S':
+                extract_type = m_audio;
                 break;
 
             case 'M':
@@ -737,8 +498,8 @@ int main(int argc, char *argv[]) {
                 break;
 
             case 'm':
-                max_images = atoi(optarg);
-                if (max_images <= 0) {
+                max_tmpfiles = atoi(optarg);
+                if (max_tmpfiles <= 0) {
                     fprintf(stderr, PROGNAME": `%s' does not make sense for -m\n", optarg);
                     return -1;
                 }
@@ -774,22 +535,22 @@ int main(int argc, char *argv[]) {
 #endif /* !NO_DISPLAY_WINDOW */
     
     /* Let's not be too fascist about option checking.... */
-    if (max_images && !adjunct) {
+    if (max_tmpfiles && !adjunct) {
         fprintf(stderr, PROGNAME": warning: -m only makes sense with -a\n");
-        max_images = 0;
+        max_tmpfiles = 0;
     }
 
     if (adjunct && newpfx)
         fprintf(stderr, PROGNAME": warning: -x ignored -a\n");
 
-    if (mpeg_player_specified && !extract_audio)
+    if (mpeg_player_specified && !(extract_type & m_audio))
         fprintf(stderr, PROGNAME": warning: -M only makes sense with -s\n");
 
     if (mpeg_player_specified && adjunct)
         fprintf(stderr, PROGNAME": warning: -M ignored with -a\n");
 
-    if (max_images && adjunct && verbose)
-        fprintf(stderr, PROGNAME": a maximum of %d images will be buffered\n", max_images);
+    if (max_tmpfiles && adjunct && verbose)
+        fprintf(stderr, PROGNAME": a maximum of %d images will be buffered\n", max_tmpfiles);
 
     /* If a directory name has not been specified, then we need to create one.
      * Otherwise, check that it's a directory into which we may write files. */
@@ -851,12 +612,12 @@ int main(int argc, char *argv[]) {
     setup_signals();
     
     /* Start up the audio player, if required. */
-    if (extract_audio && !adjunct)
+    if (!adjunct && (extract_type & m_audio))
         do_mpeg_player();
     
 #ifndef NO_DISPLAY_WINDOW
     /* Possibly fork to start the display child process */
-    if (!adjunct) {
+    if (!adjunct && (extract_type & m_image)) {
         int pfd[2];
         pipe(pfd);
         switch (dpychld = fork()) {
