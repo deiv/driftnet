@@ -1,9 +1,11 @@
 README for driftnet
-$Id: README,v 1.5 2002/05/27 16:59:44 chris Exp $
+$Id: README,v 1.6 2002/05/29 11:52:23 chris Exp $
 
 Driftnet watches network traffic, and picks out and displays JPEG and GIF
-images for display. It is a horrific invasion of privacy and shouldn't be used
-by anyone anywhere.
+images for display. It is an horrific invasion of privacy and shouldn't be used
+by anyone anywhere. It can also extract MPEG audio data from the network and
+play it. If you live in a house with thick walls, this may be a useful way to
+find out about your neighbours' musical taste.
 
 To compile, read the Makefile and make any changes required, then type `make'
 and fix the errors which get displayed. Driftnet is at a very early stage of
@@ -13,7 +15,8 @@ You will need libpcap, libjpeg and libungif. On most Linux distributions these
 are available as packages. If you don't want a version of driftnet which will
 display images itself, but just want to use it to gather images for some other
 application, you only need libpcap -- see comments in the Makefile for more
-information.
+information. To play MPEG audio, you need an MPEG player-- by default,
+driftnet will use mpg123.
 
 Driftnet needs to run with sufficient privilege to obtain raw packets from the
 network. On most systems, this means running it as root.

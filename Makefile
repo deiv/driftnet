@@ -5,7 +5,7 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.17 2002/05/28 20:19:09 chris Exp $
+# $Id: Makefile,v 1.18 2002/05/29 11:48:10 chris Exp $
 #
 
 # Driftnet version. Do not alter.
@@ -271,3 +271,36 @@ display.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
 display.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
 display.o: /usr/include/arpa/inet.h /usr/include/sys/time.h
 display.o: /usr/include/bits/time.h img.h
+playaudio.o: /usr/include/sys/types.h /usr/include/features.h
+playaudio.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+playaudio.o: /usr/include/bits/types.h
+playaudio.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
+playaudio.o: /usr/include/time.h /usr/include/endian.h
+playaudio.o: /usr/include/bits/endian.h /usr/include/sys/select.h
+playaudio.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+playaudio.o: /usr/include/sys/sysmacros.h /usr/include/errno.h
+playaudio.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+playaudio.o: /usr/include/asm/errno.h /usr/include/pthread.h
+playaudio.o: /usr/include/sched.h /usr/include/bits/sched.h
+playaudio.o: /usr/include/signal.h /usr/include/bits/signum.h
+playaudio.o: /usr/include/bits/siginfo.h /usr/include/bits/sigaction.h
+playaudio.o: /usr/include/bits/sigcontext.h /usr/include/asm/sigcontext.h
+playaudio.o: /usr/include/bits/sigstack.h /usr/include/bits/pthreadtypes.h
+playaudio.o: /usr/include/bits/sigthread.h /usr/include/stdio.h
+playaudio.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdarg.h
+playaudio.o: /usr/include/libio.h /usr/include/_G_config.h
+playaudio.o: /usr/include/bits/stdio_lim.h /usr/include/stdlib.h
+playaudio.o: /usr/include/alloca.h /usr/include/string.h
+playaudio.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+playaudio.o: /usr/include/bits/confname.h /usr/include/getopt.h
+playaudio.o: /usr/include/sys/wait.h /usr/include/bits/waitflags.h
+playaudio.o: /usr/include/bits/waitstatus.h driftnet.h
+playaudio.o: /usr/include/sys/socket.h /usr/include/bits/socket.h
+playaudio.o: /usr/include/limits.h /usr/include/bits/posix1_lim.h
+playaudio.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
+playaudio.o: /usr/include/bits/posix2_lim.h /usr/include/bits/sockaddr.h
+playaudio.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
+playaudio.o: /usr/include/netinet/in.h /usr/include/stdint.h
+playaudio.o: /usr/include/bits/wordsize.h /usr/include/bits/in.h
+playaudio.o: /usr/include/bits/byteswap.h /usr/include/arpa/inet.h
+playaudio.o: /usr/include/sys/time.h /usr/include/bits/time.h
