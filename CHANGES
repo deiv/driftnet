@@ -1,6 +1,7 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.18 2003/10/16 11:56:37 chris Exp $
+$Id: CHANGES,v 1.19 2004/04/26 14:42:36 chris Exp $
 
+Driftnet now uses GTK2, rather than GTK1.
 
 Added support for reading packets from a pcap dump file (thanks to Rob Timko
 and Joshua Wright for this); and for extracting URLs from HTTP requests (not

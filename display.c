@@ -9,7 +9,7 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.18 2003/08/25 12:23:43 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp $";
 
 #include <sys/types.h>
 
@@ -108,7 +108,7 @@ void update_window() {
         GdkGC *gc;
         gc = gdk_gc_new(drawable);
         gdk_draw_rgb_32_image(drawable, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, (guchar*)backing_image->flat, sizeof(pel) * width);
-        gdk_gc_destroy(gc);
+        g_object_unref(gc);
     }
 }
 
@@ -176,7 +176,7 @@ struct imgrect *find_image_rectangle(const int x, const int y) {
  * React to an expose event, perhaps changing the backing image size. */
 void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     if (darea) drawable = darea->window;
-    gdk_window_get_size(drawable, &width, &height);
+    gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -187,7 +187,7 @@ void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
  * React to a configure event, perhaps changing the backing image size. */
 void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     if (darea) drawable = darea->window;
-    gdk_window_get_size(drawable, &width, &height);
+    gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -394,28 +394,26 @@ int dodisplay(int argc, char *argv[]) {
        
     /* do some init thing */
     gtk_init(&argc, &argv);
-    gdk_rgb_init();
 
-    gtk_widget_set_default_colormap(gdk_rgb_get_cmap());
-    gtk_widget_set_default_visual(gdk_rgb_get_visual());
+    gtk_widget_push_colormap(gdk_rgb_get_colormap());
 
     /* Make our own window. */
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_usize(window, 0, 0);
+    gtk_widget_set_size_request(window, 100, 100);
 
     darea = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(window), darea);
     gtk_widget_set_events(darea, GDK_EXPOSURE_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK);
 
-    gtk_signal_connect(GTK_OBJECT(window), "delete_event", GTK_SIGNAL_FUNC(delete_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
+    g_signal_connect(G_OBJECT(window), "delete_event", GTK_SIGNAL_FUNC(delete_event), NULL);
+    g_signal_connect(G_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
 
-    gtk_signal_connect(GTK_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
     
     /* mouse button press/release for saving images */
-    gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
 
     gtk_widget_show_all(window);
 
