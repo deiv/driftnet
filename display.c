@@ -9,10 +9,11 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.14 2002/06/13 19:08:37 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.15 2002/06/13 20:06:42 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <gdk/gdkx.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,8 +32,7 @@ static const char rcsid[] = "$Id: display.c,v 1.14 2002/06/13 19:08:37 chris Exp
 extern int verbose; /* in driftnet.c */
 
 static GtkWidget *window, *darea;
-
-GdkColor white, black;
+static GdkWindow *drawable;
 
 static int width, height, wrx, wry, rowheight;
 static img backing_image;
@@ -42,8 +42,8 @@ struct imgrect {
     int x, y, w, h;
 };
 
-int nimgrects;
-struct imgrect *imgrects;
+static int nimgrects;
+static struct imgrect *imgrects;
 
 gint delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     if (verbose)
@@ -101,8 +101,9 @@ void make_backing_image() {
  * Copy the backing image onto the window. */
 void update_window() {
     if (backing_image) {
-        GdkGC *gc = gdk_gc_new(darea->window);
-        gdk_draw_rgb_32_image(darea->window, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, (guchar*)backing_image->flat, sizeof(pel) * width);
+        GdkGC *gc;
+        gc = gdk_gc_new(drawable);
+        gdk_draw_rgb_32_image(drawable, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, (guchar*)backing_image->flat, sizeof(pel) * width);
         gdk_gc_destroy(gc);
     }
 }
@@ -170,7 +171,8 @@ struct imgrect *find_image_rectangle(const int x, const int y) {
 /* expose_event:
  * React to an expose event, perhaps changing the backing image size. */
 void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    gdk_window_get_size(darea->window, &width, &height);
+    if (darea) drawable = darea->window;
+    gdk_window_get_size(drawable, &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -180,7 +182,8 @@ void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
 /* configure_event:
  * React to a configure event, perhaps changing the backing image size. */
 void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    gdk_window_get_size(darea->window, &width, &height);
+    if (darea) drawable = darea->window;
+    gdk_window_get_size(drawable, &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -255,11 +258,11 @@ void button_release_event(GtkWidget *widget, GdkEventButton *event) {
         /* We draw a little frame around the image while we're saving it, to
          * give some visual feedback. */
         struct timespec jiffy = { 0, 100000000 };
-        gdk_draw_rectangle(darea->window, darea->style->white_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+        gdk_draw_rectangle(drawable, darea->style->white_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
         gdk_flush();    /* force X to actually draw the damn thing. */
         save_image(ir);
         nanosleep(&jiffy, NULL);
-        gdk_draw_rectangle(darea->window, darea->style->black_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+        gdk_draw_rectangle(drawable, darea->style->black_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
     }
 }
 
@@ -293,7 +296,7 @@ extern char *tmpdir;    /* in driftnet.c */
 
 gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     static char *path;
-    char name[32];
+    char name[TMPNAMELEN];
     ssize_t rr;
     int nimgs = 0;
 
@@ -344,7 +347,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         }
 
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
-                        add_image_rectangle(name, wrx, wry - h, w, h);
+                        add_image_rectangle(path, wrx, wry - h, w, h);
                         saveimg = 1;
 
                         update_window();
@@ -389,7 +392,8 @@ int dodisplay(int argc, char *argv[]) {
     gtk_widget_set_default_colormap(gdk_rgb_get_cmap());
     gtk_widget_set_default_visual(gdk_rgb_get_visual());
 
-    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    /* Make our own window. */
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_widget_set_usize(window, 0, 0);
 
     darea = gtk_drawing_area_new();
@@ -405,9 +409,9 @@ int dodisplay(int argc, char *argv[]) {
     /* mouse button press/release for saving images */
     gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
     gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
-    
+
     gtk_widget_show_all(window);
-    
+
     gtk_main();
 
     /* Get rid of all remaining images. */

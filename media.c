@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: media.c,v 1.4 2002/06/13 19:08:37 chris Exp $";
+static const char rcsid[] = "$Id: media.c,v 1.5 2002/06/13 20:06:42 chris Exp $";
 
 #include <assert.h>
 #include <dirent.h>
@@ -61,7 +61,7 @@ static int count_temporary_files(void) {
 /* dispatch_image:
  * Throw some image data at the display process. */
 void dispatch_image(const char *mname, const unsigned char *data, const size_t len) {
-    char *buf, name[32];
+    char *buf, name[TMPNAMELEN];
     int fd;
     buf = malloc(strlen(tmpdir) + 64);
     sprintf(name, "driftnet-%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);

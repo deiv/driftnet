@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.8 2002/06/10 23:16:37 chris Exp $
+ * $Id: driftnet.h,v 1.9 2002/06/13 20:06:42 chris Exp $
  *
  */
 
@@ -60,5 +60,7 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 
 /* media.c */
 void connection_extract_media(connection c, const enum mediatype T);
+
+#define TMPNAMELEN      64
 
 #endif /* __DRIFTNET_H_ */

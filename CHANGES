@@ -1,5 +1,5 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.12 2002/06/10 21:25:48 chris Exp $
+$Id: CHANGES,v 1.13 2002/06/13 20:07:31 chris Exp $
 
 0.1.5
 
@@ -12,9 +12,9 @@ The temporary directory used by driftnet may now be specified as a command-line
 option; otherwise, it is created dynamically.
 
 Added the -a (adjunct) and various related options to make it easy to use
-driftnet as a back-end for some other program. It is now possible to compile
-a back-end only version of driftnet without any X11 support by using the
-NO_DISPLAY_WINDOW option at compile time.
+driftnet as a back-end for some other program, such as webcollage. It is now
+possible to compile a back-end only version of driftnet without any X11 support
+by using the NO_DISPLAY_WINDOW option at compile time.
 
 Added the -s option to extract MPEG audio data from network streams, along with
 a ghastly mess of threads and pipes to allow driftnet to play the data to play
