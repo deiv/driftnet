@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.24 2002/06/10 23:16:37 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.25 2002/07/08 20:57:17 chris Exp $";
 
 #undef NDEBUG
 
@@ -466,7 +466,9 @@ int main(int argc, char *argv[]) {
     struct bpf_program filter;
     char ebuf[PCAP_ERRBUF_SIZE];
     int c;
+#ifndef NO_DISPLAY_WINDOW
     extern char *savedimgpfx;       /* in display.c */
+#endif
     extern char *audio_mpeg_player; /* in playaudio.c */
     int newpfx = 0;
     int mpeg_player_specified = 0;
@@ -522,10 +524,12 @@ int main(int argc, char *argv[]) {
                 tmpdir_specified = 1; /* so we don't delete it. */
                 break;
 
+#ifndef NO_DISPLAY_WINDOW
             case 'x':
                 savedimgpfx = optarg;
                 newpfx = 1;
                 break;
+#endif
 
             case '?':
             default:
@@ -618,8 +622,10 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, PROGNAME": using filter expression `%s'\n", filterexpr);
     
 
+#ifndef NO_DISPLAY_WINDOW
     if (verbose && newpfx && !adjunct)
         fprintf(stderr, PROGNAME": using saved image prefix `%s'\n", savedimgpfx);
+#endif
 
     setup_signals();
     

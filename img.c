@@ -7,7 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: img.c,v 1.8 2002/06/10 21:25:48 chris Exp $";
+#ifndef NO_DISPLAY_WINDOW
+
+static const char rcsid[] = "$Id: img.c,v 1.9 2002/07/08 20:57:17 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -286,4 +288,7 @@ void img_blt(img dest, const int dx, const int dy, img src, const int sx, const 
         /* Different images; simple copy. */
         img_simple_blt(dest, destx, desty, src, srcx, srcy, width, height);
 }
+
 #endif
+
+#endif /* !NO_DISPLAY_WINDOW */

@@ -7,7 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: jpeg.c,v 1.4 2002/06/10 21:25:48 chris Exp $";
+#ifndef NO_DISPLAY_WINDOW
+
+static const char rcsid[] = "$Id: jpeg.c,v 1.5 2002/07/08 20:57:17 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -162,3 +164,5 @@ int jpeg_save_img(const img I, FILE *fp) {
 
     return 1;
 }
+
+#endif /* !NO_DISPLAY_WINDOW */

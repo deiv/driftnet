@@ -5,9 +5,11 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: img.h,v 1.6 2002/06/10 21:25:48 chris Exp $
+ * $Id: img.h,v 1.7 2002/07/08 20:57:17 chris Exp $
  *
  */
+
+#ifndef NO_DISPLAY_WINDOW
 
 #ifndef __IMG_H_ /* include guard */
 #define __IMG_H_
@@ -83,3 +85,5 @@ void img_delete(img I);
 void img_simple_blt(img dest, const int dx, const int dy, img src, const int sx, const int sy, const int w, const int h);
 
 #endif /* __IMG_H_ */
+
+#endif /* !NO_DISPLAY_WINDOW */

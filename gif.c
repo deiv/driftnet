@@ -7,7 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: gif.c,v 1.3 2002/06/10 21:25:48 chris Exp $";
+#ifndef NO_DISPLAY_WINDOW
+
+static const char rcsid[] = "$Id: gif.c,v 1.4 2002/07/08 20:57:17 chris Exp $";
 
 #include <gif_lib.h>
 
@@ -116,3 +118,5 @@ fail:
     
     return ret;
 }
+
+#endif /* !NO_DISPLAY_WINDOW */
