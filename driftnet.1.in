@@ -6,7 +6,7 @@
 .\" Copyright (c) 2002 Chris Lightfoot. All rights reserved.
 .\" Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 .\"
-.\" $Id: driftnet.1.in,v 1.3 2002/05/29 11:48:10 chris Exp $
+.\" $Id: driftnet.1.in,v 1.4 2002/06/04 14:52:53 anonymous Exp $
 .\"
 
 .SH NAME
@@ -71,6 +71,9 @@ Attempt to capture streamed audio data from the network, and either play it
 or, in adjunct mode, save it in files. At present this only works with MPEG
 data.
 .TP
+\fB-S\fP
+Attempt only to capture streamed audio data, ignoring images.
+.TP
 \fB-M\fP \fIcommand\fP
 Use the named \fIcommand\fP to play MPEG audio data. The \fIcommand\fP, which
 is executed using the shell, should accept MPEG frames on standard input.
@@ -98,7 +101,7 @@ Chris Lightfoot <chris@ex-parrot.com>
 .SH VERSION
 \fBDriftnet\fP, version @@@VERSION@@@.
 .br
-$Id: driftnet.1.in,v 1.3 2002/05/29 11:48:10 chris Exp $
+$Id: driftnet.1.in,v 1.4 2002/06/04 14:52:53 anonymous Exp $
 
 .SH COPYING
 This program is free software; you can redistribute it and/or modify
