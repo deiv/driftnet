@@ -1,25 +1,18 @@
 TODO for driftnet
-$Id: TODO,v 1.4 2002/05/26 23:45:03 chris Exp $
+$Id: TODO,v 1.5 2002/05/27 16:59:44 chris Exp $
 
 * PNG files.
 
 * More intelligent layout algorithm for images.
 
-* Memory leaks? Buffer overruns?
-
-* Option to save images by clicking on them.
+* Memory leaks? Buffer overruns? Static-sized buffers.
 
 * Parse JPEG files properly -- the lame memstr(..., "\xff\xd9") thing is
   broken and should be done right. At the moment, some JPEG files get
   truncated in a really bad way. An alternative is to store more state for
   JPEG files, and do special parsing when we know a connection has closed.
 
-* Fix issues to do with the display child outliving the capture process, or
-  vice-versa.
-
 * Drop privileges after starting up pcap.
-
-* Turn it into an X screensaver (insane idea, but hey...).
 
 * More portability / bug fixes.
 

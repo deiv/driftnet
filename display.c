@@ -7,7 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.8 2002/05/26 23:45:03 chris Exp $";
+#ifndef NO_DISPLAY_WINDOW
+
+static const char rcsid[] = "$Id: display.c,v 1.9 2002/05/27 16:59:44 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -379,3 +381,5 @@ int dodisplay(int argc, char *argv[]) {
 
     return 0;
 }
+
+#endif /* !NO_DISPLAY_WINDOW */

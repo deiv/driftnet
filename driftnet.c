@@ -7,14 +7,14 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.13 2002/05/26 23:45:03 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.14 2002/05/27 16:59:44 chris Exp $";
 
 #undef NDEBUG
 
 #include <assert.h>
+#include <dirent.h>
 #include <errno.h>
 #include <pcap.h>
-#include <linux/if_ether.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <stdlib.h>
@@ -29,8 +29,15 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.13 2002/05/26 23:45:03 chris Ex
 
 #include "driftnet.h"
 
+/* slots for storing information about connections */
 connection *slots;
 unsigned int slotsused, slotsalloc;
+
+/* flags: verbose, adjunct mode, temporary directory to use. */
+int verbose, adjunct;
+int tmpdir_specified;
+char *tmpdir;
+int max_images;
 
 /* ugh. */
 pcap_t *pc;
@@ -39,6 +46,71 @@ pcap_t *pc;
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen);
 unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsigned char **jpegdata, size_t *jpeglen);
 
+#ifndef NO_DISPLAY_WINDOW
+/* PID of display child and file descriptor on pipe to same. */
+pid_t dpychld;
+int dpychld_fd;
+
+/* display.c */
+int dodisplay(int argc, char *argv[]);
+#endif /* !NO_DISPLAY_WINDOW */
+
+/* count_temporary_files:
+ * How many of our files remain in the temporary directory? We do this a
+ * maximum of once every five seconds. */
+static int count_temporary_files(void) {
+    static int num;
+    static time_t last_counted;
+    if (last_counted < time(NULL) - 5) {
+        DIR *d;
+        struct dirent *de;
+        num = 0;
+        d = opendir(tmpdir);
+        if (d) {
+            while ((de = readdir(d))) {
+                char *p;
+                p = strrchr(de->d_name, '.');
+                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0)))
+                    ++num;
+            }
+            closedir(d);
+            last_counted = time(NULL);
+        }
+    }
+    return num;
+}
+
+/* clean_temporary_directory:
+ * Ensure that our temporary directory is clear of any files. */
+void clean_temporary_directory(void) {
+    DIR *d;
+    struct dirent *de;
+    
+    /* If tmpdir_specified is true, the user specified a particular temporary
+     * directory. We presume that the user doesn't want the directory removed
+     * and that we shouldn't nuke any files in that directory which don't look
+     * like ours. */
+
+    d = opendir(tmpdir);
+    if (d) {
+        char s[PATH_MAX + 1];
+        while ((de = readdir(d))) {
+            char *p;
+            p = strrchr(de->d_name, '.');
+            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0))) {
+                sprintf(s, "%s/%s", tmpdir, de->d_name);
+                unlink(s);
+            }
+        }
+        closedir(d);
+    }
+
+    if (!tmpdir_specified && rmdir(tmpdir) == -1 && errno != ENOENT) /* lame attempt to avoid race */
+        fprintf(stderr, PROGNAME ": rmdir(%s): %s\n", tmpdir, strerror(errno));
+}
+
+/* connection_new:
+ * Allocate a new connection structure between the given addresses. */
 connection connection_new(const struct in_addr *src, const struct in_addr *dst, const short int sport, const short int dport) {
     connection c = (connection)calloc(1, sizeof(struct _connection));
     c->src = *src;
@@ -51,11 +123,15 @@ connection connection_new(const struct in_addr *src, const struct in_addr *dst, 
     return c;
 }
 
+/* connection_delete:
+ * Free the named connection structure. */
 void connection_delete(connection c) {
     free(c->data);
     free(c);
 }
 
+/* connection_push:
+ * Put some more data in a connection. */
 void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
     size_t goff = c->gif - c->data, joff = c->jpeg - c->data;
 /*    printf("connection_push(%p, %p, %u, %u)\n", c, data, off, len);*/
@@ -75,18 +151,27 @@ void connection_push(connection c, const unsigned char *data, unsigned int off, 
     c->last = time(NULL);
 }
 
-pid_t dpychld;
-int dpychld_fd;
 
-int dodisplay(int argc, char *argv[]);
-
+/* image_notify:
+ * Tell the display child about an image, or, if we are running in adjunct
+ * mode, just write its name to standard output. */
 void image_notify(int len, char *filename) {
-    struct pipemsg m = {0};
-    m.len = len;
-    strcpy(m.filename, filename);
-    write(dpychld_fd, &m, sizeof(m));
+    if (adjunct)
+        /* in adjunct mode, just write these to standard output */
+        printf("%s\n", filename);
+#ifndef NO_DISPLAY_WINDOW
+    else {
+        /* otherwise, send a suitably-formatted message to the display child. */
+        struct pipemsg m = {0};
+        m.len = len;
+        strcpy(m.filename, filename);
+        write(dpychld_fd, &m, sizeof(m));
+    }
+#endif /* !NO_DISPLAY_WINDOW */
 }
 
+/* connection_harvest_images:
+ * Extract image data from a connection's buffer. */
 void connection_harvest_images(connection c) {
     unsigned char *ptr, *oldptr, *img;
     size_t ilen;
@@ -99,14 +184,13 @@ void connection_harvest_images(connection c) {
         oldptr = ptr;
         ptr = find_gif_image(ptr, c->len - (ptr - c->data), &img, &ilen);
 
-        if (img) {
-            char buf[128];
+        if (img && max_images && count_temporary_files() < max_images) {
+            char buf[PATH_MAX + 1];
             int fd;
-            sprintf(buf, "/tmp/imgdump/%d.%d.gif", (int)time(NULL), rand());
+            sprintf(buf, "%s/driftnet-%d.%d.gif", tmpdir, (int)time(NULL), rand());
             fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
             write(fd, img, ilen);
             close(fd);
-/*            printf("saved GIF data of length %u in %s\n", ilen, buf);*/
             image_notify(ilen, buf);
         }
     }
@@ -121,14 +205,13 @@ void connection_harvest_images(connection c) {
         oldptr = ptr;
         ptr = find_jpeg_image(ptr, c->len - (ptr - c->data), &img, &ilen);
 
-        if (img) {
-            char buf[128];
+        if (img && max_images && count_temporary_files() < max_images) {
+            char buf[PATH_MAX + 1];
             int fd;
-            sprintf(buf, "/tmp/imgdump/%d.%d.jpg", (int)time(NULL), rand());
+            sprintf(buf, "%s/driftnet-%d.%d.jpg", tmpdir, (int)time(NULL), rand());
             fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
             write(fd, img, ilen);
             close(fd);
-/*            printf("saved JPEG data of length %u in %s\n", ilen, buf);*/
             image_notify(ilen, buf);
         }
     }
@@ -259,18 +342,39 @@ void usage(FILE *fp) {
     fprintf(fp,
 "driftnet, version %s\n"
 "Capture images from network traffic and display them in an X window.\n"
+#ifdef NO_DISPLAY_WINDOW
 "\n"
-"Synopsis: driftnet -h | [-i interface] [-p] [-v] [filter code]\n"
+"Actually, this version of driftnet was compiled with the NO_DISPLAY_WINDOW\n"
+"option, so that it can only be used in adjunct mode. See below.\n"
+#endif /* NO_DISPLAY_WINDOW */
+"\n"
+"Synopsis: driftnet [options] [filter code]\n"
+"\n"
+"Options:\n"
 "\n"
 "  -h               Display this help message.\n"
 "  -i interface     Select the interface on which to listen (default: all\n"
 "                   interfaces).\n"
 "  -p               Do not put the listening interface into promiscuous mode.\n"
 "  -v               Verbose operation.\n"
+"  -a               Adjunct mode: do not display images on screen, but save\n"
+"                   them to a temporary directory and announce their names on\n"
+"                   standard output.\n"
+"  -m number        Maximum number of images to keep in temporary directory in\n"
+"                   adjunct mode.\n"
+"  -d directory     Use the named temporary directory.\n"
 "  -x prefix        Prefix to use when saving images.\n"
 "\n"
 "Filter code can be specified after any options in the manner of tcpdump(8).\n"
 "The filter code will be evaluated as `tcp and (user filter code)'\n"
+"\n"
+"You can save images to the current directory by clicking on them.\n"
+"\n"
+"Adjunct mode is designed to be used by other programs which want to use\n"
+"driftnet to gather images from the network. With the -m option, driftnet will\n"
+"silently drop images if more than the specified number of images are saved\n"
+"in its temporary directory. It is assumed that some other process is\n"
+"collecting and deleting the image files.\n"
 "\n"
 "driftnet, copyright (c) 2001-2 Chris Lightfoot <chris@ex-parrot.com>\n"
 "home page: http://www.ex-parrot.com/~chris/driftnet/\n"
@@ -288,13 +392,18 @@ void usage(FILE *fp) {
  * the pcap_next call in the main loop may block, so it's best to just exit
  * here. */
 void terminate_on_signal(int s) {
-    if (dpychld == 0) {
+    clean_temporary_directory();    /* ugh */
+#ifdef NO_DISPLAY_WINDOW
+    _exit(0);
+#else
+    if (dpychld == 0 || adjunct) {
         _exit(0);
     } else {
         close(dpychld_fd);
         pcap_close(pc);
         _exit(0);
     }
+#endif /* NO_DISPLAY_WINDOW */
 }
 
 /* setup_signals:
@@ -336,9 +445,7 @@ char *connection_string(const struct in_addr s, const unsigned short s_port, con
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:pvx:";
-
-int verbose;
+char optstring[] = "hi:pvam:d:x:";
 
 int main(int argc, char *argv[]) {
     char *interface = NULL, *filterexpr;
@@ -347,11 +454,10 @@ int main(int argc, char *argv[]) {
     char ebuf[PCAP_ERRBUF_SIZE];
     struct pcap_pkthdr hdr;
     const unsigned char *pkt;
-    int pfd[2];
     int pkt_offset;
     int c;
-    struct stat st;
     extern char *savedimgpfx;    /* in display.c */
+    int newpfx = 0;
 
     /* Handle command-line options. */
     opterr = 0;
@@ -373,8 +479,26 @@ int main(int argc, char *argv[]) {
                 promisc = 0;
                 break;
 
+            case 'a':
+                adjunct = 1;
+                break;
+
+            case 'm':
+                max_images = atoi(optarg);
+                if (max_images <= 0) {
+                    fprintf(stderr, PROGNAME ": `%s' does not make sense for -m\n", optarg);
+                    return -1;
+                }
+                break;
+
+            case 'd':
+                tmpdir = optarg;
+                tmpdir_specified = 1; /* so we don't delete it. */
+                break;
+
             case 'x':
                 savedimgpfx = optarg;
+                newpfx = 1;
                 break;
 
             case '?':
@@ -388,30 +512,56 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /* Since most users won't read the instructions, check for and create the
-     * /tmp/imgdump directory. */
-    if (stat("/tmp/imgdump", &st) == -1) {
-        if (errno == ENOENT) {
-            fprintf(stderr, PROGNAME": /tmp/imgdump does not exist; creating it\n");
-            if (mkdir("/tmp/imgdump", 0700) == -1) {
-                perror(PROGNAME": mkdir");
-                return -1;
-            }
-        } else {
-            perror(PROGNAME": stat(/tmp/imgdump)");
+#ifdef NO_DISPLAY_WINDOW
+    if (!adjunct) {
+        fprintf(stderr, PROGNAME": this version of driftnet was compiled without display support\n");
+        fprintf(stderr, PROGNAME": use the -a option to run it in adjunct mode\n");
+        return -1;
+    }
+#endif /* !NO_DISPLAY_WINDOW */
+    
+    /* Let's not be too fascist about option checking.... */
+    if (max_images && !adjunct)
+        fprintf(stderr, PROGNAME ": warning: -m only makes sense with -a\n");
+
+    if (adjunct && newpfx)
+        fprintf(stderr, PROGNAME ": warning: -x only makes sense without -a\n");
+
+    if (max_images && adjunct && verbose)
+        fprintf(stderr, PROGNAME ": a maximum of %d images will be buffered\n", max_images);
+
+    
+    /* If a directory name has not been specified, then we need to create one.
+     * Otherwise, check that it's a directory into which we may write files. */
+    if (tmpdir) {
+        struct stat st;
+        if (stat(tmpdir, &st) == -1) {
+            fprintf(stderr, PROGNAME": stat(%s): %s\n", tmpdir, strerror(errno));
+            return -1;
+        } else if (!S_ISDIR(st.st_mode)) {
+            fprintf(stderr, PROGNAME": %s: not a directory\n", tmpdir);
+            return -1;
+        } else if (access(tmpdir, R_OK | W_OK) != 0) { /* access is unsafe but we don't really care. */
+            fprintf(stderr, PROGNAME": %s: %s\n", tmpdir, strerror(errno));
             return -1;
         }
     } else {
-        if (!S_ISDIR(st.st_mode)) {
-            fprintf(stderr, PROGNAME": /tmp/imgdump exists, but is not a directory. Quitting.\n");
-            return -1;
+        /* need to make a temporary directory. */
+        for (;;) {
+            tmpdir = strdup(tmpnam(NULL));
+            if (mkdir(tmpdir, 0700) == 0)
+                break;
+            free(tmpdir);
         }
     }
-    
+
+    if (verbose) 
+        fprintf(stderr, PROGNAME ": using temporary file directory %s\n", tmpdir);
     
     if (verbose)
         fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
 
+    /* Build up filter. */
     if (optind < argc) {
         char **a;
         int l;
@@ -430,35 +580,37 @@ int main(int argc, char *argv[]) {
     
     setup_signals();
 
-    if (verbose)
+    if (verbose && newpfx && !adjunct)
         fprintf(stderr, PROGNAME": using saved image prefix `%s'\n", savedimgpfx);
-    
-    /* fork to start the display child process */
-    pipe(pfd);
-    switch (dpychld = fork()) {
-        case 0:
-            /* we are the child */
-            close(pfd[1]);
-            dpychld_fd = pfd[0];
-            dodisplay(argc, argv);
-            return -1;
 
-        case -1:
-            perror(PROGNAME "fork");
-            return -1;
+#ifndef NO_DISPLAY_WINDOW
+    /* Possibly fork to start the display child process */
+    if (!adjunct) {
+        int pfd[2];
+        pipe(pfd);
+        switch (dpychld = fork()) {
+            case 0:
+                /* we are the child */
+                close(pfd[1]);
+                dpychld_fd = pfd[0];
+                dodisplay(argc, argv);
+                return -1;
 
-        default:
-            close(pfd[0]);
-            dpychld_fd = pfd[1];
-            if (verbose)
-                fprintf(stderr, PROGNAME ": started display child, pid %d\n", (int)dpychld);
-            break;
-    }
-    
-    slotsused = 0;
-    slotsalloc = 64;
-    slots = (connection*)calloc(slotsalloc, sizeof(connection));
+            case -1:
+                perror(PROGNAME "fork");
+                return -1;
 
+            default:
+                close(pfd[0]);
+                dpychld_fd = pfd[1];
+                if (verbose)
+                    fprintf(stderr, PROGNAME ": started display child, pid %d\n", (int)dpychld);
+                break;
+        }
+    } else if (verbose)
+        fprintf(stderr, PROGNAME ": operating in adjunct mode\n");
+#endif /* !NO_DISPLAY_WINDOW */
+ 
     /* Start up pcap. */
     pc = pcap_open_live(interface, 262144, promisc, 1, ebuf);
     if (!pc) {
@@ -488,8 +640,14 @@ int main(int argc, char *argv[]) {
     if (verbose)
         fprintf(stderr, PROGNAME": link-level header length is %d bytes\n", pkt_offset);
 
+
+    slotsused = 0;
+    slotsalloc = 64;
+    slots = (connection*)calloc(slotsalloc, sizeof(connection));
+
+    /* Main capture loop. */
     while (1) {
-        struct iphdr ip;
+        struct ip ip;
         struct tcphdr tcp;
         struct in_addr s, d;
         int off, len;
@@ -502,41 +660,34 @@ int main(int argc, char *argv[]) {
 
         if (verbose)
             fprintf(stderr, ".");
-/*
-        fprintf(stderr, "packet len = %d captured = %d!\n", hdr.len, hdr.caplen);
-*/
-        memcpy(&ip, pkt + pkt_offset, sizeof(ip));
-        memcpy(&s, &ip.saddr, sizeof(ip.saddr));
-        memcpy(&d, &ip.daddr, sizeof(ip.daddr));
 
-        memcpy(&tcp, pkt + pkt_offset + (ip.ihl << 2), sizeof(tcp));
-        off = pkt_offset + (ip.ihl << 2) + (tcp.doff << 2);
+        memcpy(&ip, pkt + pkt_offset, sizeof(ip));
+        memcpy(&s, &ip.ip_src, sizeof(ip.ip_src));
+        memcpy(&d, &ip.ip_dst, sizeof(ip.ip_dst));
+
+        memcpy(&tcp, pkt + pkt_offset + (ip.ip_hl << 2), sizeof(tcp));
+        off = pkt_offset + (ip.ip_hl << 2) + (tcp.th_off << 2);
         len = hdr.caplen - off;
 
-        /*
-        if (verbose)
-            fprintf(stderr, PROGNAME": captured packet: %s:%d -> %s:%d\n", inet_ntoa(s), ntohs(tcp.source), inet_ntoa(d), ntohs(tcp.dest));
-        */
-        
         /* XXX fragmented packets and other nasties. */
         
         /* try to find the connection slot associated with this. */
-        C = find_connection(&s, &d, ntohs(tcp.source), ntohs(tcp.dest));
+        C = find_connection(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
 
         /* no connection at all, so we need to allocate one. */
         if (!C) {
             if (verbose)
-                fprintf(stderr, PROGNAME": new connection: %s\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)));
+                fprintf(stderr, PROGNAME": new connection: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
             C = alloc_connection();
-            *C = connection_new(&s, &d, ntohs(tcp.source), ntohs(tcp.dest));
+            *C = connection_new(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
             /* This might or might not be an entirely new connection (SYN flag
              * set). Either way we need a sequence number to start at. */
-            (*C)->isn = ntohl(tcp.seq);
+            (*C)->isn = ntohl(tcp.th_seq);
         }
 
         /* Now we need to process this segment. */
         c = *C;
-        delta = 0;//tcp.syn ? 1 : 0;
+        delta = 0;/*tcp.syn ? 1 : 0;*/
 
         /* NB (STD0007):
          *    SEG.LEN = the number of octets occupied by the data in the
@@ -547,16 +698,16 @@ int main(int argc, char *argv[]) {
             c->isn = htonl(tcp.seq);
 #endif
 
-        if (tcp.rst) {
+        if (tcp.th_flags & TH_RST){
             /* Looks like this connection is bogus, and so might be a
              * connection going the other way. */
             if (verbose)
-                fprintf(stderr, PROGNAME": connection reset: %s\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)));
+                fprintf(stderr, PROGNAME": connection reset: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
             
             connection_delete(c);
             *C = NULL;
 
-            if ((C = find_connection(&d, &s, ntohs(tcp.dest), ntohs(tcp.source)))) {
+            if ((C = find_connection(&d, &s, ntohs(tcp.th_dport), ntohs(tcp.th_sport)))) {
                 connection_delete(*C);
                 *C = NULL;
             }
@@ -568,7 +719,7 @@ int main(int argc, char *argv[]) {
             /* We have some data in the packet. If this data occurred after
              * the first data we collected for this connection, then save it
              * so that we can look for images. Otherwise, discard it. */
-            unsigned int offset = ntohl(tcp.seq);
+            unsigned int offset = ntohl(tcp.th_seq);
 
             /* Modulo 2**32 arithmetic; offset = seq - isn + delta. */
             if (offset < (c->isn + delta))
@@ -579,19 +730,17 @@ int main(int argc, char *argv[]) {
             if (offset > c->len + 262144) {
                 /* Out-of-order packet. */
                 if (verbose) 
-                    fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)));
+                    fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
             } else {
-/*                if (verbose)
-                    fprintf(stderr, PROGNAME": captured %d bytes: %s:%d -> %s:%d\n", (int)len, inet_ntoa(s), ntohs(tcp.source), inet_ntoa(d), ntohs(tcp.dest));*/
                 connection_push(c, pkt + off, offset, len);
                 connection_harvest_images(c);
             }
         }
 
-        if (tcp.fin) {
+        if (tcp.th_flags & TH_FIN) {
             /* Connection closing. */
             if (verbose)
-                fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)), c->len);
+                fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
             connection_harvest_images(c);
             connection_delete(c);
             *C = NULL;
@@ -602,6 +751,8 @@ int main(int argc, char *argv[]) {
     }
 
     pcap_close(pc);
+
+    clean_temporary_directory();
 
     return 0;
 }
