@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.1 2001/07/15 11:07:33 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.2 2001/07/16 00:09:33 chris Exp $";
 
 #include <assert.h>
 #include <pcap.h>
@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
 
                 connection_harvest_images(c, backwards);
             }
-#if 0
+
             if (tcp.fin) {
                 if (backwards) c->dsfin = 1;
                 else c->sdfin = 1;
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
                     *C = NULL;
                 }
             }
-#endif
+
         } else {
             if (tcp.syn) {
                 /* new connection being opened, we track it. */

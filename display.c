@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.1 2001/07/15 11:07:29 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.2 2001/07/16 00:09:33 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -97,26 +97,27 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                 fprintf(stderr, PROGNAME": %s: bogus image\n", m.filename);
             else {
                 if (i->width > 8 && i->height > 8) {
-                    /* slot in the new image at some plausible place. */
-                    int w, h;
-                    if (i->width > width - 2 * BORDER) w = width - 2 * BORDER;
-                    else w = i->width;
-                    if (i->height > height - 2 * BORDER) h = height - 2 * BORDER;
-                    else h = i->height;
-
-                    /* is there space on this row? */
-                    if (width - wrx < w) {
-                        /* no */
-                        scroll_backing_image(h + BORDER);
-                        wrx = BORDER;
-                        rowheight = h + BORDER;
-                    }
-                    if (rowheight < h + BORDER) {
-                        scroll_backing_image(h + BORDER - rowheight);
-                        rowheight = h + BORDER;
-                    }
 
                     if (img_load(i, full, i->type)) {
+                        /* slot in the new image at some plausible place. */
+                        int w, h;
+                        if (i->width > width - 2 * BORDER) w = width - 2 * BORDER;
+                        else w = i->width;
+                        if (i->height > height - 2 * BORDER) h = height - 2 * BORDER;
+                        else h = i->height;
+
+                        /* is there space on this row? */
+                        if (width - wrx < w) {
+                            /* no */
+                            scroll_backing_image(h + BORDER);
+                            wrx = BORDER;
+                            rowheight = h + BORDER;
+                        }
+                        if (rowheight < h + BORDER) {
+                            scroll_backing_image(h + BORDER - rowheight);
+                            rowheight = h + BORDER;
+                        }
+
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
 
                         update_window();

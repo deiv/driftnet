@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.1 2001/07/15 11:07:33 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.2 2001/07/16 00:09:33 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,12 +20,12 @@ static char *memstr(const char *haystack, size_t h_len, const char *needle, size
     if (n_len > h_len)
     return NULL;
 
-    p = (const char*) memchr(haystack, *needle, h_len - n_len);
+    p = (const char*) memchr(haystack, *needle, h_len - n_len + 1);
     while (p) {
     if (!memcmp(p, needle, n_len))
         return (char*)p;
     else
-        p = (const char*)memchr(p + 1, *needle, (haystack + h_len - n_len) - p - 1);
+        p = (const char*)memchr(p + 1, *needle, (h_len - (p - haystack)) - n_len);
     }
 
     return NULL;
@@ -181,7 +181,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     jpeghdr = memstr(data, len, "\xff\xd8", 2); /* JPEG SOI marker */
     if (!jpeghdr) return (unsigned char*)(data + len - 1);
 
-/*     printf("SOI marker at %p\n", jpeghdr);*/
+     /* printf("SOI marker at %p\n", jpeghdr); */
     
     if (jpeghdr + 2 > data + len) return jpeghdr;
     block = jpeg_next_marker(jpeghdr + 2, len - 2 - (jpeghdr - data));
@@ -190,12 +190,12 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
 
     /* now we need to find the onward count from this place */
     while ((block = jpeg_skip_block(block + 1, len - (block - data)))) {
-/*        printf("data = %p block = %p\n", data, block);*/
+        /* printf("data = %p block = %p\n", data, block); */
 
         block = jpeg_next_marker(block, len - (block - data));
         if (!block) return jpeghdr;
 
-/*        printf("got block of type %02x\n", *block);*/
+        /* printf("got block of type %02x\n", *block); */
 
         if (*block == 0xda) {
             /* start of scan; dunno how to parse this but just look for end of
@@ -208,7 +208,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
             } else break;
         }
     }
-/*    printf("nope, no complete JPEG here\n");*/
+    /* printf("nope, no complete JPEG here\n"); */
     return jpeghdr;
 }
 

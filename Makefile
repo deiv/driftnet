@@ -5,9 +5,8 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.1 2001/07/15 11:07:29 chris Exp $
+# $Id: Makefile,v 1.2 2001/07/16 00:09:41 chris Exp $
 #
-
 
 VERSION = 0.1.0
 
@@ -15,9 +14,11 @@ VERSION = 0.1.0
 
 CFLAGS  += -g -Wall `gtk-config --cflags` -I/usr/include/pcap/
 LDFLAGS += -g
-LDLIBS  += -lpcap -ljpeg -lungif -lpnm -lppm -lpgm -lpbm `gtk-config --libs` -lefence
+LDLIBS  += -lpcap -ljpeg -lungif -lpnm -lppm -lpgm -lpbm `gtk-config --libs`
 
-TXTS = 
+SUBDIRS = 
+
+TXTS = README TODO COPYING
 SRCS = gif.c img.c jpeg.c png.c pnm.c raw.c driftnet.c image.c display.c
 HDRS = img.h driftnet.h
 BINS = driftnet
@@ -35,6 +36,14 @@ clean:  nodepend
 
 tags:
 	etags *.c *.h
+
+tarball: nodepend $(SRCS) $(HDRS) $(TXTS)
+	mkdir driftnet-$(VERSION)
+	set -e ; for i in Makefile $(SRCS) $(HDRS) $(TXTS) ; do cp $$i driftnet-$(VERSION)/$$i ; done
+	tar cvzf driftnet-$(VERSION).tar.gz driftnet-$(VERSION)
+	rm -rf driftnet-$(VERSION)
+	mv driftnet-$(VERSION).tar.gz ..
+	
 
 depend:
 	makedepend -- $(CFLAGS) -- $(SRCS)
