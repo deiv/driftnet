@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.11 2002/02/15 12:35:11 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.12 2002/02/15 12:44:20 chris Exp $";
 
 #undef NDEBUG
 
@@ -464,19 +464,22 @@ int main(int argc, char *argv[]) {
     pc = pcap_open_live(interface, 262144, promisc, 1, ebuf);
     if (!pc) {
         fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
-        kill(dpychld, SIGTERM);
+
+        if (getuid() != 0)
+            fprintf(stderr, PROGNAME": perhaps you need to be root?\n");
+        else if (!interface)
+            fprintf(stderr, PROGNAME": perhaps try selecting an interface with the -i option?\n");
+            
         return -1;
     }
     
     if (pcap_compile(pc, &filter, (char*)filterexpr, 1, 0) == -1) {
         fprintf(stderr, PROGNAME": pcap_compile: %s\n", pcap_geterr(pc));
-        kill(dpychld, SIGTERM);
         return -1;
     }
     
     if (pcap_setfilter(pc, &filter) == -1) {
         fprintf(stderr, PROGNAME": pcap_setfilter: %s\n", pcap_geterr(pc));
-        kill(dpychld, SIGTERM);
         return -1;
     }
 
