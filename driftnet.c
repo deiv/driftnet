@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.14 2002/05/27 16:59:44 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.15 2002/05/28 00:23:55 chris Exp $";
 
 #undef NDEBUG
 
@@ -34,10 +34,15 @@ connection *slots;
 unsigned int slotsused, slotsalloc;
 
 /* flags: verbose, adjunct mode, temporary directory to use. */
+int extract_images = 1;
 int verbose, adjunct;
 int tmpdir_specified;
 char *tmpdir;
 int max_images;
+
+/* audio stuff. */
+int extract_audio;
+char *audio_mpeg_player = "mpg123";
 
 /* ugh. */
 pcap_t *pc;
@@ -45,6 +50,9 @@ pcap_t *pc;
 /* image.c */
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen);
 unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsigned char **jpegdata, size_t *jpeglen);
+
+/* audio.c */
+unsigned char *find_mpeg_stream(const unsigned char *data, const size_t len, unsigned char **mpegdata, size_t *mpeglen);
 
 #ifndef NO_DISPLAY_WINDOW
 /* PID of display child and file descriptor on pipe to same. */
@@ -106,7 +114,7 @@ void clean_temporary_directory(void) {
     }
 
     if (!tmpdir_specified && rmdir(tmpdir) == -1 && errno != ENOENT) /* lame attempt to avoid race */
-        fprintf(stderr, PROGNAME ": rmdir(%s): %s\n", tmpdir, strerror(errno));
+        fprintf(stderr, PROGNAME": rmdir(%s): %s\n", tmpdir, strerror(errno));
 }
 
 /* connection_new:
@@ -118,7 +126,7 @@ connection connection_new(const struct in_addr *src, const struct in_addr *dst, 
     c->sport = sport;
     c->dport = dport;
     c->alloc = 16384;
-    c->data = c->gif = c->jpeg = (unsigned char*)malloc(c->alloc);
+    c->data = c->gif = c->jpeg = c->mpeg = malloc(c->alloc);
     c->last = time(NULL);
     return c;
 }
@@ -133,7 +141,7 @@ void connection_delete(connection c) {
 /* connection_push:
  * Put some more data in a connection. */
 void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
-    size_t goff = c->gif - c->data, joff = c->jpeg - c->data;
+    size_t goff = c->gif - c->data, joff = c->jpeg - c->data, moff = c->mpeg - c->data;
 /*    printf("connection_push(%p, %p, %u, %u)\n", c, data, off, len);*/
     assert(c->alloc > 0);
     if (off + len > c->alloc) {
@@ -145,6 +153,7 @@ void connection_push(connection c, const unsigned char *data, unsigned int off, 
     }
     c->gif = c->data + goff;
     c->jpeg = c->data + joff;
+    c->mpeg = c->data + moff;
     memcpy(c->data + off, data, len);
 
     if (off + len > c->len) c->len = off + len;
@@ -184,7 +193,7 @@ void connection_harvest_images(connection c) {
         oldptr = ptr;
         ptr = find_gif_image(ptr, c->len - (ptr - c->data), &img, &ilen);
 
-        if (img && max_images && count_temporary_files() < max_images) {
+        if (img && (!max_images || count_temporary_files() < max_images)) {
             char buf[PATH_MAX + 1];
             int fd;
             sprintf(buf, "%s/driftnet-%d.%d.gif", tmpdir, (int)time(NULL), rand());
@@ -205,7 +214,7 @@ void connection_harvest_images(connection c) {
         oldptr = ptr;
         ptr = find_jpeg_image(ptr, c->len - (ptr - c->data), &img, &ilen);
 
-        if (img && max_images && count_temporary_files() < max_images) {
+        if (img && (!max_images || count_temporary_files() < max_images)) {
             char buf[PATH_MAX + 1];
             int fd;
             sprintf(buf, "%s/driftnet-%d.%d.jpg", tmpdir, (int)time(NULL), rand());
@@ -217,6 +226,35 @@ void connection_harvest_images(connection c) {
     }
 
     c->jpeg = ptr;
+}
+
+/* connection_harvest_audio:
+ * Extract audio data from a connection's buffer. */
+void connection_harvest_audio(connection c) {
+    unsigned char *ptr, *oldptr, *audio;
+    size_t alen;
+
+    /* look for MPEG streams */
+    ptr = c->mpeg;
+    oldptr = NULL;
+
+    while (ptr != oldptr) {
+        oldptr = ptr;
+        ptr = find_mpeg_stream(ptr, c->len - (ptr - c->data), &audio, &alen);
+
+        if (audio) {
+            char buf[PATH_MAX + 1];
+            int fd;
+            sprintf(buf, "%s/driftnet-%d.%d.mp3", tmpdir, (int)time(NULL), rand());
+            fd = open(buf, O_WRONLY|O_CREAT|O_EXCL, 0644);
+            write(fd, audio, alen);
+            close(fd);
+/*            image_notify(ilen, buf);*/
+            fprintf(stderr, "audio %s\n", buf);
+        }
+    }
+
+    c->mpeg = ptr;
 }
 
 connection *alloc_connection(void) {
@@ -356,12 +394,18 @@ void usage(FILE *fp) {
 "  -i interface     Select the interface on which to listen (default: all\n"
 "                   interfaces).\n"
 "  -p               Do not put the listening interface into promiscuous mode.\n"
+"  -s               Attempt to extract streamed audio data from the network,\n"
+"                   in addition to images. At present this supports MPEG data\n"
+"                   only.\n"
+"  -M command       Use the given command to play MPEG audio data extracted\n"
+"                   with the -s option; the name of a file to play will be\n"
+"                   appended to the command line. Default: `mpg123'\n"
 "  -v               Verbose operation.\n"
 "  -a               Adjunct mode: do not display images on screen, but save\n"
 "                   them to a temporary directory and announce their names on\n"
 "                   standard output.\n"
-"  -m number        Maximum number of images to keep in temporary directory in\n"
-"                   adjunct mode.\n"
+"  -m number        Maximum number of images to keep in temporary directory\n"
+"                   in adjunct mode.\n"
 "  -d directory     Use the named temporary directory.\n"
 "  -x prefix        Prefix to use when saving images.\n"
 "\n"
@@ -445,7 +489,7 @@ char *connection_string(const struct in_addr s, const unsigned short s_port, con
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:pvam:d:x:";
+char optstring[] = "hi:psMvam:d:x:";
 
 int main(int argc, char *argv[]) {
     char *interface = NULL, *filterexpr;
@@ -458,6 +502,7 @@ int main(int argc, char *argv[]) {
     int c;
     extern char *savedimgpfx;    /* in display.c */
     int newpfx = 0;
+    int mpeg_player_specified = 0;
 
     /* Handle command-line options. */
     opterr = 0;
@@ -479,6 +524,15 @@ int main(int argc, char *argv[]) {
                 promisc = 0;
                 break;
 
+            case 's':
+                extract_audio = 1;
+                break;
+
+            case 'M':
+                audio_mpeg_player = optarg;
+                mpeg_player_specified = 1;
+                break;
+
             case 'a':
                 adjunct = 1;
                 break;
@@ -486,7 +540,7 @@ int main(int argc, char *argv[]) {
             case 'm':
                 max_images = atoi(optarg);
                 if (max_images <= 0) {
-                    fprintf(stderr, PROGNAME ": `%s' does not make sense for -m\n", optarg);
+                    fprintf(stderr, PROGNAME": `%s' does not make sense for -m\n", optarg);
                     return -1;
                 }
                 break;
@@ -511,7 +565,7 @@ int main(int argc, char *argv[]) {
                 return 1;
         }
     }
-
+    
 #ifdef NO_DISPLAY_WINDOW
     if (!adjunct) {
         fprintf(stderr, PROGNAME": this version of driftnet was compiled without display support\n");
@@ -521,16 +575,23 @@ int main(int argc, char *argv[]) {
 #endif /* !NO_DISPLAY_WINDOW */
     
     /* Let's not be too fascist about option checking.... */
-    if (max_images && !adjunct)
-        fprintf(stderr, PROGNAME ": warning: -m only makes sense with -a\n");
+    if (max_images && !adjunct) {
+        fprintf(stderr, PROGNAME": warning: -m only makes sense with -a\n");
+        max_images = 0;
+    }
 
     if (adjunct && newpfx)
-        fprintf(stderr, PROGNAME ": warning: -x only makes sense without -a\n");
+        fprintf(stderr, PROGNAME": warning: -x ignored -a\n");
+
+    if (mpeg_player_specified && !extract_audio)
+        fprintf(stderr, PROGNAME": warning: -M only makes sense with -s\n");
+
+    if (mpeg_player_specified && adjunct)
+        fprintf(stderr, PROGNAME": warning: -M ignored with -a\n");
 
     if (max_images && adjunct && verbose)
-        fprintf(stderr, PROGNAME ": a maximum of %d images will be buffered\n", max_images);
+        fprintf(stderr, PROGNAME": a maximum of %d images will be buffered\n", max_images);
 
-    
     /* If a directory name has not been specified, then we need to create one.
      * Otherwise, check that it's a directory into which we may write files. */
     if (tmpdir) {
@@ -556,7 +617,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (verbose) 
-        fprintf(stderr, PROGNAME ": using temporary file directory %s\n", tmpdir);
+        fprintf(stderr, PROGNAME": using temporary file directory %s\n", tmpdir);
     
     if (verbose)
         fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
@@ -566,9 +627,10 @@ int main(int argc, char *argv[]) {
         char **a;
         int l;
         for (a = argv + optind, l = sizeof("tcp and ()"); *a; l += strlen(*a) + 1, ++a);
-        filterexpr = (char*)calloc(l, 1);
+        filterexpr = calloc(l, 1);
         strcpy(filterexpr, "tcp and (");
         for (a = argv + optind; *a; ++a) {
+    printf("*a = %s\n", *a);
             strcat(filterexpr, *a);
             if (*(a + 1)) strcat(filterexpr, " ");
         }
@@ -604,11 +666,11 @@ int main(int argc, char *argv[]) {
                 close(pfd[0]);
                 dpychld_fd = pfd[1];
                 if (verbose)
-                    fprintf(stderr, PROGNAME ": started display child, pid %d\n", (int)dpychld);
+                    fprintf(stderr, PROGNAME": started display child, pid %d\n", (int)dpychld);
                 break;
         }
     } else if (verbose)
-        fprintf(stderr, PROGNAME ": operating in adjunct mode\n");
+        fprintf(stderr, PROGNAME": operating in adjunct mode\n");
 #endif /* !NO_DISPLAY_WINDOW */
  
     /* Start up pcap. */
@@ -734,6 +796,7 @@ int main(int argc, char *argv[]) {
             } else {
                 connection_push(c, pkt + off, offset, len);
                 connection_harvest_images(c);
+                if (extract_audio) connection_harvest_audio(c);
             }
         }
 
@@ -742,6 +805,7 @@ int main(int argc, char *argv[]) {
             if (verbose)
                 fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
             connection_harvest_images(c);
+            if (extract_audio) connection_harvest_audio(c);
             connection_delete(c);
             *C = NULL;
         }

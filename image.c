@@ -7,14 +7,13 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.4 2002/05/26 23:45:03 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.5 2002/05/28 00:23:55 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static char *memstr(const char *haystack, size_t h_len, const char *needle, size_t n_len)
-{
+static char *memstr(const char *haystack, size_t h_len, const char *needle, size_t n_len) {
     const char *p;
 
     if (n_len > h_len)

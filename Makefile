@@ -5,7 +5,7 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.15 2002/05/27 16:59:44 chris Exp $
+# $Id: Makefile,v 1.16 2002/05/28 00:23:55 chris Exp $
 #
 
 # Driftnet version. Do not alter.
@@ -43,8 +43,8 @@ LDLIBS  += -ljpeg -lungif `gtk-config --libs`
 SUBDIRS = 
 
 TXTS = README TODO COPYING CHANGES CREDITS driftnet.1 driftnet.1.in
-SRCS = gif.c img.c jpeg.c png.c driftnet.c image.c display.c
-HDRS = img.h driftnet.h
+SRCS = audio.c mpeghdr.c gif.c img.c jpeg.c png.c driftnet.c image.c display.c
+HDRS = img.h driftnet.h mpeghdr.h
 BINS = driftnet
 
 OBJS = $(SRCS:.c=.o)
@@ -85,6 +85,35 @@ nodepend:
 
 # DO NOT DELETE
 
+audio.o: /usr/include/string.h /usr/include/features.h
+audio.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+audio.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
+audio.o: driftnet.h /usr/include/sys/socket.h /usr/include/bits/socket.h
+audio.o: /usr/include/limits.h /usr/include/bits/posix1_lim.h
+audio.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
+audio.o: /usr/include/bits/posix2_lim.h /usr/include/sys/types.h
+audio.o: /usr/include/bits/types.h /usr/include/time.h /usr/include/endian.h
+audio.o: /usr/include/bits/endian.h /usr/include/sys/select.h
+audio.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+audio.o: /usr/include/sys/sysmacros.h /usr/include/bits/sockaddr.h
+audio.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
+audio.o: /usr/include/netinet/in.h /usr/include/stdint.h
+audio.o: /usr/include/bits/wordsize.h /usr/include/bits/in.h
+audio.o: /usr/include/bits/byteswap.h /usr/include/arpa/inet.h
+audio.o: /usr/include/sys/time.h /usr/include/bits/time.h mpeghdr.h
+audio.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdbool.h
+audio.o: /usr/include/stdio.h
+audio.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdarg.h
+audio.o: /usr/include/libio.h /usr/include/_G_config.h
+audio.o: /usr/include/bits/stdio_lim.h
+mpeghdr.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdbool.h
+mpeghdr.o: /usr/include/stdint.h /usr/include/features.h
+mpeghdr.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+mpeghdr.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
+mpeghdr.o: /usr/include/bits/wordsize.h /usr/include/stdio.h
+mpeghdr.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdarg.h
+mpeghdr.o: /usr/include/bits/types.h /usr/include/libio.h
+mpeghdr.o: /usr/include/_G_config.h /usr/include/bits/stdio_lim.h mpeghdr.h
 gif.o: /usr/include/gif_lib.h img.h /usr/include/stdint.h
 gif.o: /usr/include/features.h /usr/include/sys/cdefs.h
 gif.o: /usr/include/gnu/stubs.h
@@ -99,26 +128,18 @@ img.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
 img.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdarg.h
 img.o: /usr/include/bits/types.h /usr/include/libio.h
 img.o: /usr/include/_G_config.h /usr/include/bits/stdio_lim.h
-img.o: /usr/include/stdlib.h /usr/include/sys/types.h /usr/include/time.h
-img.o: /usr/include/endian.h /usr/include/bits/endian.h
-img.o: /usr/include/sys/select.h /usr/include/bits/select.h
-img.o: /usr/include/bits/sigset.h /usr/include/sys/sysmacros.h
-img.o: /usr/include/alloca.h /usr/include/string.h img.h
-img.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
+img.o: /usr/include/stdlib.h /usr/include/alloca.h /usr/include/string.h
+img.o: img.h /usr/include/stdint.h /usr/include/bits/wordsize.h
 jpeg.o: /usr/include/stdio.h /usr/include/features.h /usr/include/sys/cdefs.h
 jpeg.o: /usr/include/gnu/stubs.h
 jpeg.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
 jpeg.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdarg.h
 jpeg.o: /usr/include/bits/types.h /usr/include/libio.h
 jpeg.o: /usr/include/_G_config.h /usr/include/bits/stdio_lim.h
-jpeg.o: /usr/include/stdlib.h /usr/include/sys/types.h /usr/include/time.h
-jpeg.o: /usr/include/endian.h /usr/include/bits/endian.h
-jpeg.o: /usr/include/sys/select.h /usr/include/bits/select.h
-jpeg.o: /usr/include/bits/sigset.h /usr/include/sys/sysmacros.h
-jpeg.o: /usr/include/alloca.h /usr/include/setjmp.h
-jpeg.o: /usr/include/bits/setjmp.h /usr/include/jpeglib.h
-jpeg.o: /usr/include/jconfig.h /usr/include/jmorecfg.h img.h
-jpeg.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
+jpeg.o: /usr/include/stdlib.h /usr/include/alloca.h /usr/include/setjmp.h
+jpeg.o: /usr/include/bits/setjmp.h /usr/include/bits/sigset.h
+jpeg.o: /usr/include/jpeglib.h /usr/include/jconfig.h /usr/include/jmorecfg.h
+jpeg.o: img.h /usr/include/stdint.h /usr/include/bits/wordsize.h
 driftnet.o: /usr/include/assert.h /usr/include/features.h
 driftnet.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 driftnet.o: /usr/include/dirent.h /usr/include/bits/types.h
@@ -136,17 +157,17 @@ driftnet.o: /usr/include/bits/time.h /usr/include/pcap/net/bpf.h
 driftnet.o: /usr/include/stdio.h
 driftnet.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdarg.h
 driftnet.o: /usr/include/libio.h /usr/include/_G_config.h
-driftnet.o: /usr/include/bits/stdio_lim.h /usr/include/linux/if_ether.h
-driftnet.o: /usr/include/netinet/ip.h /usr/include/netinet/in.h
-driftnet.o: /usr/include/limits.h /usr/include/bits/posix2_lim.h
-driftnet.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
-driftnet.o: /usr/include/bits/socket.h /usr/include/bits/sockaddr.h
-driftnet.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
-driftnet.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
-driftnet.o: /usr/include/netinet/tcp.h /usr/include/stdlib.h
-driftnet.o: /usr/include/alloca.h /usr/include/string.h /usr/include/unistd.h
-driftnet.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
-driftnet.o: /usr/include/getopt.h /usr/include/ctype.h /usr/include/fcntl.h
+driftnet.o: /usr/include/bits/stdio_lim.h /usr/include/netinet/ip.h
+driftnet.o: /usr/include/netinet/in.h /usr/include/limits.h
+driftnet.o: /usr/include/bits/posix2_lim.h /usr/include/stdint.h
+driftnet.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
+driftnet.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
+driftnet.o: /usr/include/asm/sockios.h /usr/include/bits/in.h
+driftnet.o: /usr/include/bits/byteswap.h /usr/include/netinet/tcp.h
+driftnet.o: /usr/include/stdlib.h /usr/include/alloca.h /usr/include/string.h
+driftnet.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+driftnet.o: /usr/include/bits/confname.h /usr/include/getopt.h
+driftnet.o: /usr/include/ctype.h /usr/include/fcntl.h
 driftnet.o: /usr/include/bits/fcntl.h /usr/include/signal.h
 driftnet.o: /usr/include/bits/signum.h /usr/include/bits/siginfo.h
 driftnet.o: /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h
@@ -159,11 +180,7 @@ image.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
 image.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stdarg.h
 image.o: /usr/include/bits/types.h /usr/include/libio.h
 image.o: /usr/include/_G_config.h /usr/include/bits/stdio_lim.h
-image.o: /usr/include/stdlib.h /usr/include/sys/types.h /usr/include/time.h
-image.o: /usr/include/endian.h /usr/include/bits/endian.h
-image.o: /usr/include/sys/select.h /usr/include/bits/select.h
-image.o: /usr/include/bits/sigset.h /usr/include/sys/sysmacros.h
-image.o: /usr/include/alloca.h /usr/include/string.h
+image.o: /usr/include/stdlib.h /usr/include/alloca.h /usr/include/string.h
 display.o: /usr/include/gtk/gtk.h /usr/include/gdk/gdk.h
 display.o: /usr/include/gdk/gdktypes.h /usr/include/glib.h
 display.o: /usr/lib/glib/include/glibconfig.h /usr/include/limits.h
@@ -235,14 +252,14 @@ display.o: /usr/include/gtk/gtkvseparator.h /usr/include/stdio.h
 display.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
 display.o: /usr/include/bits/types.h /usr/include/libio.h
 display.o: /usr/include/_G_config.h /usr/include/bits/stdio_lim.h
-display.o: /usr/include/stdlib.h /usr/include/sys/types.h /usr/include/time.h
-display.o: /usr/include/endian.h /usr/include/bits/endian.h
-display.o: /usr/include/sys/select.h /usr/include/bits/select.h
-display.o: /usr/include/bits/sigset.h /usr/include/sys/sysmacros.h
-display.o: /usr/include/alloca.h /usr/include/unistd.h
+display.o: /usr/include/stdlib.h /usr/include/alloca.h /usr/include/unistd.h
 display.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
 display.o: /usr/include/getopt.h /usr/include/fcntl.h
-display.o: /usr/include/bits/fcntl.h /usr/include/string.h
+display.o: /usr/include/bits/fcntl.h /usr/include/sys/types.h
+display.o: /usr/include/time.h /usr/include/endian.h
+display.o: /usr/include/bits/endian.h /usr/include/sys/select.h
+display.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+display.o: /usr/include/sys/sysmacros.h /usr/include/string.h
 display.o: /usr/include/errno.h /usr/include/bits/errno.h
 display.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
 display.o: /usr/include/sys/stat.h /usr/include/bits/stat.h driftnet.h

@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.2 2001/08/08 00:23:09 chris Exp $
+ * $Id: driftnet.h,v 1.3 2002/05/28 00:23:55 chris Exp $
  *
  */
 
@@ -24,7 +24,7 @@ typedef struct _connection {
     short int sport, dport;
     uint32_t isn;
     unsigned int len, off, alloc;
-    unsigned char *data, *gif, *jpeg;
+    unsigned char *data, *gif, *jpeg, *mpeg;
     int fin;
     time_t last;
 } *connection;
@@ -38,7 +38,7 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 
 struct pipemsg {
     int len;
-    char filename[128];
+    char filename[256]; /* ugh. */
 };
 
 #endif /* __DRIFTNET_H_ */
