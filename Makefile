@@ -5,11 +5,9 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.21 2002/06/01 15:21:33 chris Exp $
+# $Id: Makefile,v 1.24 2002/06/01 15:28:15 chris Exp $
 #
 
-# Driftnet version. Do not alter.
-VERSION = 0.1.5pre3
 
 #
 # User-serviceable parts:
@@ -19,7 +17,6 @@ VERSION = 0.1.5pre3
 #CC = gcc
 
 # Basic compiler, linker flags; should not need any changes.
-CFLAGS += -DDRIFTNET_VERSION='"$(VERSION)"'
 CFLAGS += -g -Wall
 LDFLAGS += -g
 
@@ -58,11 +55,15 @@ LDLIBS  += -ljpeg -lungif `gtk-config --libs`
 # No user-serviceable parts below this point.
 #
 
+# Driftnet version.
+VERSION = 0.1.5pre3
+CFLAGS += -DDRIFTNET_VERSION='"$(VERSION)"'
+
 SUBDIRS = 
 
-TXTS = README TODO COPYING CHANGES CREDITS driftnet.1 driftnet.1.in
+TXTS = README TODO COPYING CHANGES CREDITS driftnet.1 driftnet.1.in endian.c
 SRCS = audio.c mpeghdr.c gif.c img.c jpeg.c png.c driftnet.c image.c \
-       display.c playaudio.c endian.c
+       display.c playaudio.c
 HDRS = img.h driftnet.h mpeghdr.h
 BINS = driftnet
 
@@ -98,8 +99,8 @@ tarball: nodepend $(SRCS) $(HDRS) $(TXTS)
 	rm -rf driftnet-$(VERSION)
 	mv driftnet-$(VERSION).tar.gz ..
 	
-depend:
-	makedepend -- $(CFLAGS) -- $(SRCS)
+depend: endianness
+	makedepend -- $(CFLAGS) `cat endianness` -- $(SRCS)
 	touch depend
 	rm -f Makefile.bak
 

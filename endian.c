@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: endian.c,v 1.1 2002/06/01 15:21:48 chris Exp $";
+static const char rcsid[] = "$Id: endian.c,v 1.2 2002/06/01 15:26:09 chris Exp $";
 
 #include <stdio.h>
 #ifdef USE_SYS_INT_TYPES_H
@@ -17,13 +17,19 @@ static const char rcsid[] = "$Id: endian.c,v 1.1 2002/06/01 15:21:48 chris Exp $
 #endif
 
 int main(void) {
+#if defined(LITTLE_ENDIAN) || defined(_LITTLE_ENDIAN)
+    printf("-DDRIFTNET_LITTLE_ENDIAN\n");
+#elif defined(BIG_ENDIAN) || defined(_BIG_ENDIAN)
+    printf("-DDRIFTNET_BIG_ENDIAN\n");
+#else
     uint32_t a = 0;
     *((uint8_t*)&a) = 0xff;
     if (a == 0xff000000)
-        printf("-DBIG_ENDIAN\n");
+        printf("-DDRIFTNET_BIG_ENDIAN\n");
     else if (a == 0x000000ff)
-        printf("-DLITTLE_ENDIAN\n");
+        printf("-DDRIFTNET_LITTLE_ENDIAN\n");
     else
         return -1; /* don't know. */
     return 0;
+#endif  /* endianness test */
 }

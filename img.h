@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: img.h,v 1.4 2002/06/01 15:20:20 chris Exp $
+ * $Id: img.h,v 1.5 2002/06/01 15:26:09 chris Exp $
  *
  */
 
@@ -24,7 +24,7 @@ typedef uint8_t chan;
 typedef uint32_t pel;
 
 /* Yuk. GDKRGB expects data in a specific ordering. */
-#if defined(LITTLE_ENDIAN)
+#if defined(DRIFTNET_LITTLE_ENDIAN)
 #   define PEL(r, g, b)        ((pel)((chan)(r) | ((chan)(g) << 8) | ((chan)(b) << 16)))
 #   define PELA(r, g, b, a)    ((pel)((chan)(r) | ((chan)(g) << 8) | ((chan)(b) << 16) | ((chan)(a) << 24)))
 
@@ -32,7 +32,7 @@ typedef uint32_t pel;
 #   define GETG(p)             ((chan)(((p) & (pel)0x0000ff00) >>  8))
 #   define GETB(p)             ((chan)(((p) & (pel)0x00ff0000) >> 16))
 #   define GETA(p)             ((chan)(((p) & (pel)0xff000000) >> 24))
-#elif defined(BIG_ENDIAN)
+#elif defined(DRIFTNET_BIG_ENDIAN)
 #   define PEL(r, g, b)        ((pel)(((chan)(r) << 24) | ((chan)(g) << 16) | ((chan)(b) << 8)))
 #   define PELA(r, g, b, a)    ((pel)(((chan)(r) << 24) | ((chan)(g) << 16) | ((chan)(b) << 8) | ((chan)(a))))
 

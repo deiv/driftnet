@@ -1,11 +1,12 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.10 2002/06/01 11:44:17 chris Exp $
+$Id: CHANGES,v 1.11 2002/06/01 15:26:09 chris Exp $
 
 0.1.5
 
 Allow user to save images by clicking on them.
 
-Driftnet now exits more cleanly on interrupt. Various minor bug fixes.
+Driftnet now exits more cleanly on interrupt. Various minor bug fixes,
+including an endianness problem in the display code.
 
 The temporary directory used by driftnet may now be specified as a command-line
 option; otherwise, it is created dynamically.
