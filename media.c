@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: media.c,v 1.8 2002/12/23 08:23:58 chris Exp $";
+static const char rcsid[] = "$Id: media.c,v 1.9 2003/08/25 12:23:43 chris Exp $";
 
 #include <assert.h>
 #include <dirent.h>
@@ -27,9 +27,14 @@ extern int dpychld_fd;
 /* image.c */
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen);
 unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsigned char **jpegdata, size_t *jpeglen);
+unsigned char *find_png_image(const unsigned char *data, const size_t len, unsigned char **pngdata, size_t *pnglen);
 
 /* audio.c */
 unsigned char *find_mpeg_stream(const unsigned char *data, const size_t len, unsigned char **mpegdata, size_t *mpeglen);
+
+/* http.c */
+unsigned char *find_http_req(const unsigned char *data, const size_t len, unsigned char **http, size_t *httplen);
+void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len);
 
 /* playaudio.c */
 void mpeg_submit_chunk(const unsigned char *data, const size_t len);
@@ -49,7 +54,7 @@ static int count_temporary_files(void) {
             while ((de = readdir(d))) {
                 char *p;
                 p = strrchr(de->d_name, '.');
-                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0)))
+                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".png") == 0 || strcmp(p, ".mp3") == 0)))
                     ++num;
             }
             closedir(d);
@@ -64,11 +69,10 @@ static int count_temporary_files(void) {
 void dispatch_image(const char *mname, const unsigned char *data, const size_t len) {
     char *buf, name[TMPNAMELEN] = {0};
     int fd;
-    buf = malloc(strlen(tmpdir) + 64);
+    buf = xmalloc(strlen(tmpdir) + 64);
     sprintf(name, "driftnet-%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
     sprintf(buf, "%s/%s", tmpdir, name);
     fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, 0644);
-    free(buf);
     if (fd == -1)
         return;
     write(fd, data, len);
@@ -80,6 +84,8 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
     else
         write(dpychld_fd, name, sizeof name);
 #endif /* !NO_DISPLAY_WINDOW */
+
+    xfree(buf);
 }
 
 /* dispatch_mpeg_audio:
@@ -98,11 +104,13 @@ static struct mediadrv {
 } driver[NMEDIATYPES] = {
         { "gif",  m_image, find_gif_image,   dispatch_image },
         { "jpeg", m_image, find_jpeg_image,  dispatch_image },
-        { "mpeg", m_audio, find_mpeg_stream, dispatch_mpeg_audio }
+        { "png",  m_image, find_png_image,   dispatch_image },
+        { "mpeg", m_audio, find_mpeg_stream, dispatch_mpeg_audio },
+        { "HTTP", m_text,  find_http_req,    dispatch_http_req }
     };
 
-/* connection_extract_media:
- * Attempt to extract media data of given type/s from the named connection. */
+/* connection_extract_media CONNECTION TYPE
+ * Attempt to extract media data of the given TYPE from CONNECTION. */
 void connection_extract_media(connection c, const enum mediatype T) {
     struct datablock *b;
     extern int max_tmpfiles;  /* in driftnet.c */

@@ -1,12 +1,15 @@
 /*
  * connection.c:
+ * Connection objects.
  *
  * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
 
-static const char rcsid[] = "$Id: connection.c,v 1.4 2002/11/16 18:24:27 chris Exp $";
+static const char rcsid[] = "$Id: connection.c,v 1.5 2003/08/25 12:23:43 chris Exp $";
+
+#include <sys/types.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -19,13 +22,14 @@ static const char rcsid[] = "$Id: connection.c,v 1.4 2002/11/16 18:24:27 chris E
 /* connection_new:
  * Allocate a new connection structure between the given addresses. */
 connection connection_new(const struct in_addr *src, const struct in_addr *dst, const short int sport, const short int dport) {
-    connection c = (connection)calloc(1, sizeof(struct _connection));
+    connection c;
+    alloc_struct(_connection, c);
     c->src = *src;
     c->dst = *dst;
     c->sport = sport;
     c->dport = dport;
     c->alloc = 16384;
-    c->data = c->gif = c->jpeg = c->mpeg = malloc(c->alloc);
+    c->data = xmalloc(c->alloc);
     c->last = time(NULL);
     c->blocks = NULL;
     return c;
@@ -48,27 +52,23 @@ void connection_delete(connection c) {
 /* connection_push:
  * Put some more data in a connection. */
 void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
-    size_t goff = c->gif - c->data, joff = c->jpeg - c->data, moff = c->mpeg - c->data;
     struct datablock *B, *b, *bl, BZ = {0};
     int a;
 
     assert(c->alloc > 0);
     if (off + len > c->alloc) {
         /* Allocate more memory. */
-        while (off + len > c->alloc) {
+        while (off + len > c->alloc)
             c->alloc *= 2;
-            c->data = (unsigned char*)realloc(c->data, c->alloc);
-        }
+        c->data = (unsigned char*)xrealloc(c->data, c->alloc);
     }
-    c->gif = c->data + goff;
-    c->jpeg = c->data + joff;
-    c->mpeg = c->data + moff;
+
     memcpy(c->data + off, data, len);
 
     if (off + len > c->len) c->len = off + len;
     c->last = time(NULL);
     
-    B = malloc(sizeof *B);
+    B = xmalloc(sizeof *B);
     *B = BZ;
     B->off = off;
     B->len = len;

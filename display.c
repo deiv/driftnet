@@ -9,17 +9,21 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.17 2003/06/13 15:51:44 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.18 2003/08/25 12:23:43 chris Exp $";
+
+#include <sys/types.h>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
 
 #include <sys/stat.h>
 
@@ -80,7 +84,7 @@ void make_backing_image() {
                 /* Possible it has scrolled off the window. */
                 if (ir->x > width || ir->y + ir->h < 0) {
                     unlink(ir->filename);
-                    free(ir->filename);
+                    xfree(ir->filename);
                     memset(ir, 0, sizeof *ir);
                 }
             }
@@ -128,7 +132,7 @@ void scroll_backing_image(const int dy) {
             /* scrolled off bottom, no longer in use. */
             if ((ir->y + ir->h) < 0) {
                 unlink(ir->filename);
-                free(ir->filename);
+                xfree(ir->filename);
                 memset(ir, 0, sizeof *ir);
             }
         }
@@ -145,7 +149,7 @@ void add_image_rectangle(const char *filename, const int x, const int y, const i
             break;
     }
     if (ir == imgrects + nimgrects) {
-        imgrects = realloc(imgrects, 2 * nimgrects * sizeof *imgrects);
+        imgrects = xrealloc(imgrects, 2 * nimgrects * sizeof *imgrects);
         memset(imgrects + nimgrects, 0, nimgrects * sizeof *imgrects);
         ir = imgrects + nimgrects;
         nimgrects *= 2;
@@ -205,7 +209,7 @@ void save_image(struct imgrect *ir) {
     struct stat st;
 
     if (!name)
-        name = calloc(strlen(savedimgpfx) + 16, 1);
+        name = xcalloc(strlen(savedimgpfx) + 16, 1);
 
     do
         sprintf(name, "%s%d%s", savedimgpfx, num++, strrchr(ir->filename, '.'));
@@ -301,7 +305,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     int nimgs = 0;
 
     if (!path)
-        path = malloc(strlen(tmpdir) + 34);
+        path = xmalloc(strlen(tmpdir) + 34);
 
     /* We are sent messages of size TMPNAMELEN containing a null-terminated
      * file name. */
@@ -319,7 +323,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
         if (verbose)
             fprintf(stderr, PROGNAME": received image %s of size %d\n", name, (int)st.st_size);
         /* Check to see whether this looks like an image we're interested in. */
-        if (st.st_size > 256) {
+        if (st.st_size > 100) {
             /* Small images are probably bollocks. */
             img i = img_new();
             if (!img_load_file(i, path, header, unknown))
@@ -386,7 +390,7 @@ int dodisplay(int argc, char *argv[]) {
     fcntl(dpychld_fd, F_SETFL, O_NONBLOCK);
 
     /* set up list of image rectangles. */
-    imgrects = calloc(nimgrects = 16, sizeof *imgrects);
+    imgrects = xcalloc(nimgrects = 16, sizeof *imgrects);
        
     /* do some init thing */
     gtk_init(&argc, &argv);

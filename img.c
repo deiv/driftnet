@@ -9,12 +9,13 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: img.c,v 1.10 2002/11/16 18:24:27 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.11 2003/08/25 12:23:43 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "driftnet.h"
 #include "img.h"
 
 #define INLINE  inline
@@ -38,6 +39,12 @@ int jpeg_abort_load(img I);
 int jpeg_load_img(img I);
 int jpeg_save_img(const img I, FILE *fp);
 
+/* png.c */
+int png_load_hdr(img I);
+/*int png_abort_load(img I);*/
+int png_load_img(img I);
+/*int png_save_img(const img I, FILE *fp);*/
+
 #if 0
 /* raw.c */
 int raw_load_img(img I);
@@ -59,8 +66,9 @@ struct filedrv {
 */
         {gif,       ".gif\0",                   gif_load_hdr,   gif_abort_load,     gif_load_img,   NULL},
         {jpeg,      ".jpg\0.jpeg\0",            jpeg_load_hdr,  jpeg_abort_load,    jpeg_load_img,  jpeg_save_img},
+        {png,       ".png\0",                   png_load_hdr,   NULL /*png_abort_load*/,
+                                                                                    png_load_img,   NULL /*png_save_img*/},
 /*
-        {png,       ".png\0",                   png_load_hdr,   png_abort_load,     png_load_img,   png_save_img},
         {raw,       "",                         NULL,           raw_load_img,       NULL,           raw_save_img},
 */
     };
@@ -68,18 +76,16 @@ struct filedrv {
 #define NUMFILEDRVS (sizeof(filedrvs) / sizeof(struct filedrv))
 
 /* img_new:
- * Create a new empty image object.
- */
+ * Create a new empty image object. */
 img img_new(void) {
     img I;
-    I = (img)malloc(sizeof(struct _img));
+    I = (img)xmalloc(sizeof(struct _img));
     memset(I, 0, sizeof(struct _img));
     return I;
 }
 
 /* img_new_blank:
- * Create a new image object.
- */
+ * Create a new image object. */
 img img_new_blank(const unsigned int width, const unsigned int height) {
     img I = img_new();
     I->width = width;
@@ -94,7 +100,7 @@ img img_new_blank(const unsigned int width, const unsigned int height) {
  * block, with pointers fixed up at the beginning. */
 void img_alloc(img I) {
     pel **p, *q;
-    I->data = (pel**)calloc(I->height * sizeof(pel*) + I->width * I->height * sizeof(pel), 1);
+    I->data = (pel**)xcalloc(I->height * sizeof(pel*) + I->width * I->height * sizeof(pel), 1);
     I->flat = (pel*)(I->data + I->height);
     for (p = I->data, q = I->flat; p < I->data + I->height; ++p, q += I->width)
         *p = q;
@@ -103,9 +109,9 @@ void img_alloc(img I) {
 /* img_delete:
  * Free memory associated with an image object. */
 void img_delete(img I) {
-    if (I->data) free(I->data);
+    if (I->data) xfree(I->data);
     if (I->fp) fclose(I->fp);
-    free(I);
+    xfree(I);
 }
 
 /* img_load:

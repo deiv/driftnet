@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.30 2003/08/12 14:01:58 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.31 2003/08/25 12:23:43 chris Exp $";
 
 #undef NDEBUG
 
@@ -86,14 +86,14 @@ void clean_temporary_directory(void) {
         char *buf;
         size_t buflen;
 
-        buf = malloc(buflen = strlen(tmpdir) + 64);
+        buf = xmalloc(buflen = strlen(tmpdir) + 64);
 
         while ((de = readdir(d))) {
             char *p;
             p = strrchr(de->d_name, '.');
             if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
                 if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
-                    buf = realloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
+                    buf = xrealloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
                 
                 sprintf(buf, "%s/%s", tmpdir, de->d_name);
                 unlink(buf);
@@ -101,7 +101,7 @@ void clean_temporary_directory(void) {
         }
         closedir(d);
 
-        free(buf);
+        xfree(buf);
     }
 
 
@@ -117,7 +117,7 @@ connection *alloc_connection(void) {
         if (!*C) return C;
     }
     /* No connection slots left. */
-    slots = (connection*)realloc(slots, slotsalloc * 2 * sizeof(connection));
+    slots = (connection*)xrealloc(slots, slotsalloc * 2 * sizeof(connection));
     memset(slots + slotsalloc, 0, slotsalloc * sizeof(connection));
     C = slots + slotsalloc;
     slotsalloc *= 2;
@@ -213,10 +213,17 @@ int get_link_level_hdr_length(int type)
 
         case DLT_IEEE802:
             return 22;
-
+            
+#ifdef DLT_ATM_RFC1483
         case DLT_ATM_RFC1483:
             return 8;
+#endif
 
+#ifdef DLT_PRISM_HEADER
+        case DLT_PRISM_HEADER:
+            return 32;
+#endif
+            
         case DLT_RAW:
             return 0;
 
@@ -466,7 +473,7 @@ void *packet_capture_thread(void *v) {
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:psSMvam:d:x:bf:";
+char optstring[] = "abd:f:hi:M:m:pSsvx:";
 
 int main(int argc, char *argv[]) {
     char *interface = NULL, *filterexpr;
@@ -618,10 +625,10 @@ int main(int argc, char *argv[]) {
     } else {
         /* need to make a temporary directory. */
         for (;;) {
-            tmpdir = strdup(tmpnam(NULL));
+            tmpdir = strdup(tmpnam(NULL));  /* may generate a warning, but this is safe because we create a directory not a file */
             if (mkdir(tmpdir, 0700) == 0)
                 break;
-            free(tmpdir);
+            xfree(tmpdir);
         }
     }
 
@@ -736,7 +743,7 @@ int main(int argc, char *argv[]) {
 
     slotsused = 0;
     slotsalloc = 64;
-    slots = (connection*)calloc(slotsalloc, sizeof(connection));
+    slots = (connection*)xcalloc(slotsalloc, sizeof(connection));
 
     /* Actually start the capture stuff up. Unfortunately, on many platforms,
      * libpcap doesn't have read timeouts, so we start the thing up in a
@@ -774,8 +781,8 @@ int main(int argc, char *argv[]) {
     /* Easier for memory-leak debugging if we deallocate all this here.... */
     for (C = slots; C < slots + slotsalloc; ++C)
         if (*C) connection_delete(*C);
-    free(slots);
-    free(tmpdir);
+    xfree(slots);
+    xfree(tmpdir);
 
     return 0;
 }

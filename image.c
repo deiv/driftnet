@@ -7,36 +7,16 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.12 2002/11/16 18:24:27 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.13 2003/08/25 12:23:43 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <netinet/in.h>
 
-/* memstr:
- * Locate needle, of length n_len, in haystack, of length h_len, returning NULL.
- * Uses the Boyer-Moore search algorithm. Cf.
- *  http://www-igm.univ-mlv.fr/~lecroq/string/node14.html */
-static unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
-                             const unsigned char *needle, const size_t nlen) {
-    int skip[256], k;
+#include "img.h"
 
-    if (nlen == 0) return (char*)haystack;
-
-    /* Set up the finite state machine we use. */
-    for (k = 0; k < 256; ++k) skip[k] = nlen;
-    for (k = 0; k < nlen - 1; ++k) skip[needle[k]] = nlen - k - 1;
-
-    /* Do the search. */
-    for (k = nlen - 1; k < hlen; k += skip[haystack[k]]) {
-        int i, j;
-        for (j = nlen - 1, i = k; j >= 0 && haystack[i] == needle[j]; j--) i--;
-        if (j == -1) return (unsigned char*)(haystack + i + 1);
-    }
-
-    return NULL;
-}
-
+#include "driftnet.h"
 
 /* If we run out of space, put us back to the last candidate GIF header. */
 /*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/
@@ -221,6 +201,64 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     /* printf("nope, no complete JPEG here\n"); */
     return jpeghdr;
 }
+
+/* find_png_eoi BUFFER LEN
+ * Returns the first position in BUFFER of LEN bytes after the end of the image
+ * or NULL if end of image not found. */
+unsigned char *find_png_eoi(unsigned char *buffer, const size_t len) {
+    unsigned char *end_data, *data, chunk_code[PNG_CODE_LEN + 1];
+    struct png_chunk chunk;
+    u_int32_t datalen;
+
+    /* Move past the PNG header */
+    data = (buffer + PNG_SIG_LEN);
+    end_data = (buffer + len - (sizeof(struct png_chunk) + PNG_CRC_LEN));
+
+    while (data <= end_data) {
+        memcpy(&chunk, data, sizeof chunk);
+/*        chunk = (struct png_chunk *)data; */ /* can't do that. */
+        memset(chunk_code, '\0', PNG_CODE_LEN + 1);
+        memcpy(chunk_code, chunk.code, PNG_CODE_LEN);  
+        
+        datalen = ntohl(chunk.datalen);
+
+        if (!strncasecmp(chunk_code, "iend", PNG_CODE_LEN))
+            return (unsigned char *)(data + sizeof(struct png_chunk) + PNG_CRC_LEN);
+
+        /* Would this push us off the end of the buffer? */
+        if (datalen > (len - (data - buffer)))
+            return NULL;
+        
+        data += (sizeof(struct png_chunk) + datalen + PNG_CRC_LEN);        
+    }
+
+    return NULL;
+}
+
+/* find_png_image DATA LEN PNGDATA PNGLEN
+ * Look for PNG images in LEN bytes buffer DATA. */
+unsigned char *find_png_image(const unsigned char *data, const size_t len, unsigned char **pngdata, size_t *pnglen) {
+    unsigned char *pnghdr, *data_end, *png_eoi;
+
+    *pngdata = NULL;
+
+    if (len < PNG_SIG_LEN) 
+       return (unsigned char*)data;
+
+    pnghdr = memstr(data, len, "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", PNG_SIG_LEN);
+    if (!pnghdr)
+        return (unsigned char*)(data + len - PNG_SIG_LEN); 
+
+    data_end = (unsigned char *)(data + len);
+
+    if ((png_eoi = find_png_eoi(pnghdr, (data_end - pnghdr))) == NULL)
+        return pnghdr;
+
+    *pngdata = pnghdr;
+    *pnglen = (png_eoi - pnghdr);
+    return png_eoi;
+}
+
 
 #if 0
 #include <unistd.h>
