@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.2 2001/07/16 00:09:33 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.3 2001/09/11 08:42:53 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -186,14 +186,14 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     if (jpeghdr + 2 > data + len) return jpeghdr;
     block = jpeg_next_marker(jpeghdr + 2, len - 2 - (jpeghdr - data));
     /* printf("next block at %p\n", block); */
-    if (!block) return jpeghdr;
+    if (!block || (block - data) >= len) return jpeghdr;
 
     /* now we need to find the onward count from this place */
     while ((block = jpeg_skip_block(block + 1, len - (block - data)))) {
         /* printf("data = %p block = %p\n", data, block); */
 
         block = jpeg_next_marker(block, len - (block - data));
-        if (!block) return jpeghdr;
+        if (!block || (block - data) >= len) return jpeghdr;
 
         /* printf("got block of type %02x\n", *block); */
 

@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.8 2001/08/08 19:49:15 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.9 2001/09/11 08:42:53 chris Exp $";
 
 #undef NDEBUG
 
@@ -310,6 +310,16 @@ void setup_signals(void) {
     }
 }
 
+/* connection_string:
+ * Return a string of the form w.x.y.z:foo -> a.b.c.d:bar for a pair of
+ * addresses and ports. */
+char *connection_string(const struct in_addr s, const unsigned short s_port, const struct in_addr d, const unsigned short d_port) {
+    static char buf[50] = {0};
+    sprintf(buf, "%s:%d -> ", inet_ntoa(s), (int)s_port);
+    sprintf(buf + strlen(buf), "%s:%d", inet_ntoa(d), (int)d_port);
+    return buf;
+}
+
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
@@ -471,7 +481,7 @@ int main(int argc, char *argv[]) {
         /* no connection at all, so we need to allocate one. */
         if (!C) {
             if (verbose)
-                fprintf(stderr, PROGNAME": new connection: %s:%d -> %s:%d\n", inet_ntoa(s), ntohs(tcp.source), inet_ntoa(d), ntohs(tcp.dest));
+                fprintf(stderr, PROGNAME": new connection: %s\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)));
             C = alloc_connection();
             *C = connection_new(&s, &d, ntohs(tcp.source), ntohs(tcp.dest));
             /* This might or might not be an entirely new connection (SYN flag
@@ -496,7 +506,7 @@ int main(int argc, char *argv[]) {
             /* Looks like this connection is bogus, and so might be a
              * connection going the other way. */
             if (verbose)
-                fprintf(stderr, PROGNAME": connection reset: %s:%d -> %s:%d\n", inet_ntoa(s), ntohs(tcp.source), inet_ntoa(d), ntohs(tcp.dest));
+                fprintf(stderr, PROGNAME": connection reset: %s\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)));
             
             connection_delete(c);
             *C = NULL;
@@ -524,7 +534,7 @@ int main(int argc, char *argv[]) {
             if (offset > c->len + 262144) {
                 /* Out-of-order packet. */
                 if (verbose) 
-                    fprintf(stderr, PROGNAME": out of order packet: %s:%d -> %s:%d\n", inet_ntoa(s), ntohs(tcp.source), inet_ntoa(d), ntohs(tcp.dest));
+                    fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)));
             } else {
 /*                if (verbose)
                     fprintf(stderr, PROGNAME": captured %d bytes: %s:%d -> %s:%d\n", (int)len, inet_ntoa(s), ntohs(tcp.source), inet_ntoa(d), ntohs(tcp.dest));*/
@@ -536,7 +546,7 @@ int main(int argc, char *argv[]) {
         if (tcp.fin) {
             /* Connection closing. */
             if (verbose)
-                fprintf(stderr, PROGNAME": connection closing: %s:%d -> %s:%d, %d bytes transferred\n", inet_ntoa(s), ntohs(tcp.source), inet_ntoa(d), ntohs(tcp.dest), c->len);
+                fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.source), d, ntohs(tcp.dest)), c->len);
             connection_harvest_images(c);
             connection_delete(c);
             *C = NULL;
