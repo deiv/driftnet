@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.6 2001/08/07 13:00:34 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.7 2001/08/08 00:23:09 chris Exp $";
 
 #undef NDEBUG
 
@@ -44,55 +44,33 @@ connection connection_new(const struct in_addr *src, const struct in_addr *dst, 
     c->dst = *dst;
     c->sport = sport;
     c->dport = dport;
-    c->sdalloc = 16384;
-    c->sddata = c->sdgif = c->sdjpeg = (unsigned char*)malloc(c->sdalloc);
-    c->dsalloc = 16384;
-    c->dsdata = c->dsgif = c->dsjpeg = (unsigned char*)malloc(c->dsalloc);
+    c->alloc = 16384;
+    c->data = c->gif = c->jpeg = (unsigned char*)malloc(c->alloc);
     c->last = time(NULL);
     return c;
 }
 
 void connection_delete(connection c) {
-    free(c->sddata);
-    free(c->dsdata);
+    free(c->data);
     free(c);
 }
 
-void connection_push_sd(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
-    size_t goff = c->sdgif - c->sddata, joff = c->sdjpeg - c->sddata;
-/*    printf("connection_push_ds(%p, %p, %u, %u)\n", c, data, off, len);*/
-    assert(c->sdalloc > 0);
-    if (off + len > c->sdalloc) {
+void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
+    size_t goff = c->gif - c->data, joff = c->jpeg - c->data;
+/*    printf("connection_push(%p, %p, %u, %u)\n", c, data, off, len);*/
+    assert(c->alloc > 0);
+    if (off + len > c->alloc) {
         /* Allocate more memory. */
-        while (off + len > c->sdalloc) {
-            c->sdalloc *= 2;
-            c->sddata = (unsigned char*)realloc(c->sddata, c->sdalloc);
+        while (off + len > c->alloc) {
+            c->alloc *= 2;
+            c->data = (unsigned char*)realloc(c->data, c->alloc);
         }
     }
-    c->sdgif = c->sddata + goff;
-    c->sdjpeg = c->sddata + joff;
-    memcpy(c->sddata + off, data, len);
-/*    printf("push_sd: %u %u\n", off + len, c->sdlen);*/
-    if (off + len > c->sdlen) c->sdlen = off + len;
-    c->last = time(NULL);
-}
+    c->gif = c->data + goff;
+    c->jpeg = c->data + joff;
+    memcpy(c->data + off, data, len);
 
-void connection_push_ds(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
-    size_t goff = c->dsgif - c->dsdata, joff = c->dsjpeg - c->dsdata;
-/*    printf("connection_push_ds(%p, %p, %u, %u)\n", c, data, off, len);*/
-    assert(c->dsalloc > 0);
-    if (off + len > c->dsalloc) {
-        /* Allocate more memory. */
-        while (off + len > c->dsalloc) {
-            c->dsalloc *= 2;
-            c->dsdata = (unsigned char*)realloc(c->dsdata, c->dsalloc);
-        }
-    }
-    c->dsgif = c->dsdata + goff;
-    c->dsjpeg = c->dsdata + joff;
-    memcpy(c->dsdata + off, data, len);
-/*    printf("push_ds: %u %u\n", off + len, c->dslen);*/
-    if (off + len > c->dslen) c->dslen = off + len;
+    if (off + len > c->len) c->len = off + len;
     c->last = time(NULL);
 }
 
@@ -108,23 +86,17 @@ void image_notify(int len, char *filename) {
     write(dpychld_fd, &m, sizeof(m));
 }
 
-void connection_harvest_images(connection c, int backwards) {
+void connection_harvest_images(connection c) {
     unsigned char *ptr, *oldptr, *img;
     size_t ilen;
 
     /* look for GIF files */
-    if (backwards)
-        ptr = c->dsgif;
-    else
-        ptr = c->sdgif;
+    ptr = c->gif;
     oldptr = NULL;
 
     while (ptr != oldptr) {
         oldptr = ptr;
-        if (backwards)
-            ptr = find_gif_image(ptr, c->dslen - (ptr - c->dsdata), &img, &ilen);
-        else
-            ptr = find_gif_image(ptr, c->sdlen - (ptr - c->sddata), &img, &ilen);
+        ptr = find_gif_image(ptr, c->len - (ptr - c->data), &img, &ilen);
 
         if (img) {
             char buf[128];
@@ -138,24 +110,15 @@ void connection_harvest_images(connection c, int backwards) {
         }
     }
 
-    if (backwards)
-        c->dsgif = ptr;
-    else
-        c->sdgif = ptr;
+    c->gif = ptr;
 
     /* look for JPEG files */
-    if (backwards)
-        ptr = c->dsjpeg;
-    else
-        ptr = c->sdjpeg;
+    ptr = c->jpeg;
     oldptr = NULL;
     
     while (ptr != oldptr) {
         oldptr = ptr;
-        if (backwards)
-            ptr = find_jpeg_image(ptr, c->dslen - (ptr - c->dsdata), &img, &ilen);
-        else
-            ptr = find_jpeg_image(ptr, c->sdlen - (ptr - c->sddata), &img, &ilen);
+        ptr = find_jpeg_image(ptr, c->len - (ptr - c->data), &img, &ilen);
 
         if (img) {
             char buf[128];
@@ -169,10 +132,7 @@ void connection_harvest_images(connection c, int backwards) {
         }
     }
 
-    if (backwards)
-        c->dsjpeg = ptr;
-    else
-        c->sdjpeg = ptr;
+    c->jpeg = ptr;
 }
 
 connection *alloc_connection(void) {
@@ -211,8 +171,7 @@ void sweep_connections() {
             connection c = *C;
             if ((now - c->last) > TIMEOUT) {
                 /* get any last images out of this one */
-                connection_harvest_images(c, 0);
-                connection_harvest_images(c, 1);
+                connection_harvest_images(c);
                 connection_delete(c);
                 *C = NULL;
             }
@@ -285,8 +244,8 @@ int main(int argc, char *argv[]) {
         struct tcphdr tcp;
         struct in_addr s, d;
         int off, len;
-        int backwards = 0;
-        connection *C;
+        connection *C, c;
+        int delta;
 
         /* Capture of a packet may time out. If so, retry. */
         if (!(pkt = pcap_next(pc, &hdr)))
@@ -309,66 +268,63 @@ int main(int argc, char *argv[]) {
         
         /* try to find the connection slot associated with this. */
         C = find_connection(&s, &d, htons(tcp.source), htons(tcp.dest));
-        if (!C) {
-            backwards = 1;
-            C = find_connection(&d, &s, htons(tcp.dest), htons(tcp.source));
-        }
 
         /* no connection at all, so we need to allocate one. */
         if (!C) {
-            /* new connection being opened, we track it. */
-            connection *C = alloc_connection();
+            C = alloc_connection();
             *C = connection_new(&s, &d, htons(tcp.source), htons(tcp.dest));
-            (*C)->sdisn = htonl(tcp.seq);
-            (*C)->dsisn = htonl(tcp.ack_seq);
+            /* This might or might not be an entirely new connection (SYN flag
+             * set). Either way we need a sequence number to start at. */
+            (*C)->isn = htonl(tcp.seq);
         }
 
+        /* Now we need to process this segment. */
+        c = *C;
+        delta = 0;//tcp.syn ? 1 : 0;
 
-        /* found a connection object */
-        if (C) {
-            connection c = *C;
-            int delta = tcp.syn ? 1 : 0;
-            if (tcp.syn) {
-                /* may be getting a new isn. */
-                if (backwards) c->dsisn = htonl(tcp.seq);
-                else c->sdisn = htonl(tcp.seq);
-            }
+        /* NB (STD0007):
+         *    SEG.LEN = the number of octets occupied by the data in the
+         *    segment (counting SYN and FIN) */
+#if 0
+        if (tcp.syn)
+            /* getting a new isn. */
+            c->isn = htonl(tcp.seq);
+#endif
 
-            if (tcp.rst) {
-                /* looks like this connection is bogus. */
-                connection_delete(c);
+        if (tcp.rst) {
+            /* Looks like this connection is bogus, and so might be a
+             * connection going the other way. */
+            connection_delete(c);
+            *C = NULL;
+
+            if ((C = find_connection(&d, &s, htons(tcp.dest), htons(tcp.source)))) {
+                connection_delete(*C);
                 *C = NULL;
-                continue;
             }
+
+            continue;
+        }
+        
+        if (len > 0) {
+            unsigned int offset = htonl(tcp.seq);
+
+            /* Modulo 2**32 arithmetic; offset = seq - isn + delta. */
+            if (offset < (c->isn + delta)) {
+                printf("isn = %u, seq = %u, delta = %u; offset = ", c->isn, offset, delta);
+                offset = 0xffffffff - (c->isn + delta - offset);
+                printf("%u\n", offset);
+            } else
+                offset -= c->isn + delta;
             
-            if (len > 0) {
-                unsigned int offset = htonl(tcp.seq), isn;
-                isn = backwards ? c->dsisn : c->sdisn;
-                /* Modulo 2**32 arithmetic; offset = seq - (isn + delta). */
-                if (offset < (isn + delta)) {
-                    printf("isn = %u, seq = %u, delta = %u; offset = ", isn, offset, delta);
-                    offset = 0xffffffff - (isn + delta - offset);
-                    printf("%u\n", offset);
-                } else
-                    offset -= isn + delta;
-                
-                if (backwards) connection_push_ds(c, pkt + off, offset, len);
-                else connection_push_sd(c, pkt + off, offset, len);
+            connection_push(c, pkt + off, offset, len);
+            connection_harvest_images(c);
+        }
 
-                connection_harvest_images(c, backwards);
-            }
-
-            if (tcp.fin) {
-                if (backwards) c->dsfin = 1;
-                else c->sdfin = 1;
-                if (c->sdfin && c->dsfin) {
-                    /* connection closed; look for image data in this connection. */
-                    connection_harvest_images(c, 0);
-                    connection_harvest_images(c, 1);
-                    connection_delete(c);
-                    *C = NULL;
-                }
-            }
+        if (tcp.fin) {
+            /* Connection closing. */
+            connection_harvest_images(c);
+            connection_delete(c);
+            *C = NULL;
         }
 
         /* sweep out old connections */

@@ -5,17 +5,17 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.5 2001/08/06 21:42:39 chris Exp $
+# $Id: Makefile,v 1.6 2001/08/08 00:23:09 chris Exp $
 #
 
-VERSION = 0.1.2
+VERSION = 0.1.3pre2
 
 #CC = gcc
 
 # You may need to edit the -I/usr/include/pcap and add a -L... option to
 # LDFLAGS below take account of the location of libpcap and its header files
 # on your system.
-CFLAGS  += -g -Wall `gtk-config --cflags`
+CFLAGS  += -I/usr/include/pcap -g -Wall `gtk-config --cflags`
 LDFLAGS += -g
 LDLIBS  += -lpcap -ljpeg -lungif -lpnm -lppm -lpgm -lpbm `gtk-config --libs`  -lefence
 
@@ -58,5 +58,3 @@ nodepend:
 	rm -f depend Makefile.bak
 
 # DO NOT DELETE
-
-
