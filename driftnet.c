@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.3 2001/07/20 12:02:30 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.4 2001/08/03 17:55:01 chris Exp $";
 
 #include <assert.h>
 #include <pcap.h>
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     slots = (connection*)calloc(slotsalloc, sizeof(connection));
 
     /* Start up pcap. */
-    pc = pcap_open_live("eth0", 262144, 1, 0, ebuf);
+    pc = pcap_open_live("eth0", 262144, 0 /*1*/, 0, ebuf);
     if (!pc) {
         fprintf(stderr, PROGNAME "pcap_open_live: %s\n", ebuf);
         return -1;

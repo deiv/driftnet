@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: img.c,v 1.3 2001/08/03 17:07:10 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.4 2001/08/03 17:55:01 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,13 +113,19 @@ int img_load(img I, const imgstate howmuch, const imgtype type) {
     } else if (howmuch == none) return 1;
     else for (i = 0; i < NUMFILEDRVS; ++i)
         if (filedrvs[i].type == type) {
-            if (howmuch == header && filedrvs[i].loadhdr)
-                return filedrvs[i].loadhdr(I);
-            else if (filedrvs[i].loadimg) {
+            int r;
+            if (howmuch == header && filedrvs[i].loadhdr) {
+                r = filedrvs[i].loadhdr(I);
+                if (r) I->load = howmuch;
+                return r;
+            } else if (filedrvs[i].loadimg) {
                 /* May have to load header first. */
                 if (I->load != header && filedrvs[i].loadhdr && !filedrvs[i].loadhdr(I))
                     return 0;
-                return filedrvs[i].loadimg(I);
+                I->load = header;
+                r = filedrvs[i].loadimg(I);
+                if (r) I->load = full;
+                return r;
             }
         }
 

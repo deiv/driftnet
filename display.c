@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.3 2001/07/20 12:02:30 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.4 2001/08/03 17:55:01 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -94,10 +94,9 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
             /* small images are probably bollocks. */
             img i = img_new();
             if (!img_load_file(i, m.filename, header, unknown))
-                fprintf(stderr, PROGNAME": %s: bogus image\n", m.filename);
+                fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", m.filename, i->err);
             else {
                 if (i->width > 8 && i->height > 8) {
-
                     if (img_load(i, full, i->type)) {
                         /* slot in the new image at some plausible place. */
                         int w, h;
@@ -123,13 +122,13 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         update_window();
 
                         wrx += w + BORDER;
-                    } else fprintf(stderr, PROGNAME": bogus image\n");
-                } else fprintf(stderr, PROGNAME": image dimensions (%d x %d) too small to bother with", i->width, i->height);
+                    } else fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", m.filename, i->err);
+                } else fprintf(stderr, PROGNAME": %s: image dimensions (%d x %d) too small to bother with\n", m.filename, i->width, i->height);
             }
 
             img_delete(i);
             unlink(m.filename);
-        } else fprintf(stderr, PROGNAME": image data too small to bother with\n");
+        } else fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)m.len);
     }
     return TRUE;
 }
