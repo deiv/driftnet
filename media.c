@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: media.c,v 1.3 2002/06/10 23:16:37 chris Exp $";
+static const char rcsid[] = "$Id: media.c,v 1.4 2002/06/13 19:08:37 chris Exp $";
 
 #include <assert.h>
 #include <dirent.h>
@@ -61,10 +61,11 @@ static int count_temporary_files(void) {
 /* dispatch_image:
  * Throw some image data at the display process. */
 void dispatch_image(const char *mname, const unsigned char *data, const size_t len) {
-    char *buf;
+    char *buf, name[32];
     int fd;
     buf = malloc(strlen(tmpdir) + 64);
-    sprintf(buf, "%s/driftnet-%d.%d.%s", tmpdir, (int)time(NULL), rand(), mname);
+    sprintf(name, "driftnet-%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
+    sprintf(buf, "%s/%s", tmpdir, name);
     fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, 0644);
     if (fd == -1) return;
     write(fd, data, len);
@@ -73,13 +74,8 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
     if (adjunct)
         printf("%s\n", buf);
 #ifndef NO_DISPLAY_WINDOW
-    else {
-        size_t namelen;
-        namelen = strlen(buf);
-        write(dpychld_fd, &namelen, sizeof namelen);
-        write(dpychld_fd, &len, sizeof len);
-        write(dpychld_fd, buf, namelen);
-    }
+    else
+        write(dpychld_fd, name, sizeof name);
 #endif /* !NO_DISPLAY_WINDOW */
 
     free(buf);
