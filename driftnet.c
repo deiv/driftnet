@@ -7,7 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.4 2001/08/03 17:55:01 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.5 2001/08/06 21:42:39 chris Exp $";
+
+#undef NDEBUG
 
 #include <assert.h>
 #include <pcap.h>
@@ -21,6 +23,7 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.4 2001/08/03 17:55:01 chris Exp
 #include <ctype.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <time.h>
 
 #include "driftnet.h"
 
@@ -57,10 +60,14 @@ void connection_delete(connection c) {
 
 void connection_push_sd(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
     size_t goff = c->sdgif - c->sddata, joff = c->sdjpeg - c->sddata;
+/*    printf("connection_push_ds(%p, %p, %u, %u)\n", c, data, off, len);*/
     assert(c->sdalloc > 0);
-    while (off + len > c->sdalloc) {
-        c->sdalloc *= 2;
-        c->sddata = (unsigned char*)realloc(c->sddata, c->sdalloc);
+    if (off + len > c->sdalloc) {
+        /* Allocate more memory. */
+        while (off + len > c->sdalloc) {
+            c->sdalloc *= 2;
+            c->sddata = (unsigned char*)realloc(c->sddata, c->sdalloc);
+        }
     }
     c->sdgif = c->sddata + goff;
     c->sdjpeg = c->sddata + joff;
@@ -72,10 +79,14 @@ void connection_push_sd(connection c, const unsigned char *data, unsigned int of
 
 void connection_push_ds(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
     size_t goff = c->dsgif - c->dsdata, joff = c->dsjpeg - c->dsdata;
+/*    printf("connection_push_ds(%p, %p, %u, %u)\n", c, data, off, len);*/
     assert(c->dsalloc > 0);
-    while (off + len > c->dsalloc) {
-        c->dsalloc *= 2;
-        c->dsdata = (unsigned char*)realloc(c->dsdata, c->dsalloc);
+    if (off + len > c->dsalloc) {
+        /* Allocate more memory. */
+        while (off + len > c->dsalloc) {
+            c->dsalloc *= 2;
+            c->dsdata = (unsigned char*)realloc(c->dsdata, c->dsalloc);
+        }
     }
     c->dsgif = c->dsdata + goff;
     c->dsjpeg = c->dsdata + joff;
@@ -189,7 +200,7 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
     return NULL;
 }
 
-#define TIMEOUT 10
+#define TIMEOUT 5
 
 void sweep_connections() {
     time_t now;
@@ -227,7 +238,7 @@ int main(int argc, char *argv[]) {
 
     signal(SIGPIPE, SIG_IGN);
 
-    /* fork to start the dispaly child process */
+    /* fork to start the display child process */
     pipe(pfd);
     switch (dpychld = fork()) {
         case 0:
@@ -303,6 +314,16 @@ int main(int argc, char *argv[]) {
             C = find_connection(&d, &s, htons(tcp.dest), htons(tcp.source));
         }
 
+        /* no connection at all, so we need to allocate one. */
+        if (!C) {
+            /* new connection being opened, we track it. */
+            connection *C = alloc_connection();
+            *C = connection_new(&s, &d, htons(tcp.source), htons(tcp.dest));
+            (*C)->sdisn = htonl(tcp.seq);
+            (*C)->dsisn = htonl(tcp.ack_seq);
+        }
+
+
         /* found a connection object */
         if (C) {
             connection c = *C;
@@ -321,8 +342,18 @@ int main(int argc, char *argv[]) {
             }
             
             if (len > 0) {
-                if (backwards) connection_push_ds(c, pkt + off, htonl(tcp.seq) - c->dsisn - delta, len);
-                else connection_push_sd(c, pkt + off, htonl(tcp.seq) - c->sdisn - delta, len);
+                unsigned int offset = htonl(tcp.seq), isn;
+                isn = backwards ? c->dsisn : c->sdisn;
+                /* Modulo 2**32 arithmetic; offset = seq - isn + delta. */
+                if (offset < (isn + delta)) {
+                    printf("isn = %u, seq = %u, delta = %u; offset = ", isn, offset, delta);
+                    offset = 0xffffffff - (isn + delta - offset);
+                    printf("%u\n", offset);
+                } else
+                    offset -= isn + delta;
+                
+                if (backwards) connection_push_ds(c, pkt + off, offset, len);
+                else connection_push_sd(c, pkt + off, offset, len);
 
                 connection_harvest_images(c, backwards);
             }
@@ -337,21 +368,6 @@ int main(int argc, char *argv[]) {
                     connection_delete(c);
                     *C = NULL;
                 }
-            }
-
-        } else {
-            if (tcp.syn) {
-                /* new connection being opened, we track it. */
-                connection *C = alloc_connection();
-                *C = connection_new(&s, &d, htons(tcp.source), htons(tcp.dest));
-                (*C)->sdisn = htonl(tcp.seq);
-
-                if (len > 0) {
-                    connection_push_sd(*C, pkt + off, htonl(tcp.seq) - (*C)->sdisn - 1, len);
-                    connection_harvest_images(*C, 0);
-                }
-
-/*                fprintf(stderr, "allocating new connection\n");*/
             }
         }
 

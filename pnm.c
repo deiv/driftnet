@@ -7,8 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: pnm.c,v 1.1 2001/07/15 11:07:33 chris Exp $";
+static const char rcsid[] = "$Id: pnm.c,v 1.2 2001/08/06 21:42:39 chris Exp $";
 
+#include <string.h>
 #include <pnm.h>
 
 #include "img.h"

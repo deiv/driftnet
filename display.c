@@ -7,13 +7,14 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.4 2001/08/03 17:55:01 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.5 2001/08/06 21:42:39 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "driftnet.h"
 #include "img.h"
@@ -127,8 +128,9 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
             }
 
             img_delete(i);
-            unlink(m.filename);
         } else fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)m.len);
+
+        unlink(m.filename);
     }
     return TRUE;
 }
