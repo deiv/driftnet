@@ -5,10 +5,10 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.8 2001/08/11 13:45:42 chris Exp $
+# $Id: Makefile,v 1.9 2001/08/30 18:49:33 chris Exp $
 #
 
-VERSION = 0.1.3pre3
+VERSION = 0.1.3
 
 #CC = gcc
 
@@ -58,5 +58,3 @@ nodepend:
 	rm -f depend Makefile.bak
 
 # DO NOT DELETE
-
-
