@@ -6,5 +6,5 @@
  *
  */
 
-static const char rcsid[] = "$Id: png.c,v 1.1 2001/07/15 11:07:33 chris Exp $";
+static const char rcsid[] = "$Id: png.c,v 1.2 2002/06/01 11:44:17 chris Exp $";
 

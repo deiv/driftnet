@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: img.c,v 1.6 2001/08/11 13:45:42 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.7 2002/06/01 11:44:17 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -163,8 +163,9 @@ int img_load_file(img I, const char *name, const imgstate howmuch, const imgtype
 
     if (type == unknown) {
         /* Try to figure out type. */
-        char *p = rindex(name, '.');
+        char *p;
         int i;
+        p = strrchr(name, '.');
         for (i = 0; i < NUMFILEDRVS; ++i) {
             char *q;
             for (q = filedrvs[i].suffices; *q; q += strlen(q) + 1)

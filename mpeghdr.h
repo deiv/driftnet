@@ -5,7 +5,7 @@
  * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: mpeghdr.h,v 1.1 2002/05/29 11:48:46 chris Exp $
+ * $Id: mpeghdr.h,v 1.2 2002/06/01 11:44:17 chris Exp $
  *
  */
 
@@ -13,7 +13,13 @@
 #define __MPEGHDR_H_
 
 #include <stdbool.h>
-#include <stdint.h>
+
+#ifdef USE_SYS_INT_TYPES_H
+#include <sys/int_types.h>  /* Solaris etc. */
+#else
+#include <stdint.h>         /* C99 standard. */
+#endif
+
 #include <stdio.h>
 
 /* struct mpeg_audio_hdr:

@@ -5,14 +5,19 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: img.h,v 1.2 2001/07/20 12:02:30 chris Exp $
+ * $Id: img.h,v 1.3 2002/06/01 11:44:17 chris Exp $
  *
  */
 
 #ifndef __IMG_H_ /* include guard */
 #define __IMG_H_
 
-#include <stdint.h>
+#ifdef USE_SYS_INT_TYPES_H
+#   include <sys/int_types.h>   /* Solaris etc. */
+#else
+#   include <stdint.h>          /* C99 standard */
+#endif
+
 #include <stdio.h>
 
 typedef uint8_t chan;

@@ -7,10 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: mpeghdr.c,v 1.1 2002/05/29 11:48:46 chris Exp $";
+static const char rcsid[] = "$Id: mpeghdr.c,v 1.2 2002/06/01 11:44:17 chris Exp $";
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 
 #include "mpeghdr.h"
@@ -123,6 +122,9 @@ int mpeg_hdr_parse(const uint8_t *data, struct mpeg_audio_hdr *h) {
 
 /* mpeg_hdr_nextframe_offset:
  * Return the offset of the next MPEG header frame. */
+
+/* XXX this is broken -- see tabsel_123 in common.c in mpg123 for the correct
+ * way to do it.... */
 int mpeg_hdr_nextframe_offset(const struct mpeg_audio_hdr *h) {
     int off = 0;
 /*    if (h->has_crc) off += 2; */

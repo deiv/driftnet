@@ -13,7 +13,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: playaudio.c,v 1.1 2002/05/29 11:49:12 chris Exp $";
+static const char rcsid[] = "$Id: playaudio.c,v 1.2 2002/06/01 11:44:17 chris Exp $";
 
 #include <sys/types.h>
 
@@ -207,7 +207,7 @@ static void mpeg_player_manager(void) {verbose=1;
         if (time(NULL) - whenstarted < 5) {
             /* The player expired very quickly. Probably something's wrong;
              * sleep for a bit and hope the problem goes away. */
-            fprintf(stderr, PROGNAME": MPEG player expired after %d seconds, sleeping for a bit\n", time(NULL) - whenstarted);
+            fprintf(stderr, PROGNAME": MPEG player expired after %d seconds, sleeping for a bit\n", (int)(time(NULL) - whenstarted));
             sleep(5);
         }
     }

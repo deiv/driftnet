@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.3 2002/05/28 00:23:55 chris Exp $
+ * $Id: driftnet.h,v 1.4 2002/06/01 11:44:17 chris Exp $
  *
  */
 

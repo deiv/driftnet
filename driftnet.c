@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.17 2002/05/28 20:38:32 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.18 2002/06/01 11:44:17 chris Exp $";
 
 #undef NDEBUG
 
@@ -15,6 +15,11 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.17 2002/05/28 20:38:32 chris Ex
 #include <dirent.h>
 #include <errno.h>
 #include <pcap.h>
+
+#include <arpa/inet.h>
+#include <limits.h>
+
+#include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <stdlib.h>
@@ -28,6 +33,9 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.17 2002/05/28 20:38:32 chris Ex
 #include <sys/stat.h>
 
 #include "driftnet.h"
+
+#define SNAPLEN  16384      /* largest chunk of data we accept from pcap */
+#define WRAPLEN 262144      /* out-of-order packet margin */
 
 /* slots for storing information about connections */
 connection *slots;
@@ -631,7 +639,13 @@ int main(int argc, char *argv[]) {
 
     if (verbose) 
         fprintf(stderr, PROGNAME": using temporary file directory %s\n", tmpdir);
-    
+
+    if (!interface && !(interface = pcap_lookupdev(ebuf))) {
+        fprintf(stderr, PROGNAME": pcap_lookupdev: %s\n", ebuf);
+        fprintf(stderr, PROGNAME": try specifying an interface with -i\n");
+        return -1;
+    }
+
     if (verbose)
         fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
 
@@ -692,7 +706,7 @@ int main(int argc, char *argv[]) {
  
 
     /* Start up pcap. */
-    pc = pcap_open_live(interface, 262144, promisc, 1, ebuf);
+    pc = pcap_open_live(interface, SNAPLEN, promisc, 1, ebuf);
     if (!pc) {
         fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
 
@@ -806,7 +820,7 @@ int main(int argc, char *argv[]) {
             else
                 offset -= c->isn + delta;
             
-            if (offset > c->len + 262144) {
+            if (offset > c->len + WRAPLEN) {
                 /* Out-of-order packet. */
                 if (verbose) 
                     fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
