@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.16 2002/05/28 20:19:09 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.17 2002/05/28 20:38:32 chris Exp $";
 
 #undef NDEBUG
 
@@ -108,7 +108,7 @@ void clean_temporary_directory(void) {
         while ((de = readdir(d))) {
             char *p;
             p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0) || strcmp(p, ".mp3") == 0)) {
+            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
                 sprintf(s, "%s/%s", tmpdir, de->d_name);
                 unlink(s);
             }
@@ -403,9 +403,16 @@ void usage(FILE *fp) {
 "Options:\n"
 "\n"
 "  -h               Display this help message.\n"
+"  -v               Verbose operation.\n"
 "  -i interface     Select the interface on which to listen (default: all\n"
 "                   interfaces).\n"
-"  -p               Do not put the listening interface into promiscuous mode.\n"
+"  -p               Do not put the listening interface into promiscuous mode.\n""  -a               Adjunct mode: do not display images on screen, but save\n"
+"                   them to a temporary directory and announce their names on\n"
+"                   standard output.\n"
+"  -m number        Maximum number of images to keep in temporary directory\n"
+"                   in adjunct mode.\n"
+"  -d directory     Use the named temporary directory.\n"
+"  -x prefix        Prefix to use when saving images.\n"
 "  -s               Attempt to extract streamed audio data from the network,\n"
 "                   in addition to images. At present this supports MPEG data\n"
 "                   only.\n"
@@ -413,14 +420,6 @@ void usage(FILE *fp) {
 "  -M command       Use the given command to play MPEG audio data extracted\n"
 "                   with the -s option; this should process MPEG frames\n"
 "                   supplied on standard input. Default: `mpg123 -'.\n"
-"  -v               Verbose operation.\n"
-"  -a               Adjunct mode: do not display images on screen, but save\n"
-"                   them to a temporary directory and announce their names on\n"
-"                   standard output.\n"
-"  -m number        Maximum number of images to keep in temporary directory\n"
-"                   in adjunct mode.\n"
-"  -d directory     Use the named temporary directory.\n"
-"  -x prefix        Prefix to use when saving images.\n"
 "\n"
 "Filter code can be specified after any options in the manner of tcpdump(8).\n"
 "The filter code will be evaluated as `tcp and (user filter code)'\n"
