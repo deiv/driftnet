@@ -5,7 +5,7 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.11 2001/09/11 09:33:41 chris Exp $
+# $Id: Makefile,v 1.12 2002/01/14 19:49:41 chris Exp $
 #
 
 VERSION = 0.1.4
@@ -21,7 +21,7 @@ CFLAGS  += -I/usr/include/pcap
 
 SUBDIRS = 
 
-TXTS = README TODO COPYING CHANGES CREDITS
+TXTS = README TODO COPYING CHANGES CREDITS driftnet.1
 SRCS = gif.c img.c jpeg.c png.c driftnet.c image.c display.c
 HDRS = img.h driftnet.h
 BINS = driftnet
