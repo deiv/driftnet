@@ -1,10 +1,10 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.14 2002/07/02 22:17:25 chris Exp $
+$Id: CHANGES,v 1.16 2002/07/09 17:31:00 chris Exp $
 
 0.1.6
 
-Chagned the algorithm used to search for image start blocks to Boyer-Moore, for
-a performance improvement.
+Changed the algorithm used to search for image start blocks to Boyer-Moore, for
+a performance improvement. Fixed some build errors.
 
 0.1.5
 

@@ -5,9 +5,8 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.33 2002/06/28 19:01:23 chris Exp $
+# $Id: Makefile,v 1.34 2002/07/09 17:30:42 chris Exp $
 #
-
 
 #
 # User-serviceable parts:
@@ -60,7 +59,7 @@ LDLIBS  += -ljpeg -lungif `gtk-config --libs`
 #
 
 # Driftnet version.
-VERSION = 0.1.5
+VERSION = 0.1.6
 CFLAGS += -DDRIFTNET_VERSION='"$(VERSION)"'
 
 SUBDIRS = 
