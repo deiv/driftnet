@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.6 2002/06/01 11:44:17 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.7 2002/06/01 17:39:11 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
     spaceleft;
 
     do {
-        /* printf("gifhdr = %p block = %p off = %u %02x\n", gifhdr, block, block - gifhdr, (unsigned int)*block); */
+         /* printf("gifhdr = %p block = %p off = %u %02x\n", gifhdr, block, block - gifhdr, (unsigned int)*block); */
         switch (*block) {
             case 0x2c:
                 /* image block */

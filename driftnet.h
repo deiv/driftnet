@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.4 2002/06/01 11:44:17 chris Exp $
+ * $Id: driftnet.h,v 1.5 2002/06/01 17:39:11 chris Exp $
  *
  */
 
@@ -19,6 +19,11 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 
+struct datablock {
+    int off, len, done;
+    struct datablock *next;
+};
+
 typedef struct _connection {
     struct in_addr src, dst;
     short int sport, dport;
@@ -27,6 +32,7 @@ typedef struct _connection {
     unsigned char *data, *gif, *jpeg, *mpeg;
     int fin;
     time_t last;
+    struct datablock *blocks;
 } *connection;
 
 /* driftnet.c */

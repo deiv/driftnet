@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.19 2002/06/01 12:58:22 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.20 2002/06/01 17:39:11 chris Exp $";
 
 #undef NDEBUG
 
@@ -36,7 +36,7 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.19 2002/06/01 12:58:22 chris Ex
 
 #include "driftnet.h"
 
-#define SNAPLEN  16384      /* largest chunk of data we accept from pcap */
+#define SNAPLEN 262144      /* largest chunk of data we accept from pcap */
 #define WRAPLEN 262144      /* out-of-order packet margin */
 
 /* slots for storing information about connections */
@@ -141,6 +141,7 @@ connection connection_new(const struct in_addr *src, const struct in_addr *dst, 
     c->alloc = 16384;
     c->data = c->gif = c->jpeg = c->mpeg = malloc(c->alloc);
     c->last = time(NULL);
+    c->blocks = NULL;
     return c;
 }
 
@@ -155,6 +156,9 @@ void connection_delete(connection c) {
  * Put some more data in a connection. */
 void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
     size_t goff = c->gif - c->data, joff = c->jpeg - c->data, moff = c->mpeg - c->data;
+    struct datablock *B, *b, *bl;
+    int a;
+
 /*    printf("connection_push(%p, %p, %u, %u)\n", c, data, off, len);*/
     assert(c->alloc > 0);
     if (off + len > c->alloc) {
@@ -171,6 +175,47 @@ void connection_push(connection c, const unsigned char *data, unsigned int off, 
 
     if (off + len > c->len) c->len = off + len;
     c->last = time(NULL);
+    
+    B = malloc(sizeof *B);
+    B->off = off;
+    B->len = len;
+    B->done = 0;
+    B->next = NULL;
+    
+    /* Insert the block into the sorted block list. */
+    for (b = c->blocks, bl = NULL; ; bl = b, b = b->next) {
+        if ((!b || off < b->off) && (!bl || off > bl->off)) {
+            B->next = b;
+            if (bl)
+                bl->next = B;
+            else
+                c->blocks = B;
+            break;
+        }
+    }
+
+    /* Now go through the list combining blocks. */
+    do {
+        a = 0;
+        for (b = c->blocks; b; b = b->next) {
+            if (b->next && b->off + b->len >= b->next->off) {
+                struct datablock *bb;
+                bb = b->next;
+                b->len = (bb->off + bb->len) - b->off;
+                b->next = bb->next;
+                free(bb);
+                ++a;
+            }
+        }
+    } while (a);
+/*
+        {
+            printf("%p: ", c);
+            for (b = c->blocks; b; b = b->next)
+                printf("[%d (%d) -> %d] ", b->off, b->len, b->off + b->len);
+            printf("\n");
+        }
+*/
 }
 
 
@@ -198,13 +243,15 @@ void connection_harvest_images(connection c) {
     unsigned char *ptr, *oldptr, *img;
     size_t ilen;
 
+    if (!c->blocks) return;
+    
     /* look for GIF files */
     ptr = c->gif;
     oldptr = NULL;
 
     while (ptr != oldptr) {
         oldptr = ptr;
-        ptr = find_gif_image(ptr, c->len - (ptr - c->data), &img, &ilen);
+        ptr = find_gif_image(ptr, (c->blocks->off + c->blocks->len) - (ptr - c->data), &img, &ilen);
 
         if (img && (!max_images || count_temporary_files() < max_images)) {
             char buf[PATH_MAX + 1];
@@ -225,7 +272,7 @@ void connection_harvest_images(connection c) {
     
     while (ptr != oldptr) {
         oldptr = ptr;
-        ptr = find_jpeg_image(ptr, c->len - (ptr - c->data), &img, &ilen);
+        ptr = find_jpeg_image(ptr, (c->blocks->off + c->blocks->len) - (ptr - c->data), &img, &ilen);
 
         if (img && (!max_images || count_temporary_files() < max_images)) {
             char buf[PATH_MAX + 1];
@@ -247,13 +294,15 @@ void connection_harvest_audio(connection c) {
     unsigned char *ptr, *oldptr, *audio;
     size_t alen;
 
+    if (!c->blocks) return;
+
     /* look for MPEG streams */
     ptr = c->mpeg;
     oldptr = NULL;
 
     while (ptr != oldptr) {
         oldptr = ptr;
-        ptr = find_mpeg_stream(ptr, c->len - (ptr - c->data), &audio, &alen);
+        ptr = find_mpeg_stream(ptr, (c->blocks->off + c->blocks->len) - (ptr - c->data), &audio, &alen);
 
         if (audio) {
             if (!adjunct) {
@@ -312,7 +361,10 @@ void sweep_connections() {
     for (C = slots; C < slots + slotsalloc; ++C) {
         if (*C) {
             connection c = *C;
-            if ((now - c->last) > TIMEOUT) {
+            /* We discard connections which have seen no activity for TIMEOUT
+             * or for which a FIN has been seen and for which there are no
+             * gaps in the stream. */
+            if ((now - c->last) > TIMEOUT || (c->fin && (!c->blocks || !c->blocks->next))) {
                 /* get any last images out of this one */
                 connection_harvest_images(c);
                 if (extract_audio) connection_harvest_audio(c);
@@ -587,12 +639,14 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
 
         return;
     }
-    
+
     if (len > 0) {
         /* We have some data in the packet. If this data occurred after
          * the first data we collected for this connection, then save it
          * so that we can look for images. Otherwise, discard it. */
-        unsigned int offset = ntohl(tcp.th_seq);
+        unsigned int offset;
+        
+        offset = ntohl(tcp.th_seq);
 
         /* Modulo 2**32 arithmetic; offset = seq - isn + delta. */
         if (offset < (c->isn + delta))
@@ -610,17 +664,16 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
             if (extract_audio) connection_harvest_audio(c);
         }
     }
-
     if (tcp.th_flags & TH_FIN) {
         /* Connection closing. */
         if (verbose)
             fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
-        connection_harvest_images(c);
+        c->fin = 1;
+/*        connection_harvest_images(c);
         if (extract_audio) connection_harvest_audio(c);
         connection_delete(c);
-        *C = NULL;
+        *C = NULL;*/
     }
-
     /* sweep out old connections */
     sweep_connections();
 }
@@ -629,7 +682,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
  * Thread in which packet capture runs. */
 void *packet_capture_thread(void *v) {
     while (!foad)
-        pcap_dispatch(pc, 0, process_packet, NULL);
+        pcap_dispatch(pc, -1, process_packet, NULL);
     return NULL;
 }
 
