@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.23 2002/06/10 21:25:48 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.24 2002/06/10 23:16:37 chris Exp $";
 
 #undef NDEBUG
 
@@ -73,7 +73,6 @@ void do_mpeg_player(void);
  * Ensure that our temporary directory is clear of any files. */
 void clean_temporary_directory(void) {
     DIR *d;
-    struct dirent *de;
     
     /* If tmpdir_specified is true, the user specified a particular temporary
      * directory. We presume that the user doesn't want the directory removed
@@ -82,17 +81,28 @@ void clean_temporary_directory(void) {
 
     d = opendir(tmpdir);
     if (d) {
-        char s[PATH_MAX + 1];
+        struct dirent *de;
+        char *buf;
+        size_t buflen;
+
+        buf = malloc(buflen = strlen(tmpdir) + 64);
+
         while ((de = readdir(d))) {
             char *p;
             p = strrchr(de->d_name, '.');
             if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
-                sprintf(s, "%s/%s", tmpdir, de->d_name);
-                unlink(s);
+                if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
+                    buf = realloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
+                
+                sprintf(buf, "%s/%s", tmpdir, de->d_name);
+                unlink(buf);
             }
         }
         closedir(d);
+
+        free(buf);
     }
+
 
     if (!tmpdir_specified && rmdir(tmpdir) == -1 && errno != ENOENT) /* lame attempt to avoid race */
         fprintf(stderr, PROGNAME": rmdir(%s): %s\n", tmpdir, strerror(errno));

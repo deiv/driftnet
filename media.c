@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: media.c,v 1.2 2002/06/10 21:25:48 chris Exp $";
+static const char rcsid[] = "$Id: media.c,v 1.3 2002/06/10 23:16:37 chris Exp $";
 
 #include <assert.h>
 #include <dirent.h>
@@ -16,8 +16,6 @@ static const char rcsid[] = "$Id: media.c,v 1.2 2002/06/10 21:25:48 chris Exp $"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <limits.h> /* added 20020603 edobbs for PATH_MAX on Solaris */
 
 #include "driftnet.h"
 
@@ -63,8 +61,9 @@ static int count_temporary_files(void) {
 /* dispatch_image:
  * Throw some image data at the display process. */
 void dispatch_image(const char *mname, const unsigned char *data, const size_t len) {
-    char buf[PATH_MAX + 1];
+    char *buf;
     int fd;
+    buf = malloc(strlen(tmpdir) + 64);
     sprintf(buf, "%s/driftnet-%d.%d.%s", tmpdir, (int)time(NULL), rand(), mname);
     fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, 0644);
     if (fd == -1) return;
@@ -75,12 +74,15 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
         printf("%s\n", buf);
 #ifndef NO_DISPLAY_WINDOW
     else {
-        struct pipemsg m = {0};
-        m.len = len;
-        strcpy(m.filename, buf);
-        write(dpychld_fd, &m, sizeof m);
+        size_t namelen;
+        namelen = strlen(buf);
+        write(dpychld_fd, &namelen, sizeof namelen);
+        write(dpychld_fd, &len, sizeof len);
+        write(dpychld_fd, buf, namelen);
     }
 #endif /* !NO_DISPLAY_WINDOW */
+
+    free(buf);
 }
 
 /* dispatch_mpeg_audio:

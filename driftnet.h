@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.7 2002/06/10 21:25:48 chris Exp $
+ * $Id: driftnet.h,v 1.8 2002/06/10 23:16:37 chris Exp $
  *
  */
 
@@ -60,12 +60,5 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 
 /* media.c */
 void connection_extract_media(connection c, const enum mediatype T);
-
-/* struct pipemsg:
- * Message we send to the display child to tell it to display an image. */
-struct pipemsg {
-    int len;
-    char filename[256]; /* ugh. */
-};
 
 #endif /* __DRIFTNET_H_ */

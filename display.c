@@ -9,7 +9,7 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.12 2002/06/10 21:25:48 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.13 2002/06/10 23:16:37 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -273,18 +273,33 @@ extern int dpychld_fd;  /* in driftnet.c */
  * React to events on the connecting pipe by loading images from the temporary
  * directory and displaying them on the window. */
 gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
-    struct pipemsg m = {0};
+    size_t len, l;
+    static size_t namelen;
+    static char *name;
     ssize_t rr;
-    while ((rr = read(dpychld_fd, &m, sizeof(m))) == sizeof(m)) {
+    /* We are sent messages continaing the length of the filename, then the
+     * length of the file, then the filename. */
+    while ((rr = read(dpychld_fd, &l, sizeof(l))) == sizeof(l)) {
         int saveimg = 0;
+
+        if ((rr = read(dpychld_fd, &len, sizeof len)) != sizeof len)
+            break;
+        
+        if (l + 1 > namelen)
+            name = realloc(name, namelen = l + 1);
+        if ((rr = read(dpychld_fd, name, l)) != l)
+            break;
+        
+        name[l] = 0;
+           
         if (verbose)
-            fprintf(stderr, PROGNAME": received image %s of size %d\n", m.filename, m.len);
+            fprintf(stderr, PROGNAME": received image %s of size %d\n", name, len);
         /* checks to see whether this looks like an image we're interested in. */
-        if (m.len > 256) {
+        if (len > 256) {
             /* small images are probably bollocks. */
             img i = img_new();
-            if (!img_load_file(i, m.filename, header, unknown))
-                fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", m.filename, i->err);
+            if (!img_load_file(i, name, header, unknown))
+                fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", name, i->err);
             else {
                 if (i->width > 8 && i->height > 8) {
                     if (img_load(i, full, i->type)) {
@@ -308,21 +323,21 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         }
 
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
-                        add_image_rectangle(m.filename, wrx, wry - h, w, h);
+                        add_image_rectangle(name, wrx, wry - h, w, h);
                         saveimg = 1;
 
                         update_window();
 
                         wrx += w + BORDER;
-                    } else fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", m.filename, i->err);
-                } else if (verbose) fprintf(stderr, PROGNAME": %s: image dimensions (%d x %d) too small to bother with\n", m.filename, i->width, i->height);
+                    } else fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", name, i->err);
+                } else if (verbose) fprintf(stderr, PROGNAME": %s: image dimensions (%d x %d) too small to bother with\n", name, i->width, i->height);
             }
 
             img_delete(i);
-        } else if (verbose) fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)m.len);
+        } else if (verbose) fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)len);
 
         if (!saveimg)
-            unlink(m.filename);
+            unlink(name);
     }
     if (rr == -1 && errno != EINTR && errno != EAGAIN) {
         perror(PROGNAME": read");
