@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.5 2001/08/06 21:42:39 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.6 2001/08/07 13:00:34 chris Exp $";
 
 #undef NDEBUG
 
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
             if (len > 0) {
                 unsigned int offset = htonl(tcp.seq), isn;
                 isn = backwards ? c->dsisn : c->sdisn;
-                /* Modulo 2**32 arithmetic; offset = seq - isn + delta. */
+                /* Modulo 2**32 arithmetic; offset = seq - (isn + delta). */
                 if (offset < (isn + delta)) {
                     printf("isn = %u, seq = %u, delta = %u; offset = ", isn, offset, delta);
                     offset = 0xffffffff - (isn + delta - offset);
