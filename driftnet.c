@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.2 2001/07/16 00:09:33 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.3 2001/07/20 12:02:30 chris Exp $";
 
 #include <assert.h>
 #include <pcap.h>
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    while ((pkt = pcap_next(pc, &hdr))) {
+    while (1) {
         struct iphdr ip;
         struct tcphdr tcp;
         struct in_addr s, d;
@@ -277,6 +277,9 @@ int main(int argc, char *argv[]) {
         int backwards = 0;
         connection *C;
 
+        /* Capture of a packet may time out. If so, retry. */
+        if (!(pkt = pcap_next(pc, &hdr)))
+            continue;
 /*
         fprintf(stderr, "packet len = %d captured = %d!\n", hdr.len, hdr.caplen);
 */

@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.2 2001/07/16 00:09:33 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.3 2001/07/20 12:02:30 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -48,7 +48,7 @@ void make_backing_image() {
 void update_window() {
     if (backing_image) {
         GdkGC *gc = gdk_gc_new(darea->window);
-        gdk_draw_rgb_32_image(darea->window, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, backing_image->flat, sizeof(pel) * width);
+        gdk_draw_rgb_32_image(darea->window, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, (guchar*)backing_image->flat, sizeof(pel) * width);
         gdk_gc_destroy(gc);
     }
 }

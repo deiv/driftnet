@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: img.h,v 1.1 2001/07/15 11:07:33 chris Exp $
+ * $Id: img.h,v 1.2 2001/07/20 12:02:30 chris Exp $
  *
  */
 
@@ -61,5 +61,7 @@ int img_save(const img I, FILE *fp, const imgtype type);
 /* img img_clone(const img I); */
 
 void img_delete(img I);
+
+void img_simple_blt(img dest, const int dx, const int dy, img src, const int sx, const int sy, const int w, const int h);
 
 #endif /* __IMG_H_ */

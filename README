@@ -1,5 +1,5 @@
 README for driftnet
-$Id: README,v 1.1 2001/07/16 00:09:41 chris Exp $
+$Id: README,v 1.2 2001/07/20 12:03:20 chris Exp $
 
 Driftnet watches network traffic, and picks out and displays JPEG and GIF
 images for display. It is a horrific invasion of privacy and shouldn't be
@@ -8,6 +8,9 @@ used by anyone anywhere.
 To compile, type `make' and fix the errors which get displayed. Driftnet is
 at a very early stage of development and probably won't work for you at all.
 To make it work, you'll need a directory called /tmp/imgdump.
+
+If you find this program entertaining, you might want to help me develop it.
+The TODO file contains a list of yet-to-be-done ideas.
 
 Driftnet is licensed under the GNU GPL. See the file COPYING in the
 distribution.

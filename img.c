@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: img.c,v 1.1 2001/07/15 11:07:33 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.2 2001/07/20 12:02:30 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -176,14 +176,6 @@ int img_save(const img I, FILE *fp, const imgtype type) {
     return 0;
 }
 
-/* img_clip:
- * Clip coordinates against an image.
- */
-INLINE void img_clip(const img I, int *x, int *y) {
-    *x += img_clip_adj_x(I, *x);
-    *y += img_clip_adj_y(I, *y);
-}
-
 /* img_clip_adj_x:
  * img_clip_adj_y:
  * Return an adjustment to the passed coordinate which will put it in the
@@ -199,6 +191,14 @@ INLINE int img_clip_adj_y(const img I, const int y) {
     if (y < 0) return -y;
     if (y >= I->height) return I->height - y;
     return 0;
+}
+
+/* img_clip:
+ * Clip coordinates against an image.
+ */
+INLINE void img_clip(const img I, int *x, int *y) {
+    *x += img_clip_adj_x(I, *x);
+    *y += img_clip_adj_y(I, *y);
 }
 
 /* img_simple_blt:
