@@ -7,9 +7,8 @@
  *
  */
 
-static const char rcsid[] = "$Id: mpeghdr.c,v 1.3 2002/06/01 12:58:22 chris Exp $";
+static const char rcsid[] = "$Id: mpeghdr.c,v 1.4 2002/06/10 21:25:48 chris Exp $";
 
-#include <stdbool.h>
 #include <stdio.h>
 
 #include "mpeghdr.h"

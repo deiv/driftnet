@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.6 2002/06/03 22:10:02 chris Exp $
+ * $Id: driftnet.h,v 1.7 2002/06/10 21:25:48 chris Exp $
  *
  */
 
@@ -14,6 +14,7 @@
 
 #define PROGNAME    "driftnet"
 
+#include <sys/types.h> /* added 20020604 edobbs for OpenBSD */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

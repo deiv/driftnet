@@ -1,5 +1,5 @@
 README for driftnet
-$Id: README,v 1.6 2002/05/29 11:52:23 chris Exp $
+$Id: README,v 1.7 2002/06/10 21:25:48 chris Exp $
 
 Driftnet watches network traffic, and picks out and displays JPEG and GIF
 images for display. It is an horrific invasion of privacy and shouldn't be used

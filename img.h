@@ -5,15 +5,15 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: img.h,v 1.5 2002/06/01 15:26:09 chris Exp $
+ * $Id: img.h,v 1.6 2002/06/10 21:25:48 chris Exp $
  *
  */
 
 #ifndef __IMG_H_ /* include guard */
 #define __IMG_H_
 
-#ifdef USE_SYS_INT_TYPES_H
-#   include <sys/int_types.h>   /* Solaris etc. */
+#ifdef USE_SYS_TYPES_H
+#   include <sys/types.h>   /* Solaris etc. */
 #else
 #   include <stdint.h>          /* C99 standard */
 #endif

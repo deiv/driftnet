@@ -5,7 +5,7 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.29 2002/06/05 11:34:49 chris Exp $
+# $Id: Makefile,v 1.30 2002/06/10 21:25:48 chris Exp $
 #
 
 
@@ -43,13 +43,16 @@ LDLIBS  += -ljpeg -lungif `gtk-config --libs`
 
 # On systems with a C99 compiler, driftnet will use <stdint.h> for the
 # definitions of types such as uint8_t. On other systems like Solaris, these
-# are in <sys/inttypes.h>, and you should uncomment this line.
-#CFLAGS += -DUSE_SYS_INT_TYPES_H
+# are in <sys/types.h>, and you should uncomment this line.
+#CFLAGS += -DUSE_SYS_TYPES_H
 
 # On Solaris, it is necessary to link against -lposix4 for the definition of
 # nanosleep; uncomment the below.
 #LDLIBS  += -lposix4
 
+# added 20020604 edobbs
+# On BSD systems, may need to use /usr/local/include
+#CFLAGS += -I/usr/local/include
 
 #
 # No user-serviceable parts below this point.

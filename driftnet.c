@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.22 2002/06/04 19:09:02 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.23 2002/06/10 21:25:48 chris Exp $";
 
 #undef NDEBUG
 
@@ -16,6 +16,7 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.22 2002/06/04 19:09:02 chris Ex
 #include <errno.h>
 #include <pcap.h>
 
+#include <netinet/in.h> /* needs to be before <arpa/inet.h> on OpenBSD */
 #include <arpa/inet.h>
 #include <limits.h>
 
@@ -645,6 +646,7 @@ int main(int argc, char *argv[]) {
 #endif /* !NO_DISPLAY_WINDOW */
  
     /* Start up pcap. */
+
     pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf);
     if (!pc) {
         fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);

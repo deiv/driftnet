@@ -9,7 +9,7 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.11 2002/06/01 12:58:22 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.12 2002/06/10 21:25:48 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>

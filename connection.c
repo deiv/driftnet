@@ -6,7 +6,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: connection.c,v 1.1 2002/06/03 22:10:45 chris Exp $";
+static const char rcsid[] = "$Id: connection.c,v 1.2 2002/06/10 21:25:48 chris Exp $";
 
 #include <assert.h>
 #include <stdio.h>

@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: media.c,v 1.1 2002/06/03 22:10:45 chris Exp $";
+static const char rcsid[] = "$Id: media.c,v 1.2 2002/06/10 21:25:48 chris Exp $";
 
 #include <assert.h>
 #include <dirent.h>
@@ -16,6 +16,8 @@ static const char rcsid[] = "$Id: media.c,v 1.1 2002/06/03 22:10:45 chris Exp $"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <limits.h> /* added 20020603 edobbs for PATH_MAX on Solaris */
 
 #include "driftnet.h"
 
