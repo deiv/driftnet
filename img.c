@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: img.c,v 1.4 2001/08/03 17:55:01 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.5 2001/08/08 19:49:15 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,11 +17,13 @@ static const char rcsid[] = "$Id: img.c,v 1.4 2001/08/03 17:55:01 chris Exp $";
 
 #define INLINE  inline
 
+#if 0
 /* pnm.c */
 int pnm_load_hdr(img I);
 int pnm_abort_load(img I);
 int pnm_load_img(img I);
 int pnm_save_img(const img I, FILE *fp);
+#endif
 
 /* gif.c */
 int gif_load_hdr(img I);
@@ -47,7 +49,7 @@ struct filedrv {
     int (*loadimg)(img);
     int (*saveimg)(const img, FILE*);
 } filedrvs[] = {
-        {pnm,       ".pnm\0.ppm\0.pgm\0.pbm\0", pnm_load_hdr,   pnm_abort_load,     pnm_load_img,   pnm_save_img},
+/*        {pnm,       ".pnm\0.ppm\0.pgm\0.pbm\0", pnm_load_hdr,   pnm_abort_load,     pnm_load_img,   pnm_save_img},*/
         {gif,       ".gif\0",                   gif_load_hdr,   gif_abort_load,     gif_load_img,   NULL},
         {jpeg,      ".jpg\0.jpeg\0",            jpeg_load_hdr,  jpeg_abort_load,    jpeg_load_img,  jpeg_save_img},
 /*        {png,       ".png\0",                   png_load_hdr,   png_abort_load,     png_load_img,   png_save_img},*/

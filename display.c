@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.5 2001/08/06 21:42:39 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.6 2001/08/08 19:49:15 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -15,11 +15,15 @@ static const char rcsid[] = "$Id: display.c,v 1.5 2001/08/06 21:42:39 chris Exp 
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <errno.h>
 
 #include "driftnet.h"
 #include "img.h"
 
+/* The border, in pixels, around images displayed in the window. */
 #define BORDER  6
+
+extern int verbose; /* in driftnet.c */
 
 static GtkWidget *window, *darea;
 
@@ -27,17 +31,29 @@ static int width, height, wrx, wry, rowheight;
 static img backing_image;
 
 gint delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    fprintf(stderr, PROGNAME ": display child shutting down\n");
+    if (verbose)
+        fprintf(stderr, PROGNAME ": display child shutting down\n");
     return FALSE;   /* do destroy window */
 }
 
 void make_backing_image() {
     img I;
-    printf("%d, %d\n", width, height);
     I = img_new_blank(width, height);
     img_alloc(I);
     if (backing_image) {
-        /* XXX copy old contents of backing image over. */
+        int w2, h2;
+
+        /* Copy old contents of backing image to ll corner of new one. */
+        w2 = backing_image->width;
+        if (w2 > width) w2 = width;
+        h2 = backing_image->height;
+        if (h2 > height) h2 = height;
+
+        img_simple_blt(I, 0, height - h2, backing_image, 0, backing_image->height - h2, w2, h2);
+
+        /* Adjust placement of new images. */
+        if (wrx >= w2) wrx = w2;
+        
         img_delete(backing_image);
     }
     backing_image = I;
@@ -88,8 +104,10 @@ extern int dpychld_fd;  /* in driftnet.c */
 
 gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     struct pipemsg m = {0};
-    while (read(dpychld_fd, &m, sizeof(m)) == sizeof(m)) {
-        printf(PROGNAME": received image %s of size %d\n", m.filename, m.len);
+    ssize_t rr;
+    while ((rr = read(dpychld_fd, &m, sizeof(m))) == sizeof(m)) {
+        if (verbose)
+            fprintf(stderr, PROGNAME": received image %s of size %d\n", m.filename, m.len);
         /* checks to see whether this looks like an image we're interested in. */
         if (m.len > 256) {
             /* small images are probably bollocks. */
@@ -124,13 +142,19 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
 
                         wrx += w + BORDER;
                     } else fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", m.filename, i->err);
-                } else fprintf(stderr, PROGNAME": %s: image dimensions (%d x %d) too small to bother with\n", m.filename, i->width, i->height);
+                } else if (verbose) fprintf(stderr, PROGNAME": %s: image dimensions (%d x %d) too small to bother with\n", m.filename, i->width, i->height);
             }
 
             img_delete(i);
-        } else fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)m.len);
+        } else if (verbose) fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)m.len);
 
         unlink(m.filename);
+    }
+    if (rr == -1 && errno != EINTR && errno != EAGAIN) {
+        perror(PROGNAME": read");
+        gtk_main_quit();
+    } else if (rr == 0) {
+        gtk_main_quit();
     }
     return TRUE;
 }
@@ -151,7 +175,7 @@ int dodisplay(int argc, char *argv[]) {
     gtk_widget_set_default_visual(gdk_rgb_get_visual());
 
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_usize(window, 500, 500);
+    gtk_widget_set_usize(window, 0, 0);
 
     darea = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(window), darea);

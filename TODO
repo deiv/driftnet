@@ -1,25 +1,18 @@
 TODO for driftnet
-$Id: TODO,v 1.2 2001/07/20 12:02:30 chris Exp $
-
-* Link-level header length -- shouldn't assume it's 14. Often it isn't.
+$Id: TODO,v 1.3 2001/08/08 19:49:15 chris Exp $
 
 * PNG files.
 
 * More intelligent layout algorithm for images.
 
-* Portability / bug fixes.
-
 * Memory leaks? Buffer overruns?
-
-* User-specified BPF filters.
-
-* Control verbosity.
 
 * Option to save images by clicking on them.
 
 * Parse JPEG files properly -- the lame memstr(..., "\xff\xd9") thing is
   broken and should be done right. At the moment, some JPEG files get
-  truncated in a really bad way.
+  truncated in a really bad way. An alternative is to store more state for
+  JPEG files, and do special parsing when we know a connection has closed.
 
 * Fix issues to do with the display child outliving the capture process, or
   vice-versa.
@@ -27,4 +20,8 @@ $Id: TODO,v 1.2 2001/07/20 12:02:30 chris Exp $
 * Drop privileges after starting up pcap.
 
 * Turn it into an X screensaver (insane idea, but hey...).
+
+* More portability / bug fixes.
+
+* Web-based version. Server push? Feedback problems.
 
