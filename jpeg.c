@@ -9,13 +9,14 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: jpeg.c,v 1.5 2002/07/08 20:57:17 chris Exp $";
+static const char rcsid[] = "$Id: jpeg.c,v 1.6 2003/08/12 14:09:57 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
 #include <jpeglib.h>
 
+#include "driftnet.h"
 #include "img.h"
 
 /* struct my_error_mgr:
@@ -38,9 +39,9 @@ static void my_error_exit(j_common_ptr cinfo) {
 int jpeg_load_hdr(img I) {
     struct jpeg_decompress_struct *cinfo;
     struct my_error_mgr *jerr;
-    cinfo = (struct jpeg_decompress_struct*)calloc(sizeof(struct jpeg_decompress_struct), 1);
+    alloc_struct(jpeg_decompress_struct, cinfo);
     I->us = cinfo;
-    jerr = (struct my_error_mgr*)calloc(sizeof(struct my_error_mgr), 1);
+    alloc_struct(my_error_mgr, jerr);
     cinfo->err = jpeg_std_error(&jerr->pub);
     jerr->pub.error_exit = my_error_exit;
     if (setjmp(jerr->jb)) {
