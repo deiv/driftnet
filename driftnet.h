@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.10 2003/08/25 12:23:43 chris Exp $
+ * $Id: driftnet.h,v 1.11 2003/08/25 12:34:21 chris Exp $
  *
  */
 
@@ -29,7 +29,7 @@
 
 /* enum mediatype:
  * Characterise types of media which we can extract. */
-enum mediatype { m_image = 1, m_audio = 2, m_text = 3 };
+enum mediatype { m_image = 1, m_audio = 2, m_text = 4 };
 
 #define NMEDIATYPES     5       /* keep up to date with media.c */
 

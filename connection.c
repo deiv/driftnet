@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: connection.c,v 1.5 2003/08/25 12:23:43 chris Exp $";
+static const char rcsid[] = "$Id: connection.c,v 1.6 2003/08/25 12:34:21 chris Exp $";
 
 #include <sys/types.h>
 
@@ -102,13 +102,5 @@ void connection_push(connection c, const unsigned char *data, unsigned int off, 
             }
         }
     } while (a);
-/*
-        {
-            printf("%p: ", c);
-            for (b = c->blocks; b; b = b->next)
-                printf("[%d (%d) -> %d] ", b->off, b->len, b->off + b->len);
-            printf("\n");
-        }
-*/
 }
 
