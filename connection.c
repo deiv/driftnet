@@ -6,11 +6,13 @@
  *
  */
 
-static const char rcsid[] = "$Id: connection.c,v 1.2 2002/06/10 21:25:48 chris Exp $";
+static const char rcsid[] = "$Id: connection.c,v 1.3 2002/07/08 23:32:33 chris Exp $";
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 #include "driftnet.h"
 
