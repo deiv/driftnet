@@ -5,24 +5,24 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.7 2001/08/08 19:49:15 chris Exp $
+# $Id: Makefile,v 1.8 2001/08/11 13:45:42 chris Exp $
 #
 
 VERSION = 0.1.3pre3
 
 #CC = gcc
 
-# You may need to edit the -I/usr/include/pcap and add a -L... option to
-# LDFLAGS below take account of the location of libpcap and its header files
-# on your system.
 CFLAGS  += -g -Wall `gtk-config --cflags` -DDRIFTNET_VERSION='"$(VERSION)"'
 LDFLAGS += -g
-LDLIBS  += -lpcap -ljpeg -lungif -lpnm -lppm -lpgm -lpbm `gtk-config --libs`
+LDLIBS  += -lpcap -ljpeg -lungif `gtk-config --libs`
+
+# This may or may not be necessary on your system.
+CFLAGS  += -I/usr/include/pcap
 
 SUBDIRS = 
 
 TXTS = README TODO COPYING CHANGES
-SRCS = gif.c img.c jpeg.c png.c raw.c driftnet.c image.c display.c
+SRCS = gif.c img.c jpeg.c png.c driftnet.c image.c display.c
 HDRS = img.h driftnet.h
 BINS = driftnet
 

@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: img.c,v 1.5 2001/08/08 19:49:15 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.6 2001/08/11 13:45:42 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,9 +36,12 @@ int jpeg_abort_load(img I);
 int jpeg_load_img(img I);
 int jpeg_save_img(const img I, FILE *fp);
 
+#if 0
 /* raw.c */
 int raw_load_img(img I);
 int raw_save_img(img I, FILE *fp);
+*/
+#endif
 
 /* Image file formats known about, and the routines used to load/save them. */
 struct filedrv {
@@ -49,11 +52,15 @@ struct filedrv {
     int (*loadimg)(img);
     int (*saveimg)(const img, FILE*);
 } filedrvs[] = {
-/*        {pnm,       ".pnm\0.ppm\0.pgm\0.pbm\0", pnm_load_hdr,   pnm_abort_load,     pnm_load_img,   pnm_save_img},*/
+/*
+        {pnm,       ".pnm\0.ppm\0.pgm\0.pbm\0", pnm_load_hdr,   pnm_abort_load,     pnm_load_img,   pnm_save_img},
+*/
         {gif,       ".gif\0",                   gif_load_hdr,   gif_abort_load,     gif_load_img,   NULL},
         {jpeg,      ".jpg\0.jpeg\0",            jpeg_load_hdr,  jpeg_abort_load,    jpeg_load_img,  jpeg_save_img},
-/*        {png,       ".png\0",                   png_load_hdr,   png_abort_load,     png_load_img,   png_save_img},*/
+/*
+        {png,       ".png\0",                   png_load_hdr,   png_abort_load,     png_load_img,   png_save_img},
         {raw,       "",                         NULL,           raw_load_img,       NULL,           raw_save_img},
+*/
     };
 
 #define NUMFILEDRVS (sizeof(filedrvs) / sizeof(struct filedrv))
