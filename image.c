@@ -7,12 +7,13 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.8 2002/06/10 21:25:48 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.9 2002/07/02 21:41:19 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#if 0
 static char *memstr(const char *haystack, size_t h_len, const char *needle, size_t n_len) {
     const char *p;
 
@@ -29,14 +30,39 @@ static char *memstr(const char *haystack, size_t h_len, const char *needle, size
 
     return NULL;
 }
+#endif
+
+/* memstr:
+ * Locate needle, of length n_len, in haystack, of length h_len, returning NULL.
+ * Uses the Boyer-Moore search algorithm. Cf.
+ *  http://www-igm.univ-mlv.fr/~lecroq/string/node14.html */
+static unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
+                             const unsigned char *needle, const size_t nlen) {
+    int skip[256], k;
+
+    if (nlen == 0) return (char*)haystack;
+
+    /* Set up the finite state machine we use. */
+    for (k = 0; k < 255; ++k) skip[k] = nlen;
+    for (k = 0; k < nlen - 1; ++k) skip[needle[k]] = nlen - k - 1;
+
+    /* Do the search. */
+    for (k = nlen - 1; k < hlen; k += skip[haystack[k]]) {
+        int i, j;
+        for (j = nlen - 1, i = k; j >= 0 && haystack[i] == needle[j]; j--) i--;
+        if (j == -1) return (unsigned char*)(haystack + i + 1);
+    }
+
+    return NULL;
+}
+
 
 /* If we run out of space, put us back to the last candidate GIF header. */
 /*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/
 #define spaceleft       if (block > data + len) return gifhdr
 
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen) {
-    unsigned char *gifhdr;
-    unsigned char *block;
+    unsigned char *gifhdr, *block;
     int gotimgblock = 0;
     int ncolours;
 
