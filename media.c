@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: media.c,v 1.7 2002/10/29 12:29:26 chris Exp $";
+static const char rcsid[] = "$Id: media.c,v 1.8 2002/12/23 08:23:58 chris Exp $";
 
 #include <assert.h>
 #include <dirent.h>
@@ -68,7 +68,9 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
     sprintf(name, "driftnet-%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
     sprintf(buf, "%s/%s", tmpdir, name);
     fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, 0644);
-    if (fd == -1) return;
+    free(buf);
+    if (fd == -1)
+        return;
     write(fd, data, len);
     close(fd);
 
@@ -78,8 +80,6 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
     else
         write(dpychld_fd, name, sizeof name);
 #endif /* !NO_DISPLAY_WINDOW */
-
-    free(buf);
 }
 
 /* dispatch_mpeg_audio:
