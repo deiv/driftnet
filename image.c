@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.3 2001/09/11 08:42:53 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.4 2002/05/26 23:45:03 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,10 +22,10 @@ static char *memstr(const char *haystack, size_t h_len, const char *needle, size
 
     p = (const char*) memchr(haystack, *needle, h_len - n_len + 1);
     while (p) {
-    if (!memcmp(p, needle, n_len))
-        return (char*)p;
-    else
-        p = (const char*)memchr(p + 1, *needle, (h_len - (p - haystack)) - n_len);
+        if (!memcmp(p, needle, n_len))
+            return (char*)p;
+        else
+            p = (const char*)memchr(p + 1, *needle, h_len - n_len - (p - haystack));
     }
 
     return NULL;
@@ -181,7 +181,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     jpeghdr = memstr(data, len, "\xff\xd8", 2); /* JPEG SOI marker */
     if (!jpeghdr) return (unsigned char*)(data + len - 1);
 
-     /* printf("SOI marker at %p\n", jpeghdr); */
+    /* printf("SOI marker at %p\n", jpeghdr); */
     
     if (jpeghdr + 2 > data + len) return jpeghdr;
     block = jpeg_next_marker(jpeghdr + 2, len - 2 - (jpeghdr - data));

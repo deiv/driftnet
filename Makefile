@@ -5,7 +5,7 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.13 2002/02/15 12:35:11 chris Exp $
+# $Id: Makefile,v 1.14 2002/05/26 23:45:03 chris Exp $
 #
 
 VERSION = 0.1.5
@@ -209,13 +209,14 @@ display.o: /usr/include/gtk/gtkvseparator.h /usr/include/stdio.h
 display.o: /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/stddef.h
 display.o: /usr/include/bits/types.h /usr/include/libio.h
 display.o: /usr/include/_G_config.h /usr/include/bits/stdio_lim.h
-display.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
-display.o: /usr/include/bits/confname.h /usr/include/getopt.h
-display.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
-display.o: /usr/include/sys/types.h /usr/include/time.h /usr/include/endian.h
-display.o: /usr/include/bits/endian.h /usr/include/sys/select.h
-display.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
-display.o: /usr/include/sys/sysmacros.h /usr/include/string.h
+display.o: /usr/include/stdlib.h /usr/include/sys/types.h /usr/include/time.h
+display.o: /usr/include/endian.h /usr/include/bits/endian.h
+display.o: /usr/include/sys/select.h /usr/include/bits/select.h
+display.o: /usr/include/bits/sigset.h /usr/include/sys/sysmacros.h
+display.o: /usr/include/alloca.h /usr/include/unistd.h
+display.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
+display.o: /usr/include/getopt.h /usr/include/fcntl.h
+display.o: /usr/include/bits/fcntl.h /usr/include/string.h
 display.o: /usr/include/errno.h /usr/include/bits/errno.h
 display.o: /usr/include/linux/errno.h /usr/include/asm/errno.h driftnet.h
 display.o: /usr/include/sys/socket.h /usr/include/bits/socket.h

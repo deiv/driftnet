@@ -1,5 +1,5 @@
 TODO for driftnet
-$Id: TODO,v 1.3 2001/08/08 19:49:15 chris Exp $
+$Id: TODO,v 1.4 2002/05/26 23:45:03 chris Exp $
 
 * PNG files.
 
@@ -24,4 +24,6 @@ $Id: TODO,v 1.3 2001/08/08 19:49:15 chris Exp $
 * More portability / bug fixes.
 
 * Web-based version. Server push? Feedback problems.
+
+* `Bogus image' problem after running for a while?
 

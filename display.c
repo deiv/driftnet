@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.7 2002/02/15 12:35:11 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.8 2002/05/26 23:45:03 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -18,6 +18,8 @@ static const char rcsid[] = "$Id: display.c,v 1.7 2002/02/15 12:35:11 chris Exp 
 #include <string.h>
 #include <errno.h>
 
+#include <sys/stat.h>
+
 #include "driftnet.h"
 #include "img.h"
 
@@ -27,6 +29,8 @@ static const char rcsid[] = "$Id: display.c,v 1.7 2002/02/15 12:35:11 chris Exp 
 extern int verbose; /* in driftnet.c */
 
 static GtkWidget *window, *darea;
+
+GdkColor white, black;
 
 static int width, height, wrx, wry, rowheight;
 static img backing_image;
@@ -45,10 +49,15 @@ gint delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     return FALSE;   /* do destroy window */
 }
 
+/* make_backing_image:
+ * Create the img structure which represents our back-buffer. */
 void make_backing_image() {
     img I;
     I = img_new_blank(width, height);
     img_alloc(I);
+/*    wry += height - backing_image->height;
+    if (wry < BORDER || wry > height - BORDER)
+        wry = height - BORDER;*/
     if (backing_image) {
         int w2, h2;
         struct imgrect *ir;
@@ -62,9 +71,18 @@ void make_backing_image() {
         img_simple_blt(I, 0, height - h2, backing_image, 0, backing_image->height - h2, w2, h2);
 
         /* Move all of the image rectangles. */
-        for (ir = imgrects; ir < imgrects + nimgrects; ++ir)
-            if (ir->filename)
-                ir->y += backing_image->height - height;
+        for (ir = imgrects; ir < imgrects + nimgrects; ++ir) {
+            if (ir->filename) {
+                ir->y += height - backing_image->height;
+
+                /* Possible it has scrolled off the window. */
+                if (ir->x > width || ir->y + ir->h < 0) {
+                    unlink(ir->filename);
+                    free(ir->filename);
+                    memset(ir, 0, sizeof *ir);
+                }
+            }
+        }
 
         /* Adjust placement of new images. */
         if (wrx >= w2) wrx = w2;
@@ -77,6 +95,8 @@ void make_backing_image() {
     rowheight = 2 * BORDER;
 }
 
+/* update_window:
+ * Copy the backing image onto the window. */
 void update_window() {
     if (backing_image) {
         GdkGC *gc = gdk_gc_new(darea->window);
@@ -85,6 +105,8 @@ void update_window() {
     }
 }
 
+/* scroll_backing_image:
+ * Scroll the image up a bit, to make room for a new image. */
 void scroll_backing_image(const int dy) {
     pel **row1, **row2;
     struct imgrect *ir;
@@ -110,6 +132,9 @@ void scroll_backing_image(const int dy) {
     }
 }
 
+/* add_image_rectangle:
+ * Add a rectangle representing the location of an image to the list, so that
+ * we can do hit-tests against it. */
 void add_image_rectangle(const char *filename, const int x, const int y, const int w, const int h) {
     struct imgrect *ir;
     for (ir = imgrects; ir < imgrects + nimgrects; ++ir) {
@@ -129,6 +154,9 @@ void add_image_rectangle(const char *filename, const int x, const int y, const i
     ir->h = h;
 }
 
+/* find_image_rectangle:
+ * Find the image, if any, which contains a given point. Used for saving images
+ * when they are clicked on. */
 struct imgrect *find_image_rectangle(const int x, const int y) {
     struct imgrect *ir;
     for (ir = imgrects; ir < imgrects + nimgrects; ++ir)
@@ -137,6 +165,8 @@ struct imgrect *find_image_rectangle(const int x, const int y) {
     return NULL;
 }
 
+/* expose_event:
+ * React to an expose event, perhaps changing the backing image size. */
 void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     gdk_window_get_size(darea->window, &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
@@ -145,6 +175,8 @@ void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     update_window();
 }
 
+/* configure_event:
+ * React to a configure event, perhaps changing the backing image size. */
 void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     gdk_window_get_size(darea->window, &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
@@ -153,19 +185,26 @@ void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     update_window();
 }
 
+/* char *savedimgpfx:
+ * The filename prefix with which we save images. */
 char *savedimgpfx = "driftnet-";
 
+/* save_image:
+ * Save an image which the user has selected. */
 void save_image(struct imgrect *ir) {
     static char *name;
     static int num;
     int fd1, fd2;
     char buf[8192];
     ssize_t l;
+    struct stat st;
 
     if (!name)
         name = calloc(strlen(savedimgpfx) + 16, 1);
 
-    sprintf(name, "%s%d%s", savedimgpfx, num++, strrchr(ir->filename, '.'));
+    do
+        sprintf(name, "%s%d%s", savedimgpfx, num++, strrchr(ir->filename, '.'));
+    while (stat(name, &st) == 0);
     fprintf(stderr, PROGNAME": saving `%s' as `%s'\n", ir->filename, name);
 
     fd1 = open(ir->filename, O_RDONLY);
@@ -210,8 +249,16 @@ void button_press_event(GtkWidget *widget, GdkEventButton *event) {
 void button_release_event(GtkWidget *widget, GdkEventButton *event) {
     struct imgrect *ir;
     ir = find_image_rectangle(click.x, click.y);
-    if (ir && ir == find_image_rectangle((int)event->x, (int)event->y))
+    if (ir && ir == find_image_rectangle((int)event->x, (int)event->y)) {
+        /* We draw a little frame around the image while we're saving it, to
+         * give some visual feedback. */
+        struct timespec jiffy = { 0, 100000000 };
+        gdk_draw_rectangle(darea->window, darea->style->white_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+        gdk_flush();    /* force X to actually draw the damn thing. */
         save_image(ir);
+        nanosleep(&jiffy, NULL);
+        gdk_draw_rectangle(darea->window, darea->style->black_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+    }
 }
 
 void destroy(GtkWidget *widget, gpointer data) {
@@ -220,6 +267,9 @@ void destroy(GtkWidget *widget, gpointer data) {
 
 extern int dpychld_fd;  /* in driftnet.c */
 
+/* pipe_event:
+ * React to events on the connecting pipe by loading images from the temporary
+ * directory and displaying them on the window. */
 gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     struct pipemsg m = {0};
     ssize_t rr;
@@ -276,6 +326,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
         perror(PROGNAME": read");
         gtk_main_quit();
     } else if (rr == 0) {
+        fprintf(stderr, PROGNAME": display child read on closed pipe\n");
         gtk_main_quit();
     }
     return TRUE;
@@ -283,6 +334,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
 
 int dodisplay(int argc, char *argv[]) {
     GIOChannel *chan;
+    struct imgrect *ir;
 
     /* have our main loop poll the pipe file descriptor */
     chan = g_io_channel_unix_new(dpychld_fd);
@@ -319,6 +371,11 @@ int dodisplay(int argc, char *argv[]) {
     gtk_widget_show_all(window);
     
     gtk_main();
-                         
+
+    /* Get rid of all remaining images. */
+    for (ir = imgrects; ir < imgrects + nimgrects; ++ir)
+        if (ir->filename)
+            unlink(ir->filename);
+
     return 0;
 }

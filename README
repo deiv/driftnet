@@ -1,5 +1,5 @@
 README for driftnet
-$Id: README,v 1.3 2002/02/15 11:12:25 chris Exp $
+$Id: README,v 1.4 2002/05/26 23:45:03 chris Exp $
 
 Driftnet watches network traffic, and picks out and displays JPEG and GIF
 images for display. It is a horrific invasion of privacy and shouldn't be used
@@ -9,6 +9,9 @@ To compile, type `make' and fix the errors which get displayed. Driftnet is at
 a very early stage of development and probably won't work for you at all. To
 make it work, you'll need a directory called /tmp/imgdump.
 
+You will need libpcap, libjpeg and libungif. On most Linux distributions these
+are available as packages.
+
 Driftnet needs to run with sufficient privilege to obtain raw packets from the
 network. On most systems, this means running it as root.
 
@@ -17,3 +20,4 @@ The TODO file contains a list of yet-to-be-done ideas.
 
 Driftnet is licensed under the GNU GPL. See the file COPYING in the
 distribution.
+

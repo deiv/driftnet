@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: jpeg.c,v 1.1 2001/07/15 11:07:33 chris Exp $";
+static const char rcsid[] = "$Id: jpeg.c,v 1.2 2002/05/26 23:45:03 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,16 +17,14 @@ static const char rcsid[] = "$Id: jpeg.c,v 1.1 2001/07/15 11:07:33 chris Exp $";
 #include "img.h"
 
 /* struct my_error_mgr:
- * Error handling struct for JPEG library interaction.
- */
+ * Error handling struct for JPEG library interaction. */
 struct my_error_mgr {
     struct jpeg_error_mgr pub;
     jmp_buf jb;
 };
 
 /* my_error_exit:
- * Error handler method for JPEG library.
- */
+ * Error handler method for JPEG library. */
 static void my_error_exit(j_common_ptr cinfo) {
     struct my_error_mgr *e = (struct my_error_mgr*)cinfo->err;
     (*cinfo->err->output_message)(cinfo);
@@ -34,8 +32,7 @@ static void my_error_exit(j_common_ptr cinfo) {
 }
 
 /* jpeg_load_hdr:
- * Load the header of a JPEG file.
- */
+ * Load the header of a JPEG file. */
 int jpeg_load_hdr(img I) {
     struct jpeg_decompress_struct *cinfo;
     struct my_error_mgr *jerr;
@@ -66,8 +63,7 @@ int jpeg_load_hdr(img I) {
 }
 
 /* jpeg_abort_load:
- * Abort loading a JPEG after the header is done.
- */
+ * Abort loading a JPEG after the header is done. */
 int jpeg_abort_load(img I) {
     jpeg_finish_decompress((struct jpeg_decompress_struct*)I->us);
     jpeg_destroy_decompress((struct jpeg_decompress_struct*)I->us);
@@ -75,8 +71,7 @@ int jpeg_abort_load(img I) {
 }
 
 /* jpeg_load_img:
- * Read a JPEG file into an image.
- */
+ * Read a JPEG file into an image. */
 int jpeg_load_img(img I) {
     struct jpeg_decompress_struct *cinfo = I->us;
     struct my_error_mgr *jerr;
@@ -113,8 +108,7 @@ int jpeg_load_img(img I) {
 }
 
 /* jpeg_save_img:
- * Write an image out into a JPEG file.
- */
+ * Write an image out into a JPEG file. */
 int jpeg_save_img(const img I, FILE *fp) {
     struct jpeg_compress_struct cinfo;
     struct my_error_mgr jerr;

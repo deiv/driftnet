@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.12 2002/02/15 12:44:20 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.13 2002/05/26 23:45:03 chris Exp $";
 
 #undef NDEBUG
 
@@ -193,8 +193,7 @@ void dump_data(FILE *fp, const unsigned char *data, const unsigned int len) {
  * type. This is based on init_linktype in the libpcap distribution; I
  * don't know why libpcap doesn't expose the information directly. The
  * constants here are taken from 0.6.2, but I've added #ifdefs in the hope
- * that it will still compile with earlier versions.
- */
+ * that it will still compile with earlier versions. */
 int get_link_level_hdr_length(int type)
 {
     switch (type) {
@@ -350,13 +349,13 @@ int main(int argc, char *argv[]) {
     const unsigned char *pkt;
     int pfd[2];
     int pkt_offset;
-    char c;
+    int c;
     struct stat st;
     extern char *savedimgpfx;    /* in display.c */
 
     /* Handle command-line options. */
     opterr = 0;
-    while ((c = getopt(argc, argv, optstring)) != EOF) {
+    while ((c = getopt(argc, argv, optstring)) != -1) {
         switch(c) {
             case 'h':
                 usage(stdout);
