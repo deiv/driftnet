@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: img.c,v 1.2 2001/07/20 12:02:30 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.3 2001/08/03 17:07:10 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,8 +115,12 @@ int img_load(img I, const imgstate howmuch, const imgtype type) {
         if (filedrvs[i].type == type) {
             if (howmuch == header && filedrvs[i].loadhdr)
                 return filedrvs[i].loadhdr(I);
-            else if (filedrvs[i].loadimg)
+            else if (filedrvs[i].loadimg) {
+                /* May have to load header first. */
+                if (I->load != header && filedrvs[i].loadhdr && !filedrvs[i].loadhdr(I))
+                    return 0;
                 return filedrvs[i].loadimg(I);
+            }
         }
 
     I->err = IE_UNKNOWNTYPE;
