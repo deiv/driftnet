@@ -1,5 +1,5 @@
 /*
- *. driftnet.c:
+ * driftnet.c:
  * Pick out images from passing network traffic.
  *
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.29 2003/06/13 15:51:44 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.30 2003/08/12 14:01:58 chris Exp $";
 
 #undef NDEBUG
 
@@ -263,6 +263,9 @@ void usage(FILE *fp) {
 "  -b               Beep when a new image is captured.\n"
 "  -i interface     Select the interface on which to listen (default: all\n"
 "                   interfaces).\n"
+"  -f file          Instead of listening on an interface, read captured\n"
+"                   packets from a pcap dump file; file can be a named pipe\n"
+"                   for use with Kismet or similar.\n"
 "  -p               Do not put the listening interface into promiscuous mode.\n""  -a               Adjunct mode: do not display images on screen, but save\n"
 "                   them to a temporary directory and announce their names on\n"
 "                   standard output.\n"
@@ -463,7 +466,7 @@ void *packet_capture_thread(void *v) {
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:psSMvam:d:x:b";
+char optstring[] = "hi:psSMvam:d:x:bf:";
 
 int main(int argc, char *argv[]) {
     char *interface = NULL, *filterexpr;
@@ -477,6 +480,8 @@ int main(int argc, char *argv[]) {
     extern char *audio_mpeg_player; /* in playaudio.c */
     int newpfx = 0;
     int mpeg_player_specified = 0;
+    char *dumpfile = NULL;
+    
     pthread_t packetth;
     connection *C;
 
@@ -489,6 +494,10 @@ int main(int argc, char *argv[]) {
                 return 0;
 
             case 'i':
+                if (dumpfile) {
+                    fprintf(stderr, PROGNAME": can't specify -i and -f\n");
+                    return -1;
+                }
                 interface = optarg;
                 break;
 
@@ -535,6 +544,14 @@ int main(int argc, char *argv[]) {
             case 'd':
                 tmpdir = optarg;
                 tmpdir_specified = 1; /* so we don't delete it. */
+                break;
+
+            case 'f':
+                if (interface) {
+                    fprintf(stderr, PROGNAME": can't specify -i and -f\n");
+                    return -1;
+                }
+                dumpfile = optarg;
                 break;
 
 #ifndef NO_DISPLAY_WINDOW
@@ -622,16 +639,20 @@ int main(int argc, char *argv[]) {
 
     /* Build up filter. */
     if (optind < argc) {
-        char **a;
-        int l;
-        for (a = argv + optind, l = sizeof("tcp and ()"); *a; l += strlen(*a) + 1, ++a);
-        filterexpr = calloc(l, 1);
-        strcpy(filterexpr, "tcp and (");
-        for (a = argv + optind; *a; ++a) {
-            strcat(filterexpr, *a);
-            if (*(a + 1)) strcat(filterexpr, " ");
+        if (dumpfile)
+            fprintf(stderr, PROGNAME": filter code ignored with dump file\n");
+        else {
+            char **a;
+            int l;
+            for (a = argv + optind, l = sizeof("tcp and ()"); *a; l += strlen(*a) + 1, ++a);
+            filterexpr = calloc(l, 1);
+            strcpy(filterexpr, "tcp and (");
+            for (a = argv + optind; *a; ++a) {
+                strcat(filterexpr, *a);
+                if (*(a + 1)) strcat(filterexpr, " ");
+            }
+            strcat(filterexpr, ")");
         }
-        strcat(filterexpr, ")");
     } else filterexpr = "tcp";
 
     if (verbose)
@@ -678,27 +699,33 @@ int main(int argc, char *argv[]) {
 #endif /* !NO_DISPLAY_WINDOW */
  
     /* Start up pcap. */
+    if (dumpfile) {
+        if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
+            fprintf(stderr, PROGNAME": pcap_open_offline: %s\n", ebuf);
+            return -1;
+        }   
+    } else {
+        if (!(pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf))) {
+            fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
 
-    pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf);
-    if (!pc) {
-        fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
-
-        if (getuid() != 0)
-            fprintf(stderr, PROGNAME": perhaps you need to be root?\n");
-        else if (!interface)
-            fprintf(stderr, PROGNAME": perhaps try selecting an interface with the -i option?\n");
-            
-        return -1;
-    }
+            if (getuid() != 0)
+                fprintf(stderr, PROGNAME": perhaps you need to be root?\n");
+            else if (!interface)
+                fprintf(stderr, PROGNAME": perhaps try selecting an interface with the -i option?\n");
+                
+            return -1;
+        }
     
-    if (pcap_compile(pc, &filter, (char*)filterexpr, 1, 0) == -1) {
-        fprintf(stderr, PROGNAME": pcap_compile: %s\n", pcap_geterr(pc));
-        return -1;
-    }
-    
-    if (pcap_setfilter(pc, &filter) == -1) {
-        fprintf(stderr, PROGNAME": pcap_setfilter: %s\n", pcap_geterr(pc));
-        return -1;
+        /* Only apply a filter to live packets. Is this right? */
+        if (pcap_compile(pc, &filter, (char*)filterexpr, 1, 0) == -1) {
+            fprintf(stderr, PROGNAME": pcap_compile: %s\n", pcap_geterr(pc));
+            return -1;
+        }
+        
+        if (pcap_setfilter(pc, &filter) == -1) {
+            fprintf(stderr, PROGNAME": pcap_setfilter: %s\n", pcap_geterr(pc));
+            return -1;
+        }
     }
 
     /* Figure out the offset from the start of a returned packet to the data in
