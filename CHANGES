@@ -1,13 +1,20 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.17 2003/08/12 14:01:58 chris Exp $
+$Id: CHANGES,v 1.18 2003/10/16 11:56:37 chris Exp $
+
+
+Added support for reading packets from a pcap dump file (thanks to Rob Timko
+and Joshua Wright for this); and for extracting URLs from HTTP requests (not
+yet exposed in the user interface).
+
+Driftnet will now discard connections after 8Mb of data has been transferred.
+
+Fixed adjunct mode so that stdout is line-buffered, following a suggestion by
+Jonas Jensen.
 
 0.1.6
 
 Changed the algorithm used to search for image start blocks to Boyer-Moore, for
 a performance improvement. Fixed some build errors.
-
-Added support for reading packets from a pcap dump file (thanks to Rob Timko
-and Joshua Wright for this).
 
 0.1.5
 

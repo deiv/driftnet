@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.31 2003/08/25 12:23:43 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Exp $";
 
 #undef NDEBUG
 
@@ -142,6 +142,7 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 /* sweep_connections:
  * Free finished connection slots. */
 #define TIMEOUT 5
+#define MAXCONNECTIONDATA   (8 * 1024 * 1024)
 
 void sweep_connections(void) {
     time_t now;
@@ -152,8 +153,11 @@ void sweep_connections(void) {
             connection c = *C;
             /* We discard connections which have seen no activity for TIMEOUT
              * or for which a FIN has been seen and for which there are no
-             * gaps in the stream. */
-            if ((now - c->last) > TIMEOUT || (c->fin && (!c->blocks || !c->blocks->next))) {
+             * gaps in the stream, or where more than MAXCONNECTIONDATA have
+             * been captured. */
+            if ((now - c->last) > TIMEOUT
+                || (c->fin && (!c->blocks || !c->blocks->next))
+                || c->len > MAXCONNECTIONDATA) {
                 connection_extract_media(c, extract_type);
                 connection_delete(c);
                 *C = NULL;
@@ -607,6 +611,12 @@ int main(int argc, char *argv[]) {
 
     if (beep && adjunct)
         fprintf(stderr, PROGNAME": can't beep in adjunct mode\n");
+
+    /* In adjunct mode, it's important that the attached program gets
+     * notification of images in a timely manner. Make stdout line-buffered
+     * for this reason. */
+    if (adjunct)
+        setvbuf(stdout, NULL, _IOLBF, 0);
 
     /* If a directory name has not been specified, then we need to create one.
      * Otherwise, check that it's a directory into which we may write files. */
