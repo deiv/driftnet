@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: img.h,v 1.8 2003/08/25 12:23:43 chris Exp $
+ * $Id: img.h,v 1.9 2003/11/03 10:40:23 chris Exp $
  *
  */
 
@@ -21,6 +21,8 @@
 #endif
 
 #include <stdio.h>
+
+#include "endianness.h"
 
 typedef uint8_t chan;
 typedef uint32_t pel;
