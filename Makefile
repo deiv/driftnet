@@ -5,7 +5,7 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.39 2003/11/03 10:40:22 chris Exp $
+# $Id: Makefile,v 1.40 2004/04/08 23:06:28 chris Exp $
 #
 
 #
@@ -22,6 +22,9 @@ LDFLAGS += -g
 # You might need these if libpcap is installed somewhere random.
 CFLAGS += -I/usr/include/pcap
 #LDFLAGS += -L/path/to/libpcap.so
+# On Mac OS X with Fink etc., try these:
+#CFLAGS += -I/usr/include/pcap -I/sw/include -I/opt/local/include
+#LDFLAGS += -L/opt/local/lib/
 
 # Required on Linux to get BSDish definitions of the TCP/IP structs.
 CFLAGS += -D_BSD_SOURCE

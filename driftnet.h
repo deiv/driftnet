@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.12 2003/10/16 11:56:37 chris Exp $
+ * $Id: driftnet.h,v 1.13 2004/04/08 23:06:29 chris Exp $
  *
  */
 
@@ -21,6 +21,9 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <stdio.h>
+#ifndef USE_SYS_TYPES_H
+#   include <stdint.h>
+#endif
 
 /* alloc_struct S P
  * Make P point to a new struct S, initialised as if in static storage (like
