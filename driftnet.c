@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.25 2002/07/08 20:57:17 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.26 2002/10/29 12:29:15 chris Exp $";
 
 #undef NDEBUG
 
@@ -229,6 +229,11 @@ int get_link_level_hdr_length(int type)
             return 16;
 #endif
 
+#ifdef DLT_IEEE802_11           /* 802.11 wireless ethernet */
+        case DLT_IEEE802_11:
+            return 44;
+#endif
+            
         default:;
     }
     fprintf(stderr, PROGNAME": unknown data link type %d", type);
