@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.11 2002/07/15 08:06:19 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.12 2002/11/16 18:24:27 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +40,7 @@ static unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
 
 /* If we run out of space, put us back to the last candidate GIF header. */
 /*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/
-#define spaceleft       if (block > data + len) return gifhdr
+#define spaceleft       if (block >= data + len) return gifhdr /* > ?? */
 
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen) {
     unsigned char *gifhdr, *block;
@@ -59,6 +59,7 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
     ncolours = (1 << ((gifhdr[10] & 0x7) + 1));
     /* printf("gif header %d colours\n", ncolours); */
     block = gifhdr + 13;
+    spaceleft;
     if (gifhdr[10] & 0x80) block += 3 * ncolours; /* global colour table */
     spaceleft;
 
@@ -68,9 +69,12 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
             case 0x2c:
                 /* image block */
                 /* printf("image data\n"); */
-                if (block[9] & 0x80)
+                if (block + 9 > data + len) return gifhdr;
+                if (block[9] & 0x80) {
                     /* local colour table */
                     block += 3 * ((1 << ((gifhdr[9] & 0x7) + 1)));
+                    spaceleft;
+                }
                 block += 10;
                 ++block;        /* lzw code size */
                 do {
@@ -195,7 +199,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     if (!block || (block - data) >= len) return jpeghdr;
 
     /* now we need to find the onward count from this place */
-    while ((block = jpeg_skip_block(block + 1, len - (block - data)))) {
+    while ((block = jpeg_skip_block(block + 1, len - (block + 1 - data)))) {
         /* printf("data = %p block = %p\n", data, block); */
 
         block = jpeg_next_marker(block, len - (block - data));

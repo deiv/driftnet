@@ -6,7 +6,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: connection.c,v 1.3 2002/07/08 23:32:33 chris Exp $";
+static const char rcsid[] = "$Id: connection.c,v 1.4 2002/11/16 18:24:27 chris Exp $";
 
 #include <assert.h>
 #include <stdio.h>
@@ -34,6 +34,13 @@ connection connection_new(const struct in_addr *src, const struct in_addr *dst, 
 /* connection_delete:
  * Free the named connection structure. */
 void connection_delete(connection c) {
+    struct datablock *b;
+    for (b = c->blocks; b;) {
+        struct datablock *b2;
+        b2 = b->next;
+        free(b);
+        b = b2;
+    }
     free(c->data);
     free(c);
 }

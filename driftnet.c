@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.26 2002/10/29 12:29:15 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.27 2002/11/16 18:24:27 chris Exp $";
 
 #undef NDEBUG
 
@@ -299,9 +299,7 @@ void usage(FILE *fp) {
 }
 
 /* terminate_on_signal:
- * Terminate on receipt of an appropriate signal. This is really ugly, because
- * the pcap_next call in the main loop may block, so it's best to just exit
- * here. */
+ * Terminate on receipt of an appropriate signal. */
 sig_atomic_t foad;
 
 void terminate_on_signal(int s) {
@@ -478,6 +476,7 @@ int main(int argc, char *argv[]) {
     int newpfx = 0;
     int mpeg_player_specified = 0;
     pthread_t packetth;
+    connection *C;
 
     /* Handle command-line options. */
     opterr = 0;
@@ -729,8 +728,15 @@ int main(int argc, char *argv[]) {
     pthread_join(packetth, NULL);
     
     /* Clean up. */
+/*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
     pcap_close(pc);
     clean_temporary_directory();
+
+    /* Easier for memory-leak debugging if we deallocate all this here.... */
+    for (C = slots; C < slots + slotsalloc; ++C)
+        if (*C) connection_delete(*C);
+    free(slots);
+    free(tmpdir);
 
     return 0;
 }

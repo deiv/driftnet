@@ -9,7 +9,7 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: img.c,v 1.9 2002/07/08 20:57:17 chris Exp $";
+static const char rcsid[] = "$Id: img.c,v 1.10 2002/11/16 18:24:27 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,8 +91,7 @@ img img_new_blank(const unsigned int width, const unsigned int height) {
 
 /* img_alloc:
  * Allocate memory for an image object. The memory is allocated as a big
- * block, with pointers fixed up at the beginning.
- */
+ * block, with pointers fixed up at the beginning. */
 void img_alloc(img I) {
     pel **p, *q;
     I->data = (pel**)calloc(I->height * sizeof(pel*) + I->width * I->height * sizeof(pel), 1);
@@ -102,17 +101,16 @@ void img_alloc(img I) {
 }
 
 /* img_delete:
- * Free memory associated with an image object.
- */
+ * Free memory associated with an image object. */
 void img_delete(img I) {
     if (I->data) free(I->data);
+    if (I->fp) fclose(I->fp);
     free(I);
 }
 
 /* img_load:
  * Load an image, or part of it, from the associated stream. Returns 1 on
- * success or 0 on failure.
- */
+ * success or 0 on failure. */
 int img_load(img I, const imgstate howmuch, const imgtype type) {
     int i;
     if (type == unknown) {
@@ -145,16 +143,14 @@ int img_load(img I, const imgstate howmuch, const imgtype type) {
 }
 
 /* img_load_stream:
- * Associate an image with a stream and load something from it.
- */
+ * Associate an image with a stream and load something from it. */
 int img_load_stream(img I, FILE *fp, const imgstate howmuch, const imgtype type) {
     I->fp = fp;
     return img_load(I, howmuch, type);
 }
 
 /* img_load_file:
- * Load an image, or part of it, from a file.
- */
+ * Load an image, or part of it, from a file. */
 int img_load_file(img I, const char *name, const imgstate howmuch, const imgtype type) {
     if (howmuch == none) return 1;
     I->fp = fopen(name, "rb");
@@ -183,8 +179,7 @@ int img_load_file(img I, const char *name, const imgstate howmuch, const imgtype
 }
 
 /* img_save_file:
- * Save an image in a file of the specified type.
- */
+ * Save an image in a file of the specified type. */
 int img_save(const img I, FILE *fp, const imgtype type) {
     int i;
     if (type == unknown) {
@@ -201,8 +196,7 @@ int img_save(const img I, FILE *fp, const imgtype type) {
 /* img_clip_adj_x:
  * img_clip_adj_y:
  * Return an adjustment to the passed coordinate which will put it in the
- * clipping region for the image.
- */
+ * clipping region for the image. */
 INLINE int img_clip_adj_x(const img I, const int x) {
     if (x < 0) return -x;
     if (x >= I->width) return I->width - x;
@@ -216,16 +210,14 @@ INLINE int img_clip_adj_y(const img I, const int y) {
 }
 
 /* img_clip:
- * Clip coordinates against an image.
- */
+ * Clip coordinates against an image. */
 INLINE void img_clip(const img I, int *x, int *y) {
     *x += img_clip_adj_x(I, *x);
     *y += img_clip_adj_y(I, *y);
 }
 
 /* img_simple_blt:
- * Copy a rectangle, ignoring clipping and overlapping regions.
- */
+ * Copy a rectangle, ignoring clipping and overlapping regions. */
 INLINE void img_simple_blt(img dest, const int dx, const int dy, img src, const int sx, const int sy, const int w, const int h) {
     int y, y2;
     for (y = sy, y2 = dy; y < sy + h; ++y, ++y2)

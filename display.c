@@ -9,7 +9,7 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.15 2002/06/13 20:06:42 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.16 2002/11/16 18:24:27 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -303,8 +303,8 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     if (!path)
         path = malloc(strlen(tmpdir) + 34);
 
-    /* We are sent messages continaing the length of the filename, then the
-     * length of the file, then the filename. */
+    /* We are sent messages of size TMPNAMELEN containing a null-terminated
+     * file name. */
     while (nimgs < 4 && (rr = xread(dpychld_fd, name, sizeof name)) == sizeof name) {
         int saveimg = 0;
         struct stat st;
@@ -419,7 +419,11 @@ int dodisplay(int argc, char *argv[]) {
         if (ir->filename)
             unlink(ir->filename);
 
-    return 0;
+    img_delete(backing_image);
+    
+    gtk_exit(0);
+
+    return 0; /* NOTREACHED */
 }
 
 #endif /* !NO_DISPLAY_WINDOW */
