@@ -5,9 +5,11 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.24 2002/06/01 15:28:15 chris Exp $
+# $Id: Makefile,v 1.23 2002/06/01 15:26:16 chris Exp $
 #
 
+# Driftnet version. Do not alter.
+VERSION = 0.1.5pre3
 
 #
 # User-serviceable parts:
@@ -17,6 +19,7 @@
 #CC = gcc
 
 # Basic compiler, linker flags; should not need any changes.
+CFLAGS += -DDRIFTNET_VERSION='"$(VERSION)"'
 CFLAGS += -g -Wall
 LDFLAGS += -g
 
@@ -54,10 +57,6 @@ LDLIBS  += -ljpeg -lungif `gtk-config --libs`
 #
 # No user-serviceable parts below this point.
 #
-
-# Driftnet version.
-VERSION = 0.1.5pre3
-CFLAGS += -DDRIFTNET_VERSION='"$(VERSION)"'
 
 SUBDIRS = 
 
