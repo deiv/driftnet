@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.21 2002/06/03 22:10:02 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.22 2002/06/04 19:09:02 chris Exp $";
 
 #undef NDEBUG
 
@@ -33,6 +33,7 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.21 2002/06/03 22:10:02 chris Ex
 #include <signal.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "driftnet.h"
 
@@ -307,7 +308,7 @@ void setup_signals(void) {
     int terminate_signals[] = {SIGTERM, SIGINT, /*SIGSEGV,*/ SIGBUS, SIGCHLD, 0};
     struct sigaction sa;
 
-    sa.sa_flags = SA_RESTART;
+    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
     
     for (p = ignore_signals; *p; ++p) {
         memset(&sa, 0, sizeof(sa));
@@ -676,7 +677,6 @@ int main(int argc, char *argv[]) {
     slotsalloc = 64;
     slots = (connection*)calloc(slotsalloc, sizeof(connection));
 
-
     /* Actually start the capture stuff up. Unfortunately, on many platforms,
      * libpcap doesn't have read timeouts, so we start the thing up in a
      * separate thread. Yay! */
@@ -684,11 +684,27 @@ int main(int argc, char *argv[]) {
 
     while (!foad)
         sleep(1);
+
+    if (verbose) {
+        if (foad == SIGCHLD) {
+            pid_t pp;
+            int st;
+            while ((pp = waitpid(-1, &st, WNOHANG)) > 0) {
+                if (WIFEXITED(st))
+                    fprintf(stderr, PROGNAME": child process %d exited with status %d\n", (int)pp, WEXITSTATUS(st));
+                else if (WIFSIGNALED(st))
+                    fprintf(stderr, PROGNAME": child process %d killed by signal %d\n", (int)pp, WTERMSIG(st));
+                else
+                    fprintf(stderr, PROGNAME": child process %d died, not sure why\n", (int)pp);
+            }
+            
+        } else
+            fprintf(stderr, PROGNAME": caught signal %d\n", foad);
+    }
     
     pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */
     pthread_join(packetth, NULL);
     
-
     /* Clean up. */
     pcap_close(pc);
     clean_temporary_directory();

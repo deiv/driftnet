@@ -13,7 +13,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: playaudio.c,v 1.3 2002/06/01 12:58:22 chris Exp $";
+static const char rcsid[] = "$Id: playaudio.c,v 1.4 2002/06/04 19:09:02 chris Exp $";
 
 #include <sys/types.h>
 
@@ -166,7 +166,11 @@ static void *mpeg_play(void *a) {
  * Main loop of child process which keeps an MPEG player running. */
 static void mpeg_player_manager(void) {
     extern sig_atomic_t foad; /* in driftnet.c */
+    struct sigaction sa = {0};
     pid_t mpeg_pid;
+
+    sa.sa_handler = SIG_DFL;
+    sigaction(SIGCHLD, &sa, NULL);
     
     while (!foad) {
         time_t whenstarted;
