@@ -6,7 +6,7 @@
 .\" Copyright (c) 2002 Chris Lightfoot. All rights reserved.
 .\" Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 .\"
-.\" $Id: driftnet.1,v 1.1 2002/01/14 16:30:09 chris Exp $
+.\" $Id: driftnet.1,v 1.2 2002/02/15 12:35:11 chris Exp $
 .\"
 
 .SH NAME
@@ -21,6 +21,9 @@ driftnet - capture images from network traffic and display them in an X window.
 ] [
 .B -p
 ] [
+.B -x
+.I prefix
+] [
 .B -v
 ] [
 .I filter code
@@ -33,6 +36,8 @@ used by anyone anywhere. It has been described as `a graphical
 .BR tcpdump(8)',
 `\fIEtherPeg\fP for Unix', and called all sorts of nasty names by people on
 .IR Freshmeat .
+
+Images may be saved by clicking on them.
 
 .SH OPTIONS
 
@@ -56,6 +61,10 @@ Do not put the interface into promiscuous mode.
 Print additional details of packets captured to the terminal.
 
 .TP
+\fB-x\fP \fIprefix\fP
+The filename prefix to use when saving images, by default `driftnet-'.
+
+.TP
 .I filter code
 Additional filter code to restrict the packets captured, in the libpcap
 syntax. User filter code is evaluated as `tcp and (\fIfilter code\fP)'.
@@ -71,7 +80,7 @@ syntax. User filter code is evaluated as `tcp and (\fIfilter code\fP)'.
 Chris Lightfoot <chris@ex-parrot.com>
 
 .SH VERSION
-$Id: driftnet.1,v 1.1 2002/01/14 16:30:09 chris Exp $
+$Id: driftnet.1,v 1.2 2002/02/15 12:35:11 chris Exp $
 
 .SH COPYING
 This program is free software; you can redistribute it and/or modify

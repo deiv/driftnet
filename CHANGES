@@ -1,5 +1,10 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.5 2001/09/11 09:34:51 chris Exp $
+$Id: CHANGES,v 1.6 2002/02/15 12:35:11 chris Exp $
+
+0.1.5
+
+Allow user to save images by clicking on them. Driftnet now exits more
+cleanly on interrupt.
 
 0.1.4
 

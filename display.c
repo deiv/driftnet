@@ -7,11 +7,12 @@
  *
  */
 
-static const char rcsid[] = "$Id: display.c,v 1.6 2001/08/08 19:49:15 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.7 2002/02/15 12:35:11 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
@@ -30,6 +31,14 @@ static GtkWidget *window, *darea;
 static int width, height, wrx, wry, rowheight;
 static img backing_image;
 
+struct imgrect {
+    char *filename;
+    int x, y, w, h;
+};
+
+int nimgrects;
+struct imgrect *imgrects;
+
 gint delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     if (verbose)
         fprintf(stderr, PROGNAME ": display child shutting down\n");
@@ -42,6 +51,7 @@ void make_backing_image() {
     img_alloc(I);
     if (backing_image) {
         int w2, h2;
+        struct imgrect *ir;
 
         /* Copy old contents of backing image to ll corner of new one. */
         w2 = backing_image->width;
@@ -50,6 +60,11 @@ void make_backing_image() {
         if (h2 > height) h2 = height;
 
         img_simple_blt(I, 0, height - h2, backing_image, 0, backing_image->height - h2, w2, h2);
+
+        /* Move all of the image rectangles. */
+        for (ir = imgrects; ir < imgrects + nimgrects; ++ir)
+            if (ir->filename)
+                ir->y += backing_image->height - height;
 
         /* Adjust placement of new images. */
         if (wrx >= w2) wrx = w2;
@@ -72,12 +87,54 @@ void update_window() {
 
 void scroll_backing_image(const int dy) {
     pel **row1, **row2;
+    struct imgrect *ir;
+    
     for (row1 = backing_image->data, row2 = backing_image->data + dy;
          row2 < backing_image->data + height; ++row1, ++row2)
         memcpy(*row1, *row2, width * sizeof(pel));
 
     for (row2 = row1; row2 < backing_image->data + height; ++row2)
         memset(*row2, 0, width * sizeof(pel));
+
+    for (ir = imgrects; ir < imgrects + nimgrects; ++ir) {
+        if (ir->filename) {
+            ir->y -= dy;
+
+            /* scrolled off bottom, no longer in use. */
+            if ((ir->y + ir->h) < 0) {
+                unlink(ir->filename);
+                free(ir->filename);
+                memset(ir, 0, sizeof *ir);
+            }
+        }
+    }
+}
+
+void add_image_rectangle(const char *filename, const int x, const int y, const int w, const int h) {
+    struct imgrect *ir;
+    for (ir = imgrects; ir < imgrects + nimgrects; ++ir) {
+        if (!ir->filename)
+            break;
+    }
+    if (ir == imgrects + nimgrects) {
+        imgrects = realloc(imgrects, 2 * nimgrects * sizeof *imgrects);
+        memset(imgrects + nimgrects, 0, nimgrects * sizeof *imgrects);
+        ir = imgrects + nimgrects;
+        nimgrects *= 2;
+    }
+    ir->filename = strdup(filename);
+    ir->x = x;
+    ir->y = y;
+    ir->w = w;
+    ir->h = h;
+}
+
+struct imgrect *find_image_rectangle(const int x, const int y) {
+    struct imgrect *ir;
+    for (ir = imgrects; ir < imgrects + nimgrects; ++ir)
+        if (ir->filename && x >= ir->x && x < ir->x + ir->w && y >= ir->y && y < ir->y + ir->h)
+            return ir;
+    return NULL;
 }
 
 void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
@@ -96,6 +153,67 @@ void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     update_window();
 }
 
+char *savedimgpfx = "driftnet-";
+
+void save_image(struct imgrect *ir) {
+    static char *name;
+    static int num;
+    int fd1, fd2;
+    char buf[8192];
+    ssize_t l;
+
+    if (!name)
+        name = calloc(strlen(savedimgpfx) + 16, 1);
+
+    sprintf(name, "%s%d%s", savedimgpfx, num++, strrchr(ir->filename, '.'));
+    fprintf(stderr, PROGNAME": saving `%s' as `%s'\n", ir->filename, name);
+
+    fd1 = open(ir->filename, O_RDONLY);
+    if (fd1 == -1) {
+        fprintf(stderr, PROGNAME": %s: %s\n", ir->filename, strerror(errno));
+        return;
+    }
+    
+    fd2 = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd2 == -1) {
+        fprintf(stderr, PROGNAME": %s: %s\n", name, strerror(errno));
+        close(fd1);
+        return;
+    }
+
+    /* XXX interrupts */
+    while ((l = read(fd1, buf, sizeof buf)) > 0) {
+        if (write(fd2, buf, l) == -1) {
+            fprintf(stderr, PROGNAME": %s: %s\n", name, strerror(errno));
+            close(fd1);
+            close(fd2);
+            return;
+        }
+    }
+
+    if (l == -1)
+        fprintf(stderr, PROGNAME": %s: %s\n", ir->filename, strerror(errno));
+
+    close(fd1);
+    close(fd2);
+}
+
+static struct {
+    int x, y;
+} click;
+
+void button_press_event(GtkWidget *widget, GdkEventButton *event) {
+    click.x = (int)event->x;
+    click.y = (int)event->y;
+}
+
+void button_release_event(GtkWidget *widget, GdkEventButton *event) {
+    struct imgrect *ir;
+    ir = find_image_rectangle(click.x, click.y);
+    if (ir && ir == find_image_rectangle((int)event->x, (int)event->y))
+        save_image(ir);
+}
+
 void destroy(GtkWidget *widget, gpointer data) {
     gtk_main_quit();
 }
@@ -106,6 +224,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     struct pipemsg m = {0};
     ssize_t rr;
     while ((rr = read(dpychld_fd, &m, sizeof(m))) == sizeof(m)) {
+        int saveimg = 0;
         if (verbose)
             fprintf(stderr, PROGNAME": received image %s of size %d\n", m.filename, m.len);
         /* checks to see whether this looks like an image we're interested in. */
@@ -137,6 +256,8 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         }
 
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
+                        add_image_rectangle(m.filename, wrx, wry - h, w, h);
+                        saveimg = 1;
 
                         update_window();
 
@@ -148,7 +269,8 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
             img_delete(i);
         } else if (verbose) fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)m.len);
 
-        unlink(m.filename);
+        if (!saveimg)
+            unlink(m.filename);
     }
     if (rr == -1 && errno != EINTR && errno != EAGAIN) {
         perror(PROGNAME": read");
@@ -166,6 +288,9 @@ int dodisplay(int argc, char *argv[]) {
     chan = g_io_channel_unix_new(dpychld_fd);
     g_io_add_watch(chan, G_IO_IN | G_IO_ERR | G_IO_HUP, (GIOFunc)pipe_event, NULL);
     fcntl(dpychld_fd, F_SETFL, O_NONBLOCK);
+
+    /* set up list of image rectangles. */
+    imgrects = calloc(nimgrects = 16, sizeof *imgrects);
        
     /* do some init thing */
     gtk_init(&argc, &argv);
@@ -179,13 +304,17 @@ int dodisplay(int argc, char *argv[]) {
 
     darea = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(window), darea);
-    gtk_widget_set_events(darea, GDK_EXPOSURE_MASK);
+    gtk_widget_set_events(darea, GDK_EXPOSURE_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK);
 
     gtk_signal_connect(GTK_OBJECT(window), "delete_event", GTK_SIGNAL_FUNC(delete_event), NULL);
     gtk_signal_connect(GTK_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
 
     gtk_signal_connect(GTK_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
     gtk_signal_connect(GTK_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
+    
+    /* mouse button press/release for saving images */
+    gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
+    gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
     
     gtk_widget_show_all(window);
     

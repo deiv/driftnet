@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.10 2001/09/11 09:33:41 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.11 2002/02/15 12:35:11 chris Exp $";
 
 #undef NDEBUG
 
@@ -31,6 +31,9 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.10 2001/09/11 09:33:41 chris Ex
 
 connection *slots;
 unsigned int slotsused, slotsalloc;
+
+/* ugh. */
+pcap_t *pc;
 
 /* image.c */
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen);
@@ -265,11 +268,12 @@ void usage(FILE *fp) {
 "                   interfaces).\n"
 "  -p               Do not put the listening interface into promiscuous mode.\n"
 "  -v               Verbose operation.\n"
+"  -x prefix        Prefix to use when saving images.\n"
 "\n"
 "Filter code can be specified after any options in the manner of tcpdump(8).\n"
 "The filter code will be evaluated as `tcp and (user filter code)'\n"
 "\n"
-"driftnet, copyright (c) 2001 Chris Lightfoot <chris@ex-parrot.com>\n"
+"driftnet, copyright (c) 2001-2 Chris Lightfoot <chris@ex-parrot.com>\n"
 "home page: http://www.ex-parrot.com/~chris/driftnet/\n"
 "\n"
 "This program is free software; you can redistribute it and/or modify\n"
@@ -281,11 +285,17 @@ void usage(FILE *fp) {
 }
 
 /* terminate_on_signal:
- * Terminate on receipt of an appropriate signal. */
-sig_atomic_t foad;
+ * Terminate on receipt of an appropriate signal. This is really ugly, because
+ * the pcap_next call in the main loop may block, so it's best to just exit
+ * here. */
 void terminate_on_signal(int s) {
-    if (dpychld != 0 && s != SIGCHLD) close(dpychld_fd);
-    foad = 1;
+    if (dpychld == 0) {
+        _exit(0);
+    } else {
+        close(dpychld_fd);
+        pcap_close(pc);
+        _exit(0);
+    }
 }
 
 /* setup_signals:
@@ -299,6 +309,8 @@ void setup_signals(void) {
     int terminate_signals[] = {SIGTERM, SIGINT, SIGSEGV, SIGBUS, SIGCHLD, 0};
     struct sigaction sa;
 
+    sa.sa_flags = SA_RESTART;
+    
     for (p = ignore_signals; *p; ++p) {
         memset(&sa, 0, sizeof(sa));
         sa.sa_handler = SIG_IGN;
@@ -325,12 +337,11 @@ char *connection_string(const struct in_addr s, const unsigned short s_port, con
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:pv";
+char optstring[] = "hi:pvx:";
 
 int verbose;
 
 int main(int argc, char *argv[]) {
-    pcap_t *pc;
     char *interface = NULL, *filterexpr;
     int promisc = 1;
     struct bpf_program filter;
@@ -341,6 +352,7 @@ int main(int argc, char *argv[]) {
     int pkt_offset;
     char c;
     struct stat st;
+    extern char *savedimgpfx;    /* in display.c */
 
     /* Handle command-line options. */
     opterr = 0;
@@ -360,6 +372,10 @@ int main(int argc, char *argv[]) {
 
             case 'p':
                 promisc = 0;
+                break;
+
+            case 'x':
+                savedimgpfx = optarg;
                 break;
 
             case '?':
@@ -415,6 +431,9 @@ int main(int argc, char *argv[]) {
     
     setup_signals();
 
+    if (verbose)
+        fprintf(stderr, PROGNAME": using saved image prefix `%s'\n", savedimgpfx);
+    
     /* fork to start the display child process */
     pipe(pfd);
     switch (dpychld = fork()) {
@@ -442,7 +461,7 @@ int main(int argc, char *argv[]) {
     slots = (connection*)calloc(slotsalloc, sizeof(connection));
 
     /* Start up pcap. */
-    pc = pcap_open_live(interface, 262144, promisc, 10, ebuf);
+    pc = pcap_open_live(interface, 262144, promisc, 1, ebuf);
     if (!pc) {
         fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
         kill(dpychld, SIGTERM);
@@ -467,7 +486,7 @@ int main(int argc, char *argv[]) {
     if (verbose)
         fprintf(stderr, PROGNAME": link-level header length is %d bytes\n", pkt_offset);
 
-    while (!foad) {
+    while (1) {
         struct iphdr ip;
         struct tcphdr tcp;
         struct in_addr s, d;
@@ -578,27 +597,9 @@ int main(int argc, char *argv[]) {
 
         /* sweep out old connections */
         sweep_connections();
-#if 0
-        /* dump out all the connections we have */
-        printf("\033c\n");
-        for (C = slots; C < slots + slotsalloc; ++C) {
-            if (*C) {
-                connection c = *C;
-                printf("%s:%d (%c) %u --> %s:%d (%c) %u\n",
-                        inet_ntoa(c->src), c->sport, c->sdfin ? '*' : ' ', c->sdisn,
-                        inet_ntoa(c->dst), c->dport, c->dsfin ? '*' : ' ', c->dsisn);
-                
-                printf("--> (%u) ", c->sdlen);
-                dump_data(stdout, c->sddata, c->sdlen);
-                printf("\n<-- (%u) ", c->dslen);
-                dump_data(stdout, c->dsdata, c->dslen);
-                printf("\n");
-            }
-        }
-#endif
     }
 
-/*    fprintf(stderr, PROGNAME": pcap_next: %s\n", pcap_geterr(pc));*/
-        
+    pcap_close(pc);
+
     return 0;
 }
