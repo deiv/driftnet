@@ -7,10 +7,9 @@
  *
  */
 
-static const char rcsid[] = "$Id: util.c,v 1.2 2003/08/25 12:24:35 chris Exp $";
+static const char rcsid[] = "$Id: util.c,v 1.1 2003/08/25 12:24:08 chris Exp $";
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "driftnet.h"
 
