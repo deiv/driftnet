@@ -7,11 +7,12 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.9 2001/09/11 08:42:53 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.10 2001/09/11 09:33:41 chris Exp $";
 
 #undef NDEBUG
 
 #include <assert.h>
+#include <errno.h>
 #include <pcap.h>
 #include <linux/if_ether.h>
 #include <netinet/ip.h>
@@ -24,6 +25,7 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.9 2001/09/11 08:42:53 chris Exp
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "driftnet.h"
 
@@ -338,6 +340,7 @@ int main(int argc, char *argv[]) {
     int pfd[2];
     int pkt_offset;
     char c;
+    struct stat st;
 
     /* Handle command-line options. */
     opterr = 0;
@@ -369,6 +372,27 @@ int main(int argc, char *argv[]) {
                 return 1;
         }
     }
+
+    /* Since most users won't read the instructions, check for and create the
+     * /tmp/imgdump directory. */
+    if (stat("/tmp/imgdump", &st) == -1) {
+        if (errno == ENOENT) {
+            fprintf(stderr, PROGNAME": /tmp/imgdump does not exist; creating it\n");
+            if (mkdir("/tmp/imgdump", 0700) == -1) {
+                perror(PROGNAME": mkdir");
+                return -1;
+            }
+        } else {
+            perror(PROGNAME": stat(/tmp/imgdump)");
+            return -1;
+        }
+    } else {
+        if (!S_ISDIR(st.st_mode)) {
+            fprintf(stderr, PROGNAME": /tmp/imgdump exists, but is not a directory. Quitting.\n");
+            return -1;
+        }
+    }
+    
     
     if (verbose)
         fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");

@@ -5,10 +5,10 @@
 # Copyright (c) 2001 Chris Lightfoot. All rights reserved.
 # Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
 #
-# $Id: Makefile,v 1.10 2001/09/11 08:42:53 chris Exp $
+# $Id: Makefile,v 1.11 2001/09/11 09:33:41 chris Exp $
 #
 
-VERSION = 0.1.3
+VERSION = 0.1.4
 
 #CC = gcc
 

@@ -1,5 +1,10 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.4 2001/09/11 08:42:53 chris Exp $
+$Id: CHANGES,v 1.5 2001/09/11 09:34:51 chris Exp $
+
+0.1.4
+
+Minor bug fixes. Driftnet now tests for the existence of /tmp/imgdump, which
+should eliminate most of my support mail....
 
 0.1.3
 
