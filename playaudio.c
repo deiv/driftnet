@@ -13,12 +13,13 @@
  *
  */
 
-static const char rcsid[] = "$Id: playaudio.c,v 1.2 2002/06/01 11:44:17 chris Exp $";
+static const char rcsid[] = "$Id: playaudio.c,v 1.3 2002/06/01 12:58:22 chris Exp $";
 
 #include <sys/types.h>
 
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -163,9 +164,11 @@ static void *mpeg_play(void *a) {
 
 /* mpeg_player_manager:
  * Main loop of child process which keeps an MPEG player running. */
-static void mpeg_player_manager(void) {verbose=1;
-    while (1) {
-        pid_t mpeg_pid;
+static void mpeg_player_manager(void) {
+    extern sig_atomic_t foad; /* in driftnet.c */
+    pid_t mpeg_pid;
+    
+    while (!foad) {
         time_t whenstarted;
         int st;
 
@@ -204,19 +207,22 @@ static void mpeg_player_manager(void) {verbose=1;
         }
 
 
-        if (time(NULL) - whenstarted < 5) {
+        if (!foad && time(NULL) - whenstarted < 5) {
             /* The player expired very quickly. Probably something's wrong;
              * sleep for a bit and hope the problem goes away. */
             fprintf(stderr, PROGNAME": MPEG player expired after %d seconds, sleeping for a bit\n", (int)(time(NULL) - whenstarted));
             sleep(5);
         }
     }
+    if (mpeg_pid)
+        kill(mpeg_pid, SIGTERM);
 }
 
 /* do_mpeg_player:
  * Fork and start a process which keeps an MPEG player running. Then start a
  * thread which passes data into the player. */
 pid_t mpeg_mgr_pid;
+
 void do_mpeg_player(void) {
     int pp[2];
     pthread_t thr;

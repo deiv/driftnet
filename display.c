@@ -9,7 +9,7 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.10 2002/06/01 11:44:17 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.11 2002/06/01 12:58:22 chris Exp $";
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -328,7 +328,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
         perror(PROGNAME": read");
         gtk_main_quit();
     } else if (rr == 0) {
-        fprintf(stderr, PROGNAME": display child read on closed pipe\n");
+        /* pipe closed, exit. */
         gtk_main_quit();
     }
     return TRUE;

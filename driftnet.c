@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.18 2002/06/01 11:44:17 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.19 2002/06/01 12:58:22 chris Exp $";
 
 #undef NDEBUG
 
@@ -22,12 +22,14 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.18 2002/06/01 11:44:17 chris Ex
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+
+#include <ctype.h>
+#include <fcntl.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <ctype.h>
-#include <fcntl.h>
 #include <signal.h>
 #include <time.h>
 #include <sys/stat.h>
@@ -455,7 +457,18 @@ void usage(FILE *fp) {
  * Terminate on receipt of an appropriate signal. This is really ugly, because
  * the pcap_next call in the main loop may block, so it's best to just exit
  * here. */
+sig_atomic_t foad;
+
 void terminate_on_signal(int s) {
+    extern pid_t mpeg_mgr_pid; /* in playaudio.c */
+    /* Pass on the signal to the MPEG player manager so that it can abort,
+     * since it won't die when the pipe into it dies. */
+    if (mpeg_mgr_pid)
+        kill(mpeg_mgr_pid, s);
+    foad = s;
+}
+
+#if 0
     clean_temporary_directory();    /* ugh */
 #ifdef NO_DISPLAY_WINDOW
     _exit(0);
@@ -469,6 +482,7 @@ void terminate_on_signal(int s) {
     }
 #endif /* NO_DISPLAY_WINDOW */
 }
+#endif
 
 /* setup_signals:
  * Set up signal handlers. */
@@ -506,6 +520,119 @@ char *connection_string(const struct in_addr s, const unsigned short s_port, con
     return buf;
 }
 
+/* process_packet:
+ * Callback which processes a packet captured by libpcap. */
+int pkt_offset; /* offset of IP packet within wire packet */
+
+void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt) {
+    struct ip ip;
+    struct tcphdr tcp;
+    struct in_addr s, d;
+    int off, len, delta;
+    connection *C, c;
+
+    if (verbose)
+        fprintf(stderr, ".");
+
+    memcpy(&ip, pkt + pkt_offset, sizeof(ip));
+    memcpy(&s, &ip.ip_src, sizeof(ip.ip_src));
+    memcpy(&d, &ip.ip_dst, sizeof(ip.ip_dst));
+
+    memcpy(&tcp, pkt + pkt_offset + (ip.ip_hl << 2), sizeof(tcp));
+    off = pkt_offset + (ip.ip_hl << 2) + (tcp.th_off << 2);
+    len = hdr->caplen - off;
+
+    /* XXX fragmented packets and other nasties. */
+    
+    /* try to find the connection slot associated with this. */
+    C = find_connection(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
+
+    /* no connection at all, so we need to allocate one. */
+    if (!C) {
+        if (verbose)
+            fprintf(stderr, PROGNAME": new connection: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+        C = alloc_connection();
+        *C = connection_new(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
+        /* This might or might not be an entirely new connection (SYN flag
+         * set). Either way we need a sequence number to start at. */
+        (*C)->isn = ntohl(tcp.th_seq);
+    }
+
+    /* Now we need to process this segment. */
+    c = *C;
+    delta = 0;/*tcp.syn ? 1 : 0;*/
+
+    /* NB (STD0007):
+     *    SEG.LEN = the number of octets occupied by the data in the
+     *    segment (counting SYN and FIN) */
+#if 0
+    if (tcp.syn)
+        /* getting a new isn. */
+        c->isn = htonl(tcp.seq);
+#endif
+
+    if (tcp.th_flags & TH_RST){
+        /* Looks like this connection is bogus, and so might be a
+         * connection going the other way. */
+        if (verbose)
+            fprintf(stderr, PROGNAME": connection reset: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+        
+        connection_delete(c);
+        *C = NULL;
+
+        if ((C = find_connection(&d, &s, ntohs(tcp.th_dport), ntohs(tcp.th_sport)))) {
+            connection_delete(*C);
+            *C = NULL;
+        }
+
+        return;
+    }
+    
+    if (len > 0) {
+        /* We have some data in the packet. If this data occurred after
+         * the first data we collected for this connection, then save it
+         * so that we can look for images. Otherwise, discard it. */
+        unsigned int offset = ntohl(tcp.th_seq);
+
+        /* Modulo 2**32 arithmetic; offset = seq - isn + delta. */
+        if (offset < (c->isn + delta))
+            offset = 0xffffffff - (c->isn + delta - offset);
+        else
+            offset -= c->isn + delta;
+        
+        if (offset > c->len + WRAPLEN) {
+            /* Out-of-order packet. */
+            if (verbose) 
+                fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+        } else {
+            connection_push(c, pkt + off, offset, len);
+            connection_harvest_images(c);
+            if (extract_audio) connection_harvest_audio(c);
+        }
+    }
+
+    if (tcp.th_flags & TH_FIN) {
+        /* Connection closing. */
+        if (verbose)
+            fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
+        connection_harvest_images(c);
+        if (extract_audio) connection_harvest_audio(c);
+        connection_delete(c);
+        *C = NULL;
+    }
+
+    /* sweep out old connections */
+    sweep_connections();
+}
+
+/* packet_capture_thread:
+ * Thread in which packet capture runs. */
+void *packet_capture_thread(void *v) {
+    while (!foad)
+        pcap_dispatch(pc, 0, process_packet, NULL);
+    return NULL;
+}
+
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
@@ -516,14 +643,12 @@ int main(int argc, char *argv[]) {
     int promisc = 1;
     struct bpf_program filter;
     char ebuf[PCAP_ERRBUF_SIZE];
-    struct pcap_pkthdr hdr;
-    const unsigned char *pkt;
-    int pkt_offset;
     int c;
     extern char *savedimgpfx;       /* in display.c */
     extern char *audio_mpeg_player; /* in playaudio.c */
     int newpfx = 0;
     int mpeg_player_specified = 0;
+    pthread_t packetth;
 
     /* Handle command-line options. */
     opterr = 0;
@@ -704,9 +829,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, PROGNAME": operating in adjunct mode\n");
 #endif /* !NO_DISPLAY_WINDOW */
  
-
     /* Start up pcap. */
-    pc = pcap_open_live(interface, SNAPLEN, promisc, 1, ebuf);
+    pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf);
     if (!pc) {
         fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
 
@@ -738,115 +862,21 @@ int main(int argc, char *argv[]) {
     slotsalloc = 64;
     slots = (connection*)calloc(slotsalloc, sizeof(connection));
 
-    /* Main capture loop. */
-    while (1) {
-        struct ip ip;
-        struct tcphdr tcp;
-        struct in_addr s, d;
-        int off, len;
-        connection *C, c;
-        int delta;
 
-        /* Capture of a packet may time out. If so, retry. */
-        if (!(pkt = pcap_next(pc, &hdr)))
-            continue;
+    /* Actually start the capture stuff up. Unfortunately, on many platforms,
+     * libpcap doesn't have read timeouts, so we start the thing up in a
+     * separate thread. Yay! */
+    pthread_create(&packetth, NULL, packet_capture_thread, NULL);
 
-        if (verbose)
-            fprintf(stderr, ".");
+    while (!foad)
+        sleep(1);
+    
+    pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */
+    pthread_join(packetth, NULL);
+    
 
-        memcpy(&ip, pkt + pkt_offset, sizeof(ip));
-        memcpy(&s, &ip.ip_src, sizeof(ip.ip_src));
-        memcpy(&d, &ip.ip_dst, sizeof(ip.ip_dst));
-
-        memcpy(&tcp, pkt + pkt_offset + (ip.ip_hl << 2), sizeof(tcp));
-        off = pkt_offset + (ip.ip_hl << 2) + (tcp.th_off << 2);
-        len = hdr.caplen - off;
-
-        /* XXX fragmented packets and other nasties. */
-        
-        /* try to find the connection slot associated with this. */
-        C = find_connection(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
-
-        /* no connection at all, so we need to allocate one. */
-        if (!C) {
-            if (verbose)
-                fprintf(stderr, PROGNAME": new connection: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
-            C = alloc_connection();
-            *C = connection_new(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
-            /* This might or might not be an entirely new connection (SYN flag
-             * set). Either way we need a sequence number to start at. */
-            (*C)->isn = ntohl(tcp.th_seq);
-        }
-
-        /* Now we need to process this segment. */
-        c = *C;
-        delta = 0;/*tcp.syn ? 1 : 0;*/
-
-        /* NB (STD0007):
-         *    SEG.LEN = the number of octets occupied by the data in the
-         *    segment (counting SYN and FIN) */
-#if 0
-        if (tcp.syn)
-            /* getting a new isn. */
-            c->isn = htonl(tcp.seq);
-#endif
-
-        if (tcp.th_flags & TH_RST){
-            /* Looks like this connection is bogus, and so might be a
-             * connection going the other way. */
-            if (verbose)
-                fprintf(stderr, PROGNAME": connection reset: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
-            
-            connection_delete(c);
-            *C = NULL;
-
-            if ((C = find_connection(&d, &s, ntohs(tcp.th_dport), ntohs(tcp.th_sport)))) {
-                connection_delete(*C);
-                *C = NULL;
-            }
-
-            continue;
-        }
-        
-        if (len > 0) {
-            /* We have some data in the packet. If this data occurred after
-             * the first data we collected for this connection, then save it
-             * so that we can look for images. Otherwise, discard it. */
-            unsigned int offset = ntohl(tcp.th_seq);
-
-            /* Modulo 2**32 arithmetic; offset = seq - isn + delta. */
-            if (offset < (c->isn + delta))
-                offset = 0xffffffff - (c->isn + delta - offset);
-            else
-                offset -= c->isn + delta;
-            
-            if (offset > c->len + WRAPLEN) {
-                /* Out-of-order packet. */
-                if (verbose) 
-                    fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
-            } else {
-                connection_push(c, pkt + off, offset, len);
-                connection_harvest_images(c);
-                if (extract_audio) connection_harvest_audio(c);
-            }
-        }
-
-        if (tcp.th_flags & TH_FIN) {
-            /* Connection closing. */
-            if (verbose)
-                fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
-            connection_harvest_images(c);
-            if (extract_audio) connection_harvest_audio(c);
-            connection_delete(c);
-            *C = NULL;
-        }
-
-        /* sweep out old connections */
-        sweep_connections();
-    }
-
+    /* Clean up. */
     pcap_close(pc);
-
     clean_temporary_directory();
 
     return 0;

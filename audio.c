@@ -11,7 +11,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: audio.c,v 1.1 2002/05/29 11:49:12 chris Exp $";
+static const char rcsid[] = "$Id: audio.c,v 1.2 2002/06/01 12:58:22 chris Exp $";
 
 #include <string.h>
 
@@ -69,6 +69,7 @@ unsigned char *find_mpeg_stream(const unsigned char *data, const size_t len, uns
                 return q + 1;
             q += delta;
         } while (nframes < MIN_MPEG_EXTENT && q < data + len - 4 && mpeg_hdr_parse(q, &H));
+
         if (nframes >= MIN_MPEG_EXTENT) {
             /* got some data. */
 /*            printf("stream_start = %p, q = %p, len = %d\n", stream_start, q, q - stream_start);*/
