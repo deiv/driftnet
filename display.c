@@ -20,6 +20,7 @@ static const char rcsid[] = "$Id: display.c,v 1.15 2002/06/13 20:06:42 chris Exp
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #include <sys/stat.h>
 
@@ -301,7 +302,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     int nimgs = 0;
 
     if (!path)
-        path = malloc(strlen(tmpdir) + 34);
+        path = malloc(strlen(tmpdir) + 64);
 
     /* We are sent messages continaing the length of the filename, then the
      * length of the file, then the filename. */
@@ -408,7 +409,7 @@ int dodisplay(int argc, char *argv[]) {
     
     /* mouse button press/release for saving images */
     gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
+    gtk_signal_connect(GTK_OBJECT(darea), "button_release_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
 
     gtk_widget_show_all(window);
 

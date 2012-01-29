@@ -12,6 +12,7 @@ static const char rcsid[] = "$Id: image.c,v 1.10 2002/07/02 22:17:25 chris Exp $
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <png.h>
 
 /* memstr:
  * Locate needle, of length n_len, in haystack, of length h_len, returning NULL.
@@ -216,6 +217,40 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     }
     /* printf("nope, no complete JPEG here\n"); */
     return jpeghdr;
+}
+
+/*
+ * See http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
+ */
+unsigned char *find_png_image(const unsigned char *data, const size_t len, unsigned char **pngdata, size_t *pnglen) {
+    unsigned char *pnghdr, *block;
+
+    *pngdata = NULL;
+
+    if (len < 8) return (unsigned char*)data;
+
+    pnghdr = memstr(data, len, "\x89PNG\r\n\x1a\n", 8);
+    if (!pnghdr) return (unsigned char*)(data + len - 8);
+    block = pnghdr + 8;
+    /*
+     * Scan sequence of chunks.
+     * We need at least enough space for 3 ints: the length, type, and CRC.
+     */
+    while (block + 12 <= data + len) {
+	extern unsigned int ntohl(unsigned int);
+	unsigned int length = ntohl(*(unsigned int *)block);
+	unsigned char *chunk_type = block + 4;
+	block += 12;
+	if (memcmp(chunk_type, "IEND", 4) == 0) {
+	    if (length != 0)  /* corrupt */
+		return pnghdr + 8;
+	    *pngdata = pnghdr;
+	    *pnglen = block - pnghdr;
+	    return block;
+	}
+	block += length;
+    }
+    return pnghdr;
 }
 
 #if 0

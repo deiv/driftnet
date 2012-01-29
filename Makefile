@@ -31,8 +31,10 @@ LDLIBS += -lpcap -lpthread
 
 # Optional C compiler and linker flags. Typical driftnet builds have support
 # for displaying captured images in an X window, and need the following flags:
-CFLAGS  += `gtk-config --cflags`
-LDLIBS  += -ljpeg -lungif `gtk-config --libs`
+CFLAGS  += `pkg-config --cflags gtk+-2.0` `pkg-config --cflags libpng`
+
+#LDLIBS  += -ljpeg -lungif `pkg-config --libs gtk+-2.0` `pkg-config --libs libpng`
+LDLIBS  += -ljpeg -lgif `pkg-config --libs gtk+-2.0` `pkg-config --libs libpng`
 
 # Alternatively, you can build a version of driftnet which can only be used
 # in `adjunct' mode as the back end for some other image-processing program. To
@@ -74,7 +76,8 @@ OBJS = $(SRCS:.c=.o)
 
 default: driftnet driftnet.1
 
-driftnet:   depend $(OBJS)
+#driftnet:   depend $(OBJS)
+driftnet:   $(OBJS)
 	$(CC) -o driftnet $(OBJS) $(LDFLAGS) $(LDLIBS)
 
 driftnet.1: driftnet.1.in Makefile
@@ -101,7 +104,7 @@ tarball: nodepend $(SRCS) $(HDRS) $(TXTS)
 	tar cvzf driftnet-$(VERSION).tar.gz driftnet-$(VERSION)
 	rm -rf driftnet-$(VERSION)
 	mv driftnet-$(VERSION).tar.gz ..
-	
+
 depend: endianness
 	makedepend -- $(CFLAGS) `cat endianness` -- $(SRCS)
 	touch depend

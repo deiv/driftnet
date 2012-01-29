@@ -166,7 +166,7 @@ static void *mpeg_play(void *a) {
  * Main loop of child process which keeps an MPEG player running. */
 static void mpeg_player_manager(void) {
     extern sig_atomic_t foad; /* in driftnet.c */
-    struct sigaction sa = {0};
+    struct sigaction sa = {{0}};
     pid_t mpeg_pid;
 
     sa.sa_handler = SIG_DFL;

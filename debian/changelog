@@ -1,0 +1,136 @@
+driftnet (0.1.6-9.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Replace libjpeg62-dev build-dep with libjpeg-dev (closes: #641109)
+
+ -- Julien Cristau <jcristau@debian.org>  Sun, 29 Jan 2012 17:01:34 +0100
+
+driftnet (0.1.6-9) unstable; urgency=low
+
+  * Deal with libpng errors more gracefully (closes: #494750)
+    [Patch kindly provided by Adam Sjøgren]
+
+ -- Christoph Haas <haas@debian.org>  Fri, 15 Aug 2008 23:28:25 +0200
+
+driftnet (0.1.6-8) unstable; urgency=low
+
+  * Fixed desktop and menu file
+  * Patched the build system (from Ubuntu patch) (closes: #459799)
+  * New policy/standards version 3.7.3
+
+ -- Christoph Haas <haas@debian.org>  Sat, 09 Feb 2008 10:24:57 +0100
+
+driftnet (0.1.6-7) unstable; urgency=low
+
+  * New maintainer. (closes: #390820)
+
+ -- Christoph Haas <haas@debian.org>  Tue, 10 Oct 2006 21:49:35 +0200
+
+driftnet (0.1.6-6) unstable; urgency=low
+
+  * Added .desktop file, from Ubuntu.
+    (Closes: #375511)
+
+ -- Steve Kemp <skx@debian.org>  Thu,  26 June 2006 16:12:04 +0000
+
+driftnet (0.1.6-5) unstable; urgency=low
+
+  * Make sure each image file is closed after loading.
+    (Closes: #337400)
+  * Updated standards version to 3.7.2, no changes.
+
+ -- Steve Kemp <skx@debian.org>  Thu,  12 May 2006 15:57:43 +0000
+
+driftnet (0.1.6-4) unstable; urgency=low
+
+  * More changes from Eric Cooper:
+     * Fixed button_press/release code that broke with gtk2
+     * Added support for PNG image capture (Closes: #301695)
+
+ -- Steve Kemp <skx@debian.org>  Thu,  11 Aug 2005 06:54:36 +0000
+
+driftnet (0.1.6-3) unstable; urgency=low
+
+  * Standards-Version 3.6.2
+  * Use gtk2
+  * Use mkdtemp instead of insecure tmpnam
+  * Minor changes to avoid gcc warnings
+
+ -- Eric Cooper <ecc@cmu.edu>  Sat,  6 Aug 2005 16:10:40 -0400
+
+driftnet (0.1.6-2) unstable; urgency=low
+
+  * New maintainer.
+  * Updated standards version to 3.6.1
+    (The only necessary change was to quote some entries in the menu file).
+
+ -- Steve Kemp <skx@debian.org>  Wed, 23 Jun 2004 11:38:21 +0000
+
+driftnet (0.1.6-1) unstable; urgency=low
+
+  * New upstream version. (closes: #154566)
+  * Roll in changes from NMU (closes: #166475, #156195).
+  * New Standards-Version 3.5.8.
+
+ -- Ian Eure <ieure@debian.org>  Thu, 20 Feb 2003 13:49:11 -0800
+
+driftnet (0.1.4-5.2) unstable; urgency=low
+
+  * NMU 
+  * Build against libungif4. (closes: #166475)
+
+ -- Michael Fedrowitz <michaelf@debian.org>  Sun, 24 Nov 2002 22:52:32 +0100
+
+driftnet (0.1.4-5.1) unstable; urgency=low
+
+  * Non maintainer upload
+  * Rebuilt with new libpcap to remove dependency on libpcap0, which I
+    got removed from unstable by accident. Sorry about this...
+
+ -- Torsten Landschoff <torsten@debian.org>  Sat, 10 Aug 2002 11:36:49 +0200
+
+driftnet (0.1.4-5) unstable; urgency=low
+
+  * Fix manpage. (Closes: #150601)
+
+ -- Ian Eure <ieure@debian.org>  Mon, 24 Jun 2002 09:53:59 -0700
+
+driftnet (0.1.4-4) unstable; urgency=low
+
+  * add menu entry.
+  * remove debian/*.ex files.
+
+ -- Ian Eure <ieure@debian.org>  Wed, 28 Nov 2001 14:58:03 -0800
+
+driftnet (0.1.4-3) unstable; urgency=low
+
+  * apply patch to fix int != char problem on ppc. (closes: #112925) 
+
+ -- Ian Eure <ieure@debian.org>  Fri, 12 Oct 2001 18:50:10 -0700
+
+driftnet (0.1.4-2) unstable; urgency=low
+
+  * add xutils to build-depends. (closes: #111865)
+
+ -- Ian Eure <ieure@debian.org>  Wed, 12 Sep 2001 15:12:39 -0700
+
+driftnet (0.1.4-1) unstable; urgency=low
+
+  * new upstream release (closes: #111940)
+
+ -- Ian Eure <ieure@debian.org>  Tue, 11 Sep 2001 02:52:04 -0700
+
+driftnet (0.1.3-2) unstable; urgency=low
+
+  * fix build-depends to include xlibs-dev. he he, whoops.
+		(closes: #111865)
+
+ -- Ian Eure <ieure@debian.org>  Mon, 10 Sep 2001 14:51:37 -0700
+
+driftnet (0.1.3-1) unstable; urgency=low
+
+  * Initial Release. (closes: #110904)
+
+ -- Ian Eure <ieure@debian.org>  Mon,  3 Sep 2001 17:12:09 -0700
+
+

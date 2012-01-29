@@ -88,9 +88,7 @@ void clean_temporary_directory(void) {
         buf = malloc(buflen = strlen(tmpdir) + 64);
 
         while ((de = readdir(d))) {
-            char *p;
-            p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
+            if (!tmpdir_specified || is_driftnet_file(de->d_name)) {
                 if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
                     buf = realloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
                 
@@ -584,12 +582,11 @@ int main(int argc, char *argv[]) {
         }
     } else {
         /* need to make a temporary directory. */
-        for (;;) {
-            tmpdir = strdup(tmpnam(NULL));
-            if (mkdir(tmpdir, 0700) == 0)
-                break;
-            free(tmpdir);
-        }
+	tmpdir = mkdtemp(strdup("/tmp/driftnet-XXXXXX"));
+	if (!tmpdir) {
+	    perror(PROGNAME": mkdtemp");
+	    return -1;
+	}
     }
 
     if (verbose) 
@@ -647,7 +644,7 @@ int main(int argc, char *argv[]) {
                 return -1;
 
             case -1:
-                perror(PROGNAME "fork");
+                perror(PROGNAME": fork");
                 return -1;
 
             default:

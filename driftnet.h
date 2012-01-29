@@ -25,7 +25,7 @@
  * Characterise types of media which we can extract. */
 enum mediatype { m_image = 1, m_audio = 2 };
 
-#define NMEDIATYPES     3       /* keep up to date with media.c */
+#define NMEDIATYPES     4       /* keep up to date with media.c */
 
 /* struct datablock:
  * Represents an extent in a captured stream. */
@@ -60,6 +60,7 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 
 /* media.c */
 void connection_extract_media(connection c, const enum mediatype T);
+int is_driftnet_file(char *filename);
 
 #define TMPNAMELEN      64
 

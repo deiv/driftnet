@@ -27,12 +27,23 @@ extern int dpychld_fd;
 /* image.c */
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen);
 unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsigned char **jpegdata, size_t *jpeglen);
+unsigned char *find_png_image(const unsigned char *data, const size_t len, unsigned char **pngdata, size_t *pnglen);
 
 /* audio.c */
 unsigned char *find_mpeg_stream(const unsigned char *data, const size_t len, unsigned char **mpegdata, size_t *mpeglen);
 
 /* playaudio.c */
 void mpeg_submit_chunk(const unsigned char *data, const size_t len);
+
+int is_driftnet_file(char *filename) {
+    if (strncmp(filename, "driftnet-", 9) != 0) return 0;
+    char *p = strrchr(filename, '.');
+    if (p == 0) return 0;
+    return (strcmp(p, ".jpeg") == 0 ||
+	    strcmp(p, ".gif") == 0 ||
+	    strcmp(p, ".png") == 0 ||
+	    strcmp(p, ".mp3") == 0);
+}
 
 /* count_temporary_files:
  * How many of our files remain in the temporary directory? We do this a
@@ -47,9 +58,7 @@ static int count_temporary_files(void) {
         d = opendir(tmpdir);
         if (d) {
             while ((de = readdir(d))) {
-                char *p;
-                p = strrchr(de->d_name, '.');
-                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0)))
+                if (is_driftnet_file(de->d_name))
                     ++num;
             }
             closedir(d);
@@ -98,6 +107,7 @@ static struct mediadrv {
 } driver[NMEDIATYPES] = {
         { "gif",  m_image, find_gif_image,   dispatch_image },
         { "jpeg", m_image, find_jpeg_image,  dispatch_image },
+        { "png",  m_image, find_png_image,   dispatch_image },
         { "mpeg", m_audio, find_mpeg_stream, dispatch_mpeg_audio }
     };
 

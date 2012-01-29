@@ -38,6 +38,12 @@ int jpeg_abort_load(img I);
 int jpeg_load_img(img I);
 int jpeg_save_img(const img I, FILE *fp);
 
+/* png.c */
+int png_load_hdr(img I);
+int png_abort_load(img I);
+int png_load_img(img I);
+int png_save_img(const img I, FILE *fp);
+
 #if 0
 /* raw.c */
 int raw_load_img(img I);
@@ -59,8 +65,8 @@ struct filedrv {
 */
         {gif,       ".gif\0",                   gif_load_hdr,   gif_abort_load,     gif_load_img,   NULL},
         {jpeg,      ".jpg\0.jpeg\0",            jpeg_load_hdr,  jpeg_abort_load,    jpeg_load_img,  jpeg_save_img},
+        {png,       ".png\0",                   png_load_hdr,   png_abort_load,     png_load_img,   NULL},
 /*
-        {png,       ".png\0",                   png_load_hdr,   png_abort_load,     png_load_img,   png_save_img},
         {raw,       "",                         NULL,           raw_load_img,       NULL,           raw_save_img},
 */
     };
@@ -105,6 +111,7 @@ void img_alloc(img I) {
  * Free memory associated with an image object.
  */
 void img_delete(img I) {
+    if (I->fp) fclose(I->fp);
     if (I->data) free(I->data);
     free(I);
 }
