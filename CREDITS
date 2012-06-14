@@ -1,5 +1,5 @@
 Credits and contributors for driftnet
-$Id: CREDITS,v 1.6 2002/06/10 21:25:48 chris Exp $
+$Id: CREDITS,v 1.9 2004/04/26 14:42:36 chris Exp $
 
 Thanks to the authors of EtherPEG, for a cool idea, and to Eric Richardson,
 whose website brought it to my attention.
@@ -11,4 +11,13 @@ Jamie Zawinski for helpful suggestions and webcollage integration.
 
 Eric Dobbs for fixing some portability issues and getting driftnet running on
 Solaris and BSD systems.
+
+Drew Roedersheimer for contributing PNG support.
+
+Joshua Wright for some 802.11 fixes.
+
+Rob Timko and Joshua Wright for getting Driftnet working on wireless networks
+and reading decrypted data from Kismet.
+
+Bastien Nocera for updating driftnet to use GTK2.
 

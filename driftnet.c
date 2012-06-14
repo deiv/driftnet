@@ -7,7 +7,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: driftnet.c,v 1.25 2002/07/08 20:57:17 chris Exp $";
+static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Exp $";
 
 #undef NDEBUG
 
@@ -45,9 +45,10 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.25 2002/07/08 20:57:17 chris Ex
 connection *slots;
 unsigned int slotsused, slotsalloc;
 
-/* flags: verbose, adjunct mode, temporary directory to use, media types to extract. */
+/* flags: verbose, adjunct mode, temporary directory to use, media types to
+ * extract, beep on image. */
 int extract_images = 1;
-int verbose, adjunct;
+int verbose, adjunct, beep;
 int tmpdir_specified;
 char *tmpdir;
 int max_tmpfiles;
@@ -85,14 +86,14 @@ void clean_temporary_directory(void) {
         char *buf;
         size_t buflen;
 
-        buf = malloc(buflen = strlen(tmpdir) + 64);
+        buf = xmalloc(buflen = strlen(tmpdir) + 64);
 
         while ((de = readdir(d))) {
             char *p;
             p = strrchr(de->d_name, '.');
             if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
                 if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
-                    buf = realloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
+                    buf = xrealloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
                 
                 sprintf(buf, "%s/%s", tmpdir, de->d_name);
                 unlink(buf);
@@ -100,7 +101,7 @@ void clean_temporary_directory(void) {
         }
         closedir(d);
 
-        free(buf);
+        xfree(buf);
     }
 
 
@@ -116,7 +117,7 @@ connection *alloc_connection(void) {
         if (!*C) return C;
     }
     /* No connection slots left. */
-    slots = (connection*)realloc(slots, slotsalloc * 2 * sizeof(connection));
+    slots = (connection*)xrealloc(slots, slotsalloc * 2 * sizeof(connection));
     memset(slots + slotsalloc, 0, slotsalloc * sizeof(connection));
     C = slots + slotsalloc;
     slotsalloc *= 2;
@@ -141,6 +142,7 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 /* sweep_connections:
  * Free finished connection slots. */
 #define TIMEOUT 5
+#define MAXCONNECTIONDATA   (8 * 1024 * 1024)
 
 void sweep_connections(void) {
     time_t now;
@@ -151,8 +153,11 @@ void sweep_connections(void) {
             connection c = *C;
             /* We discard connections which have seen no activity for TIMEOUT
              * or for which a FIN has been seen and for which there are no
-             * gaps in the stream. */
-            if ((now - c->last) > TIMEOUT || (c->fin && (!c->blocks || !c->blocks->next))) {
+             * gaps in the stream, or where more than MAXCONNECTIONDATA have
+             * been captured. */
+            if ((now - c->last) > TIMEOUT
+                || (c->fin && (!c->blocks || !c->blocks->next))
+                || c->len > MAXCONNECTIONDATA) {
                 connection_extract_media(c, extract_type);
                 connection_delete(c);
                 *C = NULL;
@@ -212,10 +217,17 @@ int get_link_level_hdr_length(int type)
 
         case DLT_IEEE802:
             return 22;
-
+            
+#ifdef DLT_ATM_RFC1483
         case DLT_ATM_RFC1483:
             return 8;
+#endif
 
+#ifdef DLT_PRISM_HEADER
+        case DLT_PRISM_HEADER:
+            return 32;
+#endif
+            
         case DLT_RAW:
             return 0;
 
@@ -229,6 +241,11 @@ int get_link_level_hdr_length(int type)
             return 16;
 #endif
 
+#ifdef DLT_IEEE802_11           /* 802.11 wireless ethernet */
+        case DLT_IEEE802_11:
+            return 32; /* 20030606 email from Nikhil Bobb */ /*44; */
+#endif
+            
         default:;
     }
     fprintf(stderr, PROGNAME": unknown data link type %d", type);
@@ -254,8 +271,12 @@ void usage(FILE *fp) {
 "\n"
 "  -h               Display this help message.\n"
 "  -v               Verbose operation.\n"
+"  -b               Beep when a new image is captured.\n"
 "  -i interface     Select the interface on which to listen (default: all\n"
 "                   interfaces).\n"
+"  -f file          Instead of listening on an interface, read captured\n"
+"                   packets from a pcap dump file; file can be a named pipe\n"
+"                   for use with Kismet or similar.\n"
 "  -p               Do not put the listening interface into promiscuous mode.\n""  -a               Adjunct mode: do not display images on screen, but save\n"
 "                   them to a temporary directory and announce their names on\n"
 "                   standard output.\n"
@@ -294,9 +315,7 @@ void usage(FILE *fp) {
 }
 
 /* terminate_on_signal:
- * Terminate on receipt of an appropriate signal. This is really ugly, because
- * the pcap_next call in the main loop may block, so it's best to just exit
- * here. */
+ * Terminate on receipt of an appropriate signal. */
 sig_atomic_t foad;
 
 void terminate_on_signal(int s) {
@@ -458,7 +477,7 @@ void *packet_capture_thread(void *v) {
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "hi:psSMvam:d:x:";
+char optstring[] = "abd:f:hi:M:m:pSsvx:";
 
 int main(int argc, char *argv[]) {
     char *interface = NULL, *filterexpr;
@@ -472,7 +491,10 @@ int main(int argc, char *argv[]) {
     extern char *audio_mpeg_player; /* in playaudio.c */
     int newpfx = 0;
     int mpeg_player_specified = 0;
+    char *dumpfile = NULL;
+    
     pthread_t packetth;
+    connection *C;
 
     /* Handle command-line options. */
     opterr = 0;
@@ -483,11 +505,22 @@ int main(int argc, char *argv[]) {
                 return 0;
 
             case 'i':
+                if (dumpfile) {
+                    fprintf(stderr, PROGNAME": can't specify -i and -f\n");
+                    return -1;
+                }
                 interface = optarg;
                 break;
 
             case 'v':
                 verbose = 1;
+                break;
+
+            case 'b':
+                if (!isatty(1))
+                    fprintf(stderr, PROGNAME": can't beep unless standard output is a terminal\n");
+                else 
+                    beep = 1;
                 break;
 
             case 'p':
@@ -522,6 +555,14 @@ int main(int argc, char *argv[]) {
             case 'd':
                 tmpdir = optarg;
                 tmpdir_specified = 1; /* so we don't delete it. */
+                break;
+
+            case 'f':
+                if (interface) {
+                    fprintf(stderr, PROGNAME": can't specify -i and -f\n");
+                    return -1;
+                }
+                dumpfile = optarg;
                 break;
 
 #ifndef NO_DISPLAY_WINDOW
@@ -568,6 +609,15 @@ int main(int argc, char *argv[]) {
     if (max_tmpfiles && adjunct && verbose)
         fprintf(stderr, PROGNAME": a maximum of %d images will be buffered\n", max_tmpfiles);
 
+    if (beep && adjunct)
+        fprintf(stderr, PROGNAME": can't beep in adjunct mode\n");
+
+    /* In adjunct mode, it's important that the attached program gets
+     * notification of images in a timely manner. Make stdout line-buffered
+     * for this reason. */
+    if (adjunct)
+        setvbuf(stdout, NULL, _IOLBF, 0);
+
     /* If a directory name has not been specified, then we need to create one.
      * Otherwise, check that it's a directory into which we may write files. */
     if (tmpdir) {
@@ -585,10 +635,10 @@ int main(int argc, char *argv[]) {
     } else {
         /* need to make a temporary directory. */
         for (;;) {
-            tmpdir = strdup(tmpnam(NULL));
+            tmpdir = strdup(tmpnam(NULL));  /* may generate a warning, but this is safe because we create a directory not a file */
             if (mkdir(tmpdir, 0700) == 0)
                 break;
-            free(tmpdir);
+            xfree(tmpdir);
         }
     }
 
@@ -606,16 +656,20 @@ int main(int argc, char *argv[]) {
 
     /* Build up filter. */
     if (optind < argc) {
-        char **a;
-        int l;
-        for (a = argv + optind, l = sizeof("tcp and ()"); *a; l += strlen(*a) + 1, ++a);
-        filterexpr = calloc(l, 1);
-        strcpy(filterexpr, "tcp and (");
-        for (a = argv + optind; *a; ++a) {
-            strcat(filterexpr, *a);
-            if (*(a + 1)) strcat(filterexpr, " ");
+        if (dumpfile)
+            fprintf(stderr, PROGNAME": filter code ignored with dump file\n");
+        else {
+            char **a;
+            int l;
+            for (a = argv + optind, l = sizeof("tcp and ()"); *a; l += strlen(*a) + 1, ++a);
+            filterexpr = calloc(l, 1);
+            strcpy(filterexpr, "tcp and (");
+            for (a = argv + optind; *a; ++a) {
+                strcat(filterexpr, *a);
+                if (*(a + 1)) strcat(filterexpr, " ");
+            }
+            strcat(filterexpr, ")");
         }
-        strcat(filterexpr, ")");
     } else filterexpr = "tcp";
 
     if (verbose)
@@ -662,27 +716,33 @@ int main(int argc, char *argv[]) {
 #endif /* !NO_DISPLAY_WINDOW */
  
     /* Start up pcap. */
+    if (dumpfile) {
+        if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
+            fprintf(stderr, PROGNAME": pcap_open_offline: %s\n", ebuf);
+            return -1;
+        }   
+    } else {
+        if (!(pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf))) {
+            fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
 
-    pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf);
-    if (!pc) {
-        fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
-
-        if (getuid() != 0)
-            fprintf(stderr, PROGNAME": perhaps you need to be root?\n");
-        else if (!interface)
-            fprintf(stderr, PROGNAME": perhaps try selecting an interface with the -i option?\n");
-            
-        return -1;
-    }
+            if (getuid() != 0)
+                fprintf(stderr, PROGNAME": perhaps you need to be root?\n");
+            else if (!interface)
+                fprintf(stderr, PROGNAME": perhaps try selecting an interface with the -i option?\n");
+                
+            return -1;
+        }
     
-    if (pcap_compile(pc, &filter, (char*)filterexpr, 1, 0) == -1) {
-        fprintf(stderr, PROGNAME": pcap_compile: %s\n", pcap_geterr(pc));
-        return -1;
-    }
-    
-    if (pcap_setfilter(pc, &filter) == -1) {
-        fprintf(stderr, PROGNAME": pcap_setfilter: %s\n", pcap_geterr(pc));
-        return -1;
+        /* Only apply a filter to live packets. Is this right? */
+        if (pcap_compile(pc, &filter, (char*)filterexpr, 1, 0) == -1) {
+            fprintf(stderr, PROGNAME": pcap_compile: %s\n", pcap_geterr(pc));
+            return -1;
+        }
+        
+        if (pcap_setfilter(pc, &filter) == -1) {
+            fprintf(stderr, PROGNAME": pcap_setfilter: %s\n", pcap_geterr(pc));
+            return -1;
+        }
     }
 
     /* Figure out the offset from the start of a returned packet to the data in
@@ -693,7 +753,7 @@ int main(int argc, char *argv[]) {
 
     slotsused = 0;
     slotsalloc = 64;
-    slots = (connection*)calloc(slotsalloc, sizeof(connection));
+    slots = (connection*)xcalloc(slotsalloc, sizeof(connection));
 
     /* Actually start the capture stuff up. Unfortunately, on many platforms,
      * libpcap doesn't have read timeouts, so we start the thing up in a
@@ -724,8 +784,15 @@ int main(int argc, char *argv[]) {
     pthread_join(packetth, NULL);
     
     /* Clean up. */
+/*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
     pcap_close(pc);
     clean_temporary_directory();
+
+    /* Easier for memory-leak debugging if we deallocate all this here.... */
+    for (C = slots; C < slots + slotsalloc; ++C)
+        if (*C) connection_delete(*C);
+    xfree(slots);
+    xfree(tmpdir);
 
     return 0;
 }

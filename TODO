@@ -1,5 +1,5 @@
 TODO for driftnet
-$Id: TODO,v 1.10 2002/06/04 20:16:35 chris Exp $
+$Id: TODO,v 1.12 2003/08/12 14:13:14 chris Exp $
 
 * PNG files.
 
@@ -23,4 +23,8 @@ $Id: TODO,v 1.10 2002/06/04 20:16:35 chris Exp $
 * Safe(r) setuid operation.
 
 * Drop privileges after starting up pcap.
+
+* PID file?
+
+* Delay between reading packets from dump file?
 

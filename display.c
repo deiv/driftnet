@@ -9,17 +9,21 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.15 2002/06/13 20:06:42 chris Exp $";
+static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp $";
+
+#include <sys/types.h>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
 
 #include <sys/stat.h>
 
@@ -29,7 +33,7 @@ static const char rcsid[] = "$Id: display.c,v 1.15 2002/06/13 20:06:42 chris Exp
 /* The border, in pixels, around images displayed in the window. */
 #define BORDER  6
 
-extern int verbose; /* in driftnet.c */
+extern int verbose, beep; /* in driftnet.c */
 
 static GtkWidget *window, *darea;
 static GdkWindow *drawable;
@@ -80,7 +84,7 @@ void make_backing_image() {
                 /* Possible it has scrolled off the window. */
                 if (ir->x > width || ir->y + ir->h < 0) {
                     unlink(ir->filename);
-                    free(ir->filename);
+                    xfree(ir->filename);
                     memset(ir, 0, sizeof *ir);
                 }
             }
@@ -104,7 +108,7 @@ void update_window() {
         GdkGC *gc;
         gc = gdk_gc_new(drawable);
         gdk_draw_rgb_32_image(drawable, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, (guchar*)backing_image->flat, sizeof(pel) * width);
-        gdk_gc_destroy(gc);
+        g_object_unref(gc);
     }
 }
 
@@ -128,7 +132,7 @@ void scroll_backing_image(const int dy) {
             /* scrolled off bottom, no longer in use. */
             if ((ir->y + ir->h) < 0) {
                 unlink(ir->filename);
-                free(ir->filename);
+                xfree(ir->filename);
                 memset(ir, 0, sizeof *ir);
             }
         }
@@ -145,7 +149,7 @@ void add_image_rectangle(const char *filename, const int x, const int y, const i
             break;
     }
     if (ir == imgrects + nimgrects) {
-        imgrects = realloc(imgrects, 2 * nimgrects * sizeof *imgrects);
+        imgrects = xrealloc(imgrects, 2 * nimgrects * sizeof *imgrects);
         memset(imgrects + nimgrects, 0, nimgrects * sizeof *imgrects);
         ir = imgrects + nimgrects;
         nimgrects *= 2;
@@ -172,7 +176,7 @@ struct imgrect *find_image_rectangle(const int x, const int y) {
  * React to an expose event, perhaps changing the backing image size. */
 void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     if (darea) drawable = darea->window;
-    gdk_window_get_size(drawable, &width, &height);
+    gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -183,7 +187,7 @@ void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
  * React to a configure event, perhaps changing the backing image size. */
 void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     if (darea) drawable = darea->window;
-    gdk_window_get_size(drawable, &width, &height);
+    gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -205,7 +209,7 @@ void save_image(struct imgrect *ir) {
     struct stat st;
 
     if (!name)
-        name = calloc(strlen(savedimgpfx) + 16, 1);
+        name = xcalloc(strlen(savedimgpfx) + 16, 1);
 
     do
         sprintf(name, "%s%d%s", savedimgpfx, num++, strrchr(ir->filename, '.'));
@@ -301,10 +305,10 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     int nimgs = 0;
 
     if (!path)
-        path = malloc(strlen(tmpdir) + 34);
+        path = xmalloc(strlen(tmpdir) + 34);
 
-    /* We are sent messages continaing the length of the filename, then the
-     * length of the file, then the filename. */
+    /* We are sent messages of size TMPNAMELEN containing a null-terminated
+     * file name. */
     while (nimgs < 4 && (rr = xread(dpychld_fd, name, sizeof name)) == sizeof name) {
         int saveimg = 0;
         struct stat st;
@@ -319,7 +323,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
         if (verbose)
             fprintf(stderr, PROGNAME": received image %s of size %d\n", name, (int)st.st_size);
         /* Check to see whether this looks like an image we're interested in. */
-        if (st.st_size > 256) {
+        if (st.st_size > 100) {
             /* Small images are probably bollocks. */
             img i = img_new();
             if (!img_load_file(i, path, header, unknown))
@@ -349,6 +353,9 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
                         add_image_rectangle(path, wrx, wry - h, w, h);
                         saveimg = 1;
+
+                        if (beep)
+                            write(1, "\a", 1);
 
                         update_window();
 
@@ -383,32 +390,30 @@ int dodisplay(int argc, char *argv[]) {
     fcntl(dpychld_fd, F_SETFL, O_NONBLOCK);
 
     /* set up list of image rectangles. */
-    imgrects = calloc(nimgrects = 16, sizeof *imgrects);
+    imgrects = xcalloc(nimgrects = 16, sizeof *imgrects);
        
     /* do some init thing */
     gtk_init(&argc, &argv);
-    gdk_rgb_init();
 
-    gtk_widget_set_default_colormap(gdk_rgb_get_cmap());
-    gtk_widget_set_default_visual(gdk_rgb_get_visual());
+    gtk_widget_push_colormap(gdk_rgb_get_colormap());
 
     /* Make our own window. */
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_usize(window, 0, 0);
+    gtk_widget_set_size_request(window, 100, 100);
 
     darea = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(window), darea);
     gtk_widget_set_events(darea, GDK_EXPOSURE_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK);
 
-    gtk_signal_connect(GTK_OBJECT(window), "delete_event", GTK_SIGNAL_FUNC(delete_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
+    g_signal_connect(G_OBJECT(window), "delete_event", GTK_SIGNAL_FUNC(delete_event), NULL);
+    g_signal_connect(G_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
 
-    gtk_signal_connect(GTK_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
     
     /* mouse button press/release for saving images */
-    gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
 
     gtk_widget_show_all(window);
 
@@ -419,7 +424,11 @@ int dodisplay(int argc, char *argv[]) {
         if (ir->filename)
             unlink(ir->filename);
 
-    return 0;
+    img_delete(backing_image);
+    
+    gtk_exit(0);
+
+    return 0; /* NOTREACHED */
 }
 
 #endif /* !NO_DISPLAY_WINDOW */

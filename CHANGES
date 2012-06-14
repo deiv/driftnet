@@ -1,5 +1,16 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.16 2002/07/09 17:31:00 chris Exp $
+$Id: CHANGES,v 1.19 2004/04/26 14:42:36 chris Exp $
+
+Driftnet now uses GTK2, rather than GTK1.
+
+Added support for reading packets from a pcap dump file (thanks to Rob Timko
+and Joshua Wright for this); and for extracting URLs from HTTP requests (not
+yet exposed in the user interface).
+
+Driftnet will now discard connections after 8Mb of data has been transferred.
+
+Fixed adjunct mode so that stdout is line-buffered, following a suggestion by
+Jonas Jensen.
 
 0.1.6
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: driftnet.h,v 1.9 2002/06/13 20:06:42 chris Exp $
+ * $Id: driftnet.h,v 1.13 2004/04/08 23:06:29 chris Exp $
  *
  */
 
@@ -14,18 +14,27 @@
 
 #define PROGNAME    "driftnet"
 
-#include <sys/types.h> /* added 20020604 edobbs for OpenBSD */
+#include <sys/types.h>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <stdio.h>
+#ifndef USE_SYS_TYPES_H
+#   include <stdint.h>
+#endif
+
+/* alloc_struct S P
+ * Make P point to a new struct S, initialised as if in static storage (like
+ * = {0}). */
+#define alloc_struct(S, p)  do { struct S as__z = {0}; p = xmalloc(sizeof *p); *p = as__z; } while (0)
 
 /* enum mediatype:
- * Characterise types of media which we can extract. */
-enum mediatype { m_image = 1, m_audio = 2 };
+ * Bit field to characterise types of media which we can extract. */
+enum mediatype { m_image = 1, m_audio = 2, m_text = 4 };
 
-#define NMEDIATYPES     3       /* keep up to date with media.c */
+#define NMEDIATYPES     5       /* keep up to date with media.c */
 
 /* struct datablock:
  * Represents an extent in a captured stream. */
@@ -35,15 +44,27 @@ struct datablock {
 };
 
 /* connection:
- * Object representing one half of a TCP stream connection. */
+ * Object representing one half of a TCP stream connection. Each connection
+ * maintains a record of the data which has been recovered from the network
+ * and a list of blocks of data which represent valid data in the buffer, so
+ * that if there is a gap in the received data, we don't search it for
+ * data. */
 typedef struct _connection {
+    /* Source/destination address/port of this half-duplex connection. */
     struct in_addr src, dst;
     short int sport, dport;
+    /* The TCP initial-sequence-number of the connection. */
     uint32_t isn;
-    unsigned int len, off, alloc;
-    unsigned char *data, *gif, *jpeg, *mpeg;
+    /* The highest offset and the buffer size allocated, and the buffer
+     * itself. */
+    unsigned int len, alloc;
+    unsigned char *data;
+    /* Flag indicating that we've seen a FIN-flagged segment for this stream,
+     * so that it is undergoing a shutdown. */
     int fin;
+    /* The time at which we last received any data on this stream. */
     time_t last;
+    /* A list of the extents in the buffer which contain valid data. */
     struct datablock *blocks;
 } *connection;
 
@@ -60,6 +81,14 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 
 /* media.c */
 void connection_extract_media(connection c, const enum mediatype T);
+
+/* util.c */
+void *xmalloc(size_t n);
+void *xcalloc(size_t n, size_t m);
+void *xrealloc(void *w, size_t n);
+void xfree(void *v);
+char *xstrdup(const char *s);
+unsigned char *memstr(const unsigned char *haystack, const size_t hlen, const unsigned char *needle, const size_t nlen);
 
 #define TMPNAMELEN      64
 

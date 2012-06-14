@@ -5,7 +5,7 @@
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: img.h,v 1.7 2002/07/08 20:57:17 chris Exp $
+ * $Id: img.h,v 1.9 2003/11/03 10:40:23 chris Exp $
  *
  */
 
@@ -21,6 +21,8 @@
 #endif
 
 #include <stdio.h>
+
+#include "endianness.h"
 
 typedef uint8_t chan;
 typedef uint32_t pel;
@@ -46,6 +48,10 @@ typedef uint32_t pel;
 #   error "no endianness defined"
 #endif
 
+#define PNG_CODE_LEN 4
+#define PNG_CRC_LEN  4
+#define PNG_SIG_LEN  8
+
 typedef enum { unknown = 0, pnm = 1, gif = 2, jpeg = 3, png = 4, raw = 5 } imgtype;
 typedef enum { none = 0, header = 1, full = 2 } imgstate;
 
@@ -67,6 +73,11 @@ typedef struct _img {
     void *us;
     imgerr err;
 } *img;
+
+struct png_chunk {
+   uint32_t datalen;
+   unsigned char code[PNG_CODE_LEN];
+};
 
 img img_new(void);
 img img_new_blank(const unsigned int width, const unsigned int height);

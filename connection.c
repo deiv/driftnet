@@ -1,12 +1,15 @@
 /*
  * connection.c:
+ * Connection objects.
  *
  * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
 
-static const char rcsid[] = "$Id: connection.c,v 1.3 2002/07/08 23:32:33 chris Exp $";
+static const char rcsid[] = "$Id: connection.c,v 1.7 2003/10/16 11:56:37 chris Exp $";
+
+#include <sys/types.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -16,52 +19,58 @@ static const char rcsid[] = "$Id: connection.c,v 1.3 2002/07/08 23:32:33 chris E
 
 #include "driftnet.h"
 
-/* connection_new:
- * Allocate a new connection structure between the given addresses. */
+/* connection_new SOURCE DEST SPORT DPORT
+ * Allocate a new connection structure for data sent from SOURCE:SPORT to
+ * DEST:DPORT. */
 connection connection_new(const struct in_addr *src, const struct in_addr *dst, const short int sport, const short int dport) {
-    connection c = (connection)calloc(1, sizeof(struct _connection));
+    connection c;
+    alloc_struct(_connection, c);
     c->src = *src;
     c->dst = *dst;
     c->sport = sport;
     c->dport = dport;
     c->alloc = 16384;
-    c->data = c->gif = c->jpeg = c->mpeg = malloc(c->alloc);
+    c->data = xmalloc(c->alloc);
     c->last = time(NULL);
     c->blocks = NULL;
     return c;
 }
 
-/* connection_delete:
- * Free the named connection structure. */
+/* connection_delete CONNECTION
+ * Free CONNECTION. */
 void connection_delete(connection c) {
+    struct datablock *b;
+    for (b = c->blocks; b;) {
+        struct datablock *b2;
+        b2 = b->next;
+        free(b);
+        b = b2;
+    }
     free(c->data);
     free(c);
 }
 
-/* connection_push:
- * Put some more data in a connection. */
+/* connection_push CONNECTION DATA OFFSET LENGTH
+ * Add LENGTH bytes of DATA received at OFFSET in the stream to CONNECTION. */
 void connection_push(connection c, const unsigned char *data, unsigned int off, unsigned int len) {
-    size_t goff = c->gif - c->data, joff = c->jpeg - c->data, moff = c->mpeg - c->data;
     struct datablock *B, *b, *bl, BZ = {0};
     int a;
 
     assert(c->alloc > 0);
     if (off + len > c->alloc) {
         /* Allocate more memory. */
-        while (off + len > c->alloc) {
+        do 
             c->alloc *= 2;
-            c->data = (unsigned char*)realloc(c->data, c->alloc);
-        }
+        while (off + len > c->alloc);
+        c->data = (unsigned char*)xrealloc(c->data, c->alloc);
     }
-    c->gif = c->data + goff;
-    c->jpeg = c->data + joff;
-    c->mpeg = c->data + moff;
+
     memcpy(c->data + off, data, len);
 
     if (off + len > c->len) c->len = off + len;
     c->last = time(NULL);
     
-    B = malloc(sizeof *B);
+    B = xmalloc(sizeof *B);
     *B = BZ;
     B->off = off;
     B->len = len;
@@ -95,13 +104,5 @@ void connection_push(connection c, const unsigned char *data, unsigned int off, 
             }
         }
     } while (a);
-/*
-        {
-            printf("%p: ", c);
-            for (b = c->blocks; b; b = b->next)
-                printf("[%d (%d) -> %d] ", b->off, b->len, b->off + b->len);
-            printf("\n");
-        }
-*/
 }
 
