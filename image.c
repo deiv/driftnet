@@ -7,41 +7,20 @@
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.10 2002/07/02 22:17:25 chris Exp $";
+static const char rcsid[] = "$Id: image.c,v 1.13 2003/08/25 12:23:43 chris Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <png.h>
+#include <netinet/in.h>
 
-/* memstr:
- * Locate needle, of length n_len, in haystack, of length h_len, returning NULL.
- * Uses the Boyer-Moore search algorithm. Cf.
- *  http://www-igm.univ-mlv.fr/~lecroq/string/node14.html */
-static unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
-                             const unsigned char *needle, const size_t nlen) {
-    int skip[256], k;
+#include "img.h"
 
-    if (nlen == 0) return (char*)haystack;
-
-    /* Set up the finite state machine we use. */
-    for (k = 0; k < 255; ++k) skip[k] = nlen;
-    for (k = 0; k < nlen - 1; ++k) skip[needle[k]] = nlen - k - 1;
-
-    /* Do the search. */
-    for (k = nlen - 1; k < hlen; k += skip[haystack[k]]) {
-        int i, j;
-        for (j = nlen - 1, i = k; j >= 0 && haystack[i] == needle[j]; j--) i--;
-        if (j == -1) return (unsigned char*)(haystack + i + 1);
-    }
-
-    return NULL;
-}
-
+#include "driftnet.h"
 
 /* If we run out of space, put us back to the last candidate GIF header. */
 /*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/
-#define spaceleft       if (block > data + len) return gifhdr
+#define spaceleft       if (block >= data + len) return gifhdr /* > ?? */
 
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen) {
     unsigned char *gifhdr, *block;
@@ -60,6 +39,7 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
     ncolours = (1 << ((gifhdr[10] & 0x7) + 1));
     /* printf("gif header %d colours\n", ncolours); */
     block = gifhdr + 13;
+    spaceleft;
     if (gifhdr[10] & 0x80) block += 3 * ncolours; /* global colour table */
     spaceleft;
 
@@ -69,9 +49,12 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
             case 0x2c:
                 /* image block */
                 /* printf("image data\n"); */
-                if (block[9] & 0x80)
+                if (block + 9 > data + len) return gifhdr;
+                if (block[9] & 0x80) {
                     /* local colour table */
                     block += 3 * ((1 << ((gifhdr[9] & 0x7) + 1)));
+                    spaceleft;
+                }
                 block += 10;
                 ++block;        /* lzw code size */
                 do {
@@ -196,7 +179,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     if (!block || (block - data) >= len) return jpeghdr;
 
     /* now we need to find the onward count from this place */
-    while ((block = jpeg_skip_block(block + 1, len - (block - data)))) {
+    while ((block = jpeg_skip_block(block + 1, len - (block + 1 - data)))) {
         /* printf("data = %p block = %p\n", data, block); */
 
         block = jpeg_next_marker(block, len - (block - data));
@@ -219,39 +202,63 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     return jpeghdr;
 }
 
-/*
- * See http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
- */
+/* find_png_eoi BUFFER LEN
+ * Returns the first position in BUFFER of LEN bytes after the end of the image
+ * or NULL if end of image not found. */
+unsigned char *find_png_eoi(unsigned char *buffer, const size_t len) {
+    unsigned char *end_data, *data, chunk_code[PNG_CODE_LEN + 1];
+    struct png_chunk chunk;
+    u_int32_t datalen;
+
+    /* Move past the PNG header */
+    data = (buffer + PNG_SIG_LEN);
+    end_data = (buffer + len - (sizeof(struct png_chunk) + PNG_CRC_LEN));
+
+    while (data <= end_data) {
+        memcpy(&chunk, data, sizeof chunk);
+/*        chunk = (struct png_chunk *)data; */ /* can't do that. */
+        memset(chunk_code, '\0', PNG_CODE_LEN + 1);
+        memcpy(chunk_code, chunk.code, PNG_CODE_LEN);  
+        
+        datalen = ntohl(chunk.datalen);
+
+        if (!strncasecmp(chunk_code, "iend", PNG_CODE_LEN))
+            return (unsigned char *)(data + sizeof(struct png_chunk) + PNG_CRC_LEN);
+
+        /* Would this push us off the end of the buffer? */
+        if (datalen > (len - (data - buffer)))
+            return NULL;
+        
+        data += (sizeof(struct png_chunk) + datalen + PNG_CRC_LEN);        
+    }
+
+    return NULL;
+}
+
+/* find_png_image DATA LEN PNGDATA PNGLEN
+ * Look for PNG images in LEN bytes buffer DATA. */
 unsigned char *find_png_image(const unsigned char *data, const size_t len, unsigned char **pngdata, size_t *pnglen) {
-    unsigned char *pnghdr, *block;
+    unsigned char *pnghdr, *data_end, *png_eoi;
 
     *pngdata = NULL;
 
-    if (len < 8) return (unsigned char*)data;
+    if (len < PNG_SIG_LEN) 
+       return (unsigned char*)data;
 
-    pnghdr = memstr(data, len, "\x89PNG\r\n\x1a\n", 8);
-    if (!pnghdr) return (unsigned char*)(data + len - 8);
-    block = pnghdr + 8;
-    /*
-     * Scan sequence of chunks.
-     * We need at least enough space for 3 ints: the length, type, and CRC.
-     */
-    while (block + 12 <= data + len) {
-	extern unsigned int ntohl(unsigned int);
-	unsigned int length = ntohl(*(unsigned int *)block);
-	unsigned char *chunk_type = block + 4;
-	block += 12;
-	if (memcmp(chunk_type, "IEND", 4) == 0) {
-	    if (length != 0)  /* corrupt */
-		return pnghdr + 8;
-	    *pngdata = pnghdr;
-	    *pnglen = block - pnghdr;
-	    return block;
-	}
-	block += length;
-    }
-    return pnghdr;
+    pnghdr = memstr(data, len, "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", PNG_SIG_LEN);
+    if (!pnghdr)
+        return (unsigned char*)(data + len - PNG_SIG_LEN); 
+
+    data_end = (unsigned char *)(data + len);
+
+    if ((png_eoi = find_png_eoi(pnghdr, (data_end - pnghdr))) == NULL)
+        return pnghdr;
+
+    *pngdata = pnghdr;
+    *pnglen = (png_eoi - pnghdr);
+    return png_eoi;
 }
+
 
 #if 0
 #include <unistd.h>

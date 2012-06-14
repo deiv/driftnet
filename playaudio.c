@@ -13,7 +13,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: playaudio.c,v 1.4 2002/06/04 19:09:02 chris Exp $";
+static const char rcsid[] = "$Id: playaudio.c,v 1.5 2003/08/12 14:12:29 chris Exp $";
 
 #include <sys/types.h>
 
@@ -57,10 +57,10 @@ static audiochunk list, wr, rd;
  * Allocate a buffer and copy some data into it. */
 static audiochunk audiochunk_new(const unsigned char *data, const size_t len) {
     audiochunk A;
-    A = calloc(1, sizeof *A);
+    alloc_struct(_audiochunk, A);
     A->len = len;
     if (data) {
-        A->data = malloc(len);
+        A->data = xmalloc(len);
         memcpy(A->data, data, len);
     }
     return A;
@@ -69,8 +69,8 @@ static audiochunk audiochunk_new(const unsigned char *data, const size_t len) {
 /* audiochunk_delete:
  * Free memory from an audiochunk. */
 static void audiochunk_delete(audiochunk A) {
-    free(A->data);
-    free(A);
+    xfree(A->data);
+    xfree(A);
 }
 
 /* audiochunk_write:
@@ -166,7 +166,7 @@ static void *mpeg_play(void *a) {
  * Main loop of child process which keeps an MPEG player running. */
 static void mpeg_player_manager(void) {
     extern sig_atomic_t foad; /* in driftnet.c */
-    struct sigaction sa = {{0}};
+    struct sigaction sa = {0};
     pid_t mpeg_pid;
 
     sa.sa_handler = SIG_DFL;

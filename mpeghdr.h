@@ -5,7 +5,7 @@
  * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * $Id: mpeghdr.h,v 1.3 2002/06/10 21:25:48 chris Exp $
+ * $Id: mpeghdr.h,v 1.4 2003/05/20 16:49:08 chris Exp $
  *
  */
 
@@ -15,7 +15,7 @@
 #ifdef USE_SYS_TYPES_H
 #	include <sys/types.h>  /* Solaris etc. */
 #else
-#	include <stdint.h>         /* C99 standard. */
+#	include <stdint.h>     /* C99 standard. */
 #endif
 
 #include <stdio.h>

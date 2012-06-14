@@ -1,5 +1,5 @@
 README for driftnet
-$Id: README,v 1.7 2002/06/10 21:25:48 chris Exp $
+$Id: README,v 1.9 2003/08/12 14:03:24 chris Exp $
 
 Driftnet watches network traffic, and picks out and displays JPEG and GIF
 images for display. It is an horrific invasion of privacy and shouldn't be used
@@ -20,6 +20,18 @@ driftnet will use mpg123.
 
 Driftnet needs to run with sufficient privilege to obtain raw packets from the
 network. On most systems, this means running it as root.
+
+
+You can use Driftnet to sniff images passing over a wireless network. However,
+Driftnet does not understand the optional WEP encryption used with wireless
+ethernet. Instead, you can use Kismet, from
+  http://www.kismetwireless.net/
+to decrypt packets and pass them into a named pipe; the -f option can then be
+used to have Driftnet read the packets from the pipe. Thanks to Rob Timko and
+Joshua Wright for pointing this out; Rob's page,
+  http://68.38.68.127:81/writings/driftnet.html
+describes the process in greater detail.
+
 
 If you find this program entertaining, you might want to help me develop it.
 The TODO file contains a list of yet-to-be-done ideas.
