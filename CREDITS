@@ -1,0 +1,14 @@
+Credits and contributors for driftnet
+$Id: CREDITS,v 1.6 2002/06/10 21:25:48 chris Exp $
+
+Thanks to the authors of EtherPEG, for a cool idea, and to Eric Richardson,
+whose website brought it to my attention.
+
+Theo Honohan and Benjamin Ritcey assisted me in tracking down some bugs.
+Others certainly remain.
+
+Jamie Zawinski for helpful suggestions and webcollage integration.
+
+Eric Dobbs for fixing some portability issues and getting driftnet running on
+Solaris and BSD systems.
+

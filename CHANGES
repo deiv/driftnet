@@ -1,0 +1,56 @@
+Changelog for driftnet
+$Id: CHANGES,v 1.16 2002/07/09 17:31:00 chris Exp $
+
+0.1.6
+
+Changed the algorithm used to search for image start blocks to Boyer-Moore, for
+a performance improvement. Fixed some build errors.
+
+0.1.5
+
+Allow user to save images by clicking on them.
+
+Driftnet now exits more cleanly on interrupt. Various minor bug fixes,
+including an endianness problem in the display code.
+
+The temporary directory used by driftnet may now be specified as a command-line
+option; otherwise, it is created dynamically.
+
+Added the -a (adjunct) and various related options to make it easy to use
+driftnet as a back-end for some other program, such as webcollage. It is now
+possible to compile a back-end only version of driftnet without any X11 support
+by using the NO_DISPLAY_WINDOW option at compile time.
+
+Added the -s option to extract MPEG audio data from network streams, along with
+a ghastly mess of threads and pipes to allow driftnet to play the data to play
+through mpg123 or similar.
+
+Changed some things to make driftnet a bit more portable to non-Linux systems.
+
+0.1.4
+
+Minor bug fixes. Driftnet now tests for the existence of /tmp/imgdump, which
+should eliminate most of my support mail....
+
+0.1.3
+
+Fixed serious bugs in stream capture code, and tidied up same.
+
+Added command-line options for selecting interfaces, verbosity etc.
+
+Made window resizing neater (it now no longer results in erasing the contents
+of the window).
+
+Added cleaner shutdown and signal handling.
+
+Removed vestigial dependencies upon libpnm.
+
+0.1.2
+
+Various bug fixes.
+
+0.1.1
+
+CHANGES file created. Minor bugfixes (including preventing the program
+from quitting when it times out waiting for a packet).
+
