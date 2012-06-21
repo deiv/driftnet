@@ -76,26 +76,18 @@ char *xstrdup(const char *s) {
 
 /* memstr:
  * Locate needle, of length n_len, in haystack, of length h_len, returning NULL.
- * Uses the Boyer-Moore search algorithm. Cf.
- *  http://www-igm.univ-mlv.fr/~lecroq/string/node14.html */
+ */
 unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
-                             const unsigned char *needle, const size_t nlen) {
-    int skip[256], k;
+		const unsigned char *needle, const size_t nlen)
+{
+	char *p;
 
-    if (nlen == 0) return (unsigned char*)haystack;
-
-    /* Set up the finite state machine we use. */
-    for (k = 0; k < 256; ++k) skip[k] = nlen;
-    for (k = 0; k < nlen - 1; ++k) skip[needle[k]] = nlen - k - 1;
-
-    /* Do the search. */
-    for (k = nlen - 1; k < hlen; k += skip[haystack[k]]) {
-        int i, j;
-        for (j = nlen - 1, i = k; j >= 0 && haystack[i] == needle[j]; j--) i--;
-        if (j == -1) return (unsigned char*)(haystack + i + 1);
-    }
-
-    return NULL;
+	for (p = haystack; p <= (haystack - nlen + hlen); p++)
+	{
+		if (memcmp(p, needle, nlen) == 0)
+			return p; /* found */
+	}
+	return NULL;
 }
 
 void xnanosleep(long nanosecs)
