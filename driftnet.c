@@ -75,6 +75,10 @@ void do_mpeg_player(void);
 void clean_temporary_directory(void) {
     DIR *d;
     
+    /* If in adjunct mode, do not delete any temporary files */
+    if (adjunct)
+	return;
+
     /* If tmpdir_specified is true, the user specified a particular temporary
      * directory. We presume that the user doesn't want the directory removed
      * and that we shouldn't nuke any files in that directory which don't look
