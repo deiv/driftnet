@@ -89,9 +89,7 @@ void clean_temporary_directory(void) {
         buf = xmalloc(buflen = strlen(tmpdir) + 64);
 
         while ((de = readdir(d))) {
-            char *p;
-            p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
+            if (!tmpdir_specified || is_driftnet_file(de->d_name)) {
                 if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
                     buf = xrealloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
                 
