@@ -9,7 +9,7 @@
  *
  */
 
-#ifndef NO_DISPLAY_WINDOW
+
 
 #ifndef __IMG_H_ /* include guard */
 #define __IMG_H_
@@ -21,6 +21,17 @@
 #endif
 
 #include <stdio.h>
+
+#define PNG_CODE_LEN 4
+#define PNG_CRC_LEN  4
+#define PNG_SIG_LEN  8
+
+struct png_chunk {
+   uint32_t datalen;
+   unsigned char code[PNG_CODE_LEN];
+};
+
+#ifndef NO_DISPLAY_WINDOW
 
 #include "endianness.h"
 
@@ -48,10 +59,6 @@ typedef uint32_t pel;
 #   error "no endianness defined"
 #endif
 
-#define PNG_CODE_LEN 4
-#define PNG_CRC_LEN  4
-#define PNG_SIG_LEN  8
-
 typedef enum { unknown = 0, pnm = 1, gif = 2, jpeg = 3, png = 4, raw = 5 } imgtype;
 typedef enum { none = 0, header = 1, full = 2 } imgstate;
 
@@ -73,11 +80,6 @@ typedef struct _img {
     void *us;
     imgerr err;
 } *img;
-
-struct png_chunk {
-   uint32_t datalen;
-   unsigned char code[PNG_CODE_LEN];
-};
 
 img img_new(void);
 img img_new_blank(const unsigned int width, const unsigned int height);
