@@ -305,7 +305,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     int nimgs = 0;
 
     if (!path)
-        path = xmalloc(strlen(tmpdir) + 34);
+        path = xmalloc(strlen(tmpdir) + 64);
 
     /* We are sent messages of size TMPNAMELEN containing a null-terminated
      * file name. */
