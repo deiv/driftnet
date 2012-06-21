@@ -792,7 +792,7 @@ int main(int argc, char *argv[]) {
     for (C = slots; C < slots + slotsalloc; ++C)
         if (*C) connection_delete(*C);
     xfree(slots);
-    xfree(tmpdir);
+    /*xfree(tmpdir); */
 
     return 0;
 }
