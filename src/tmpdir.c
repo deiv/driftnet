@@ -133,46 +133,48 @@ const char* make_tmpdir(void)
  * clean_tmpdir:
  *   Ensure that our temporary directory is clear of any files.
  */
-void clean_tmpdir()
+void clean_tmpdir(int preserve_files)
 {
     DIR *d;
 
     assert (tmpdir.path != NULL);
 
-    /*
-     * If user_specified is true, the user specified a particular temporary
-     * directory. We presume that the user doesn't want the directory removed
-     * and that we shouldn't nuke any files in that directory which don't look
-     * like ours
-     *
-     * If not, remove it.
-     */
-    d = opendir(tmpdir.path);
+    if (preserve_files) {
+		/*
+		 * If user_specified is true, the user specified a particular temporary
+		 * directory. We presume that the user doesn't want the directory removed
+		 * and that we shouldn't nuke any files in that directory which don't look
+		 * like ours
+		 *
+		 * If not, remove it.
+		 */
+		d = opendir(tmpdir.path);
 
-    if (d) {
-        struct dirent *de;
-        char *buf;
-        size_t buflen;
+		if (d) {
+			struct dirent *de;
+			char *buf;
+			size_t buflen;
 
-        buf = xmalloc(buflen = strlen(tmpdir.path) + 64);
+			buf = xmalloc(buflen = strlen(tmpdir.path) + 64);
 
-        while ((de = readdir(d))) {
-            if (is_tempfile(de->d_name)) {
-                if (buflen < strlen(tmpdir.path) + strlen(de->d_name) + 1)
-                    buf = xrealloc(buf, buflen = strlen(tmpdir.path) + strlen(de->d_name) + 64);
+			while ((de = readdir(d))) {
+				if (is_tempfile(de->d_name)) {
+					if (buflen < strlen(tmpdir.path) + strlen(de->d_name) + 1)
+						buf = xrealloc(buf, buflen = strlen(tmpdir.path) + strlen(de->d_name) + 64);
 
-                sprintf(buf, "%s/%s", tmpdir.path, de->d_name);
-                unlink(buf);
-            }
-        }
-        closedir(d);
+					sprintf(buf, "%s/%s", tmpdir.path, de->d_name);
+					unlink(buf);
+				}
+			}
+			closedir(d);
 
-        xfree(buf);
-    }
+			xfree(buf);
+		}
 
-    if (tmpdir.type == TMPDIR_APP_OWNED) {
-        if ( rmdir(tmpdir.path) == -1 && errno != ENOENT) /* lame attempt to avoid race */
-            log_msg(LOG_ERROR, "rmdir(%s): %s", tmpdir.path, strerror(errno));
+		if (tmpdir.type == TMPDIR_APP_OWNED) {
+			if ( rmdir(tmpdir.path) == -1 && errno != ENOENT) /* lame attempt to avoid race */
+				log_msg(LOG_ERROR, "rmdir(%s): %s", tmpdir.path, strerror(errno));
+		}
     }
 
     xfree((void*)tmpdir.path);    /* we don't need it anymore */

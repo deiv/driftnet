@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
     /* Clean up. */
     /*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
     packetcapture_close();
-    clean_tmpdir();
+    clean_tmpdir(options->adjunct);
 
     /* Easier for memory-leak debugging if we deallocate all this here.... */
     connection_free_slots();
