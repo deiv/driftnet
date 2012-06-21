@@ -1,11 +1,31 @@
-This package was debianized by Ian Eure <ieure@debian.org> on
-Sat,  1 Sep 2001 14:47:51 -0700. It has then been adopted by
-Christoph Haas <haas@debian.org>.
+Format: http://dep.debian.net/deps/dep5
+Upstream-Name: driftnet
+Source: http://www.ex-parrot.com/~chris/driftnet/
 
-It was downloaded from <http://www.ex-parrot.com/~chris/driftnet/>
+Files: *
+Copyright: 2001-2004 Chris Lightfoot <chris@ex-parrot.com> All rights reserved.
+License: GPL-2+
+ 
+Files: debian/*
+Copyright: 2012, David Suarez <david.sephirot@gmail.com>
+           2006, Christoph Haas <haas@debian.org>
+           2001, Ian Eure <ieure@debian.org>
+License: GPL-2+
 
-Copyright © 2001 Chris Lightfoot <chris@ex-parrot.com>
-All rights reserved.
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
 
-The software is licensed under the terms of the GNU General Public License
-which you can find on your Debian system at /usr/share/common-licenses/GPL

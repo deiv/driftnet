@@ -13,11 +13,12 @@
 #
 
 # Compiler to use.
-#CC = gcc
+CC = gcc
+
 
 # Basic compiler, linker flags; should not need any changes.
-CFLAGS += -g -Wall
-LDFLAGS += -g
+CFLAGS += -O2 -g -Wall
+LDFLAGS += 
 
 # You might need these if libpcap is installed somewhere random.
 CFLAGS += -I/usr/include/pcap
