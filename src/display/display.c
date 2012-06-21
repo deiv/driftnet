@@ -452,7 +452,7 @@ static void do_gtkdisplay(void)
 
     /* mouse button press/release for saving images */
     g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
-    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_release_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
 
     gtk_widget_show_all(window);
 
