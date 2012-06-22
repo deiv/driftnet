@@ -2,13 +2,13 @@ Source: driftnet
 Section: admin
 Priority: extra
 Maintainer: David Suarez <david.sephirot@gmail.com>
-Build-Depends: debhelper (>> 5.0), libgtk2.0-dev, libpcap-dev, libjpeg-dev, libgif-dev, libpng12-dev, xutils-dev
+Build-Depends: debhelper (>= 9), libgtk2.0-dev, libpcap-dev, libjpeg-dev, libgif-dev, libpng12-dev, xutils-dev
 Standards-Version: 3.8.0
 Homepage: http://www.ex-parrot.com/~chris/driftnet/
 
 Package: driftnet
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${misc:Depends}
 Description: Picks out and displays images from network traffic
  Inspired by EtherPEG, Driftnet is a program which listens to network
  traffic and picks out images from TCP streams it observes. It is
