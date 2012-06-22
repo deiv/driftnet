@@ -1,0 +1,10 @@
+Subject: Collected Debian patches for driftnet
+Author: David Suarez <david.sephirot@gmail.com>
+
+The driftnet package is maintained in Git rather than maintaining
+patches as separate files, and separating the patches doesn't seem to
+be worth the effort.  They are therefore all included in this single
+Debian patch.
+
+For full commit history and separated commits, see the packaging Git
+repository.
