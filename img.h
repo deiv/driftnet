@@ -9,7 +9,7 @@
  *
  */
 
-#ifndef NO_DISPLAY_WINDOW
+
 
 #ifndef __IMG_H_ /* include guard */
 #define __IMG_H_
@@ -22,13 +22,24 @@
 
 #include <stdio.h>
 
-#include "endianness.h"
+#define PNG_CODE_LEN 4
+#define PNG_CRC_LEN  4
+#define PNG_SIG_LEN  8
+
+struct png_chunk {
+   uint32_t datalen;
+   unsigned char code[PNG_CODE_LEN];
+};
+
+#ifndef NO_DISPLAY_WINDOW
+
+#include <glib.h>
 
 typedef uint8_t chan;
 typedef uint32_t pel;
 
 /* Yuk. GDKRGB expects data in a specific ordering. */
-#if defined(DRIFTNET_LITTLE_ENDIAN)
+#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 #   define PEL(r, g, b)        ((pel)((chan)(r) | ((chan)(g) << 8) | ((chan)(b) << 16)))
 #   define PELA(r, g, b, a)    ((pel)((chan)(r) | ((chan)(g) << 8) | ((chan)(b) << 16) | ((chan)(a) << 24)))
 
@@ -36,7 +47,7 @@ typedef uint32_t pel;
 #   define GETG(p)             ((chan)(((p) & (pel)0x0000ff00) >>  8))
 #   define GETB(p)             ((chan)(((p) & (pel)0x00ff0000) >> 16))
 #   define GETA(p)             ((chan)(((p) & (pel)0xff000000) >> 24))
-#elif defined(DRIFTNET_BIG_ENDIAN)
+#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
 #   define PEL(r, g, b)        ((pel)(((chan)(r) << 24) | ((chan)(g) << 16) | ((chan)(b) << 8)))
 #   define PELA(r, g, b, a)    ((pel)(((chan)(r) << 24) | ((chan)(g) << 16) | ((chan)(b) << 8) | ((chan)(a))))
 
@@ -47,10 +58,6 @@ typedef uint32_t pel;
 #else
 #   error "no endianness defined"
 #endif
-
-#define PNG_CODE_LEN 4
-#define PNG_CRC_LEN  4
-#define PNG_SIG_LEN  8
 
 typedef enum { unknown = 0, pnm = 1, gif = 2, jpeg = 3, png = 4, raw = 5 } imgtype;
 typedef enum { none = 0, header = 1, full = 2 } imgstate;
@@ -73,11 +80,6 @@ typedef struct _img {
     void *us;
     imgerr err;
 } *img;
-
-struct png_chunk {
-   uint32_t datalen;
-   unsigned char code[PNG_CODE_LEN];
-};
 
 img img_new(void);
 img img_new_blank(const unsigned int width, const unsigned int height);

@@ -75,6 +75,10 @@ void do_mpeg_player(void);
 void clean_temporary_directory(void) {
     DIR *d;
     
+    /* If in adjunct mode, do not delete any temporary files */
+    if (adjunct)
+	return;
+
     /* If tmpdir_specified is true, the user specified a particular temporary
      * directory. We presume that the user doesn't want the directory removed
      * and that we shouldn't nuke any files in that directory which don't look
@@ -89,9 +93,7 @@ void clean_temporary_directory(void) {
         buf = xmalloc(buflen = strlen(tmpdir) + 64);
 
         while ((de = readdir(d))) {
-            char *p;
-            p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
+            if (!tmpdir_specified || is_driftnet_file(de->d_name)) {
                 if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
                     buf = xrealloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
                 
@@ -634,25 +636,38 @@ int main(int argc, char *argv[]) {
         }
     } else {
         /* need to make a temporary directory. */
-        for (;;) {
-            tmpdir = strdup(tmpnam(NULL));  /* may generate a warning, but this is safe because we create a directory not a file */
-            if (mkdir(tmpdir, 0700) == 0)
-                break;
-            xfree(tmpdir);
-        }
+	char *tmp;
+	char template[PATH_MAX+11];
+
+	if (!(tmp = getenv("TMPDIR")))
+	    if (!(tmp = getenv("TEMP")))
+		if (!(tmp = getenv("TMP")))
+		    tmp = "/tmp";
+
+	snprintf(template, PATH_MAX+11, "%s/drifnet-XXXXXX", tmp);
+	tmpdir = mkdtemp(template);
+	if (!tmpdir) {
+	    perror(PROGNAME": mkdtemp");
+	    return -1;
+	}
     }
 
     if (verbose) 
         fprintf(stderr, PROGNAME": using temporary file directory %s\n", tmpdir);
 
-    if (!interface && !(interface = pcap_lookupdev(ebuf))) {
+    if (!dumpfile && !interface && !(interface = pcap_lookupdev(ebuf))) {
         fprintf(stderr, PROGNAME": pcap_lookupdev: %s\n", ebuf);
         fprintf(stderr, PROGNAME": try specifying an interface with -i\n");
         return -1;
     }
 
-    if (verbose)
-        fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
+    if (verbose) {
+        if (interface) {
+            fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
+        } else if (dumpfile) {
+            fprintf(stderr, PROGNAME": processing packets from dumpfile '%s'\n", dumpfile);
+        }
+    }
 
     /* Build up filter. */
     if (optind < argc) {
@@ -792,7 +807,7 @@ int main(int argc, char *argv[]) {
     for (C = slots; C < slots + slotsalloc; ++C)
         if (*C) connection_delete(*C);
     xfree(slots);
-    xfree(tmpdir);
+    /*xfree(tmpdir); */
 
     return 0;
 }

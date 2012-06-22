@@ -305,7 +305,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     int nimgs = 0;
 
     if (!path)
-        path = xmalloc(strlen(tmpdir) + 34);
+        path = xmalloc(strlen(tmpdir) + 64);
 
     /* We are sent messages of size TMPNAMELEN containing a null-terminated
      * file name. */
@@ -413,7 +413,7 @@ int dodisplay(int argc, char *argv[]) {
     
     /* mouse button press/release for saving images */
     g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
-    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_release_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
 
     gtk_widget_show_all(window);
 

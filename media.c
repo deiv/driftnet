@@ -52,9 +52,7 @@ static int count_temporary_files(void) {
         d = opendir(tmpdir);
         if (d) {
             while ((de = readdir(d))) {
-                char *p;
-                p = strrchr(de->d_name, '.');
-                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".png") == 0 || strcmp(p, ".mp3") == 0)))
+                if (is_driftnet_file(de->d_name))
                     ++num;
             }
             closedir(d);
@@ -140,4 +138,17 @@ void connection_extract_media(connection c, const enum mediatype T) {
             b->dirty = 0;
         }
     }
+}
+
+int is_driftnet_file(char *filename) 
+{
+    if (strncmp(filename, "driftnet-", 9) != 0) return 0;
+    
+    char *p = strrchr(filename, '.');
+    if (p == 0) return 0;
+    
+    return (strcmp(p, ".jpeg") == 0 ||
+	strcmp(p, ".gif") == 0 ||
+	strcmp(p, ".png") == 0 ||
+	strcmp(p, ".mp3") == 0);
 }
