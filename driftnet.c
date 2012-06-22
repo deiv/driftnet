@@ -645,14 +645,19 @@ int main(int argc, char *argv[]) {
     if (verbose) 
         fprintf(stderr, PROGNAME": using temporary file directory %s\n", tmpdir);
 
-    if (!interface && !(interface = pcap_lookupdev(ebuf))) {
+    if (!dumpfile && !interface && !(interface = pcap_lookupdev(ebuf))) {
         fprintf(stderr, PROGNAME": pcap_lookupdev: %s\n", ebuf);
         fprintf(stderr, PROGNAME": try specifying an interface with -i\n");
         return -1;
     }
 
-    if (verbose)
-        fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
+    if (verbose) {
+        if (interface) {
+            fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
+        } else if (dumpfile) {
+            fprintf(stderr, PROGNAME": processing packets from dumpfile '%s'\n", dumpfile);
+        }
+    }
 
     /* Build up filter. */
     if (optind < argc) {
