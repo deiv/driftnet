@@ -11,10 +11,11 @@
 #
 # User-serviceable parts:
 #
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
 
 # Compiler to use.
 CC = gcc
-
 
 # Basic compiler, linker flags; should not need any changes.
 CFLAGS += -O2 -g -Wall
