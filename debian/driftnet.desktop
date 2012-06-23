@@ -1,6 +1,5 @@
 [Desktop Entry]
 Version=1.0
-Encoding=UTF-8
 Name=Driftnet
 Comment=Picks out and displays images from network traffic
 Exec=driftnet
