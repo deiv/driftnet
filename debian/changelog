@@ -1,3 +1,19 @@
+driftnet (0.1.6+cvs20040426-1) unstable; urgency=low
+
+  * Imported Upstream version 0.1.6+cvs20040426
+  * New maintainer (closes: #616451)
+  * Fix memstr() implementation non-working on 64bit systems (closes: #677623)
+  * Make driftnet read from pcap file (closes: #647949)
+  * Replace libpng12-dev build-dep with libpng-dev (closes: #662304)
+  * Update standards version 3.9.3
+  * Update debhelper version 9.0
+  * Switch to dpkg-source 3.0 (quilt) format
+  * Do not delete temporary files in adjunct mode as especified in help
+  * Fix ifndef hidding needed values for non-gtk operation
+  * Prevent backtrace due to unneccessary xfree on tmpdir
+
+ -- David Suarez <david.sephirot@gmail.com>  Fri, 22 Jun 2012 04:24:20 +0200
+
 driftnet (0.1.6-9.1) unstable; urgency=low
 
   * Non-maintainer upload.
