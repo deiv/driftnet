@@ -16,3 +16,18 @@ override_dh_install:
 	# The makefile dont have install target. Install by hand.
 	dh_install driftnet usr/bin
 	dh_install debian/driftnet.desktop /usr/share/applications
+
+DEB_DEBIAN_DIR=$(dir $(firstword $(MAKEFILE_LIST)))
+SWVERSION=$(shell dpkg-parsechangelog -l$(DEB_DEBIAN_DIR)/changelog \
+              | sed -rne 's,^Version: (.*)[+~]cvs([0-9]+)\-([0-9]+),\1,p')
+CVSDATE=$(shell dpkg-parsechangelog -l$(DEB_DEBIAN_DIR)/changelog \
+              | sed -rne 's,^Version: (.*)[+~]cvs([0-9]+)\-([0-9]+),\2,p')
+TARFILE=driftnet_$(SWVERSION)+cvs$(CVSDATE).orig.tar.bz2
+CVSHOME=:pserver:anonymous@sphinx.mythic-beasts.com:/home/chris/vcvs/repos
+EXPORTDIR=driftnet_$(SWVERSION)+cvs$(CVSDATE).orig
+
+get-orig-source:
+	cvs -d$(CVSHOME) login
+	cvs -d$(CVSHOME) export -f -D "$(shell expr $(CVSDATE) + 1)" -d $(EXPORTDIR) driftnet
+	tar -c ./$(EXPORTDIR) | bzip2 -9 > $(CURDIR)/$(TARFILE)
+	rm -rf $(CURDIR)/$(EXPORTDIR)
