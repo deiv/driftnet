@@ -47,6 +47,11 @@ pick up traffic on all interfaces, but this does not work with all versions of
 on such systems, an interface must be specified. On some systems, \fBdriftnet\fP
 can only use promiscuous mode if an interface is specified.
 .TP
+\fB-f\fP \fIfile\fP
+Instead of listening on an interface, read captured packets from a
+.BR pcap (3);
+dump \fIfile\fP; \fIfile\fP can be a named pipe for use with Kismet or similar.
+.TP
 \fB-p\fP
 Do not put the interface into promiscuous mode.
 .TP
