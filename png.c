@@ -15,6 +15,24 @@
 
 static const char rcsid[] = "$Id: png.c,v 1.4 2003/08/25 12:23:43 chris Exp $";
 
+/* png_catch_error: */
+/* Catch errors signalled by libpng, clean up and go on. */
+void png_catch_error(png_structp png_ptr, png_const_charp error_msg) {
+   jmp_buf *jmpbuf_ptr;
+   
+   fprintf(stderr, "libpng error: %s (skipping image).\n", error_msg);
+   fflush(stderr);
+
+   jmpbuf_ptr=png_jmpbuf(png_ptr);
+   if (jmpbuf_ptr==NULL) {
+      fprintf(stderr, "libpng unrecoverable error, terminating.\n");
+      fflush(stderr);
+      exit(20);
+   }
+
+   longjmp(jmpbuf_ptr, 1);
+}
+
 int png_load_hdr(img I) {
     unsigned char sig[PNG_SIG_LEN];
     png_structp png_ptr;
@@ -32,12 +50,18 @@ int png_load_hdr(img I) {
         return 0;
     }
 
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-        NULL, NULL, NULL);
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, 
+        NULL, png_catch_error, NULL);
 
     if (png_ptr == NULL) {
         I->err = IE_HDRFORMAT;
         return 0;
+    }
+   
+    if (setjmp(png_jmpbuf(png_ptr))) {
+       png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+       I->err = IE_HDRFORMAT;
+       return 0;
     }
 
     info_ptr = png_create_info_struct(png_ptr);
@@ -76,11 +100,17 @@ int png_load_img(img I) {
     img_alloc(I);
 
     png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-        NULL, NULL, NULL);
+        NULL, png_catch_error, NULL);
 
     if (png_ptr == NULL) {
         I->err = IE_HDRFORMAT;
         return 0;
+    }
+    
+    if (setjmp(png_jmpbuf(png_ptr))) {
+       png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+       I->err = IE_HDRFORMAT;
+       return 0;
     }
 
     info_ptr = png_create_info_struct(png_ptr);
