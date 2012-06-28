@@ -2,6 +2,9 @@
  * png.c:
  * PNG image support.
  *
+ * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Email: david.sephirot@gmail.com
+ *
  * Copyright (c) 2003 Drew Roedersheimer, Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
@@ -11,11 +14,23 @@
     #include <config.h>
 #endif
 
+#include <stdlib.h>
+
 #include <png.h>
 
+#include "log.h"
 #include "img.h"
-
 #include "pngformat.h"
+
+void png_catch_error(png_structp png_ptr, png_const_charp error_msg)
+{
+   log_msg(LOG_WARNING, "libpng, %s (skipping image).", error_msg);
+
+   if (setjmp(png_jmpbuf(png_ptr))) {
+	  log_msg(LOG_ERROR, "libpng, unrecoverable error, terminating.");
+      exit(-1);
+   }
+}
 
 int png_load_hdr(img I) {
     unsigned char sig[PNG_SIG_LEN];
@@ -34,12 +49,18 @@ int png_load_hdr(img I) {
         return 0;
     }
 
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-        NULL, NULL, NULL);
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, 
+        NULL, png_catch_error, NULL);
 
     if (png_ptr == NULL) {
         I->err = IE_HDRFORMAT;
         return 0;
+    }
+   
+    if (setjmp(png_jmpbuf(png_ptr))) {
+       png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+       I->err = IE_HDRFORMAT;
+       return 0;
     }
 
     info_ptr = png_create_info_struct(png_ptr);
@@ -78,11 +99,17 @@ int png_load_img(img I) {
     img_alloc(I);
 
     png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-        NULL, NULL, NULL);
+        NULL, png_catch_error, NULL);
 
     if (png_ptr == NULL) {
         I->err = IE_HDRFORMAT;
         return 0;
+    }
+    
+    if (setjmp(png_jmpbuf(png_ptr))) {
+       png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+       I->err = IE_HDRFORMAT;
+       return 0;
     }
 
     info_ptr = png_create_info_struct(png_ptr);

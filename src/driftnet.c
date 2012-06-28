@@ -2,6 +2,9 @@
  * driftnet.c:
  * Pick out images from passing network traffic.
  *
+ * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Email: david.sephirot@gmail.com
+ *
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
