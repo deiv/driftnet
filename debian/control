@@ -9,7 +9,7 @@ Homepage: http://www.ex-parrot.com/~chris/driftnet/
 Package: driftnet
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: Picks out and displays images from network traffic
+Description: picks out and displays images from network traffic
  Inspired by EtherPEG, Driftnet is a program which listens to network
  traffic and picks out images from TCP streams it observes. It is
  interesting to run it on a host which sees a lot of web traffic.
