@@ -1,0 +1,22 @@
+# dont track autools generated files
+configure
+config.guess
+Makefile.in
+Makefile
+config.h.in
+depcomp
+install-sh
+missing
+aclocal.m4
+compile
+autom4te.cache/
+.deps/
+config.h
+config.log
+config.status
+stamp-h1
+
+*.o
+
+*~
+*.swp
