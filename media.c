@@ -13,7 +13,7 @@ static const char rcsid[] = "$Id: media.c,v 1.9 2003/08/25 12:23:43 chris Exp $"
 #include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 #include <time.h>
 #include <unistd.h>

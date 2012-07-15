@@ -9,7 +9,20 @@
 
 static const char rcsid[] = "$Id: util.c,v 1.1 2003/08/25 12:24:08 chris Exp $";
 
-#include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+#include "compat.h"
+
+#include <stdio.h>
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
+
+#if HAVE_NANOSLEEP
+    #include <time.h>
+//#include <sys/time.h>  
+#elif HAVE_USLEEP
+    #include <unistd.h>
+#endif
 
 #include "driftnet.h"
 
@@ -79,4 +92,19 @@ unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
     return NULL;
 }
 
+void xnanosleep(long nanosecs)
+{
+#if HAVE_NANOSLEEP
+    struct timespec tm = {0, nanosecs};
+    
+    nanosleep(&tm, NULL);
+    
+#elif HAVE_USLEEP
+    unsigned int microsecs = (nanosecs < 1000) ? 1 : nanosecs / 1000;
 
+    usleep(microsecs); /* obsolete: POSIX.1-2001 */
+#else
+    /* sleep() can't help ... */
+    #error cannot find an usable sleep function
+#endif
+}

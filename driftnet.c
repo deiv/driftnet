@@ -9,7 +9,9 @@
 
 static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Exp $";
 
-#undef NDEBUG
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
 
 #include <assert.h>
 #include <dirent.h>
@@ -18,7 +20,9 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Ex
 
 #include <netinet/in.h> /* needs to be before <arpa/inet.h> on OpenBSD */
 #include <arpa/inet.h>
-#include <limits.h>
+#ifdef HAVE_LIMITS_H
+    #include <limits.h>
+#endif
 
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -27,12 +31,12 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Ex
 #include <ctype.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <stdlib.h>
+#include <stdio.h> 
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <signal.h>
-#include <time.h>
+
 #include <sys/stat.h>
 #include <sys/wait.h>
 

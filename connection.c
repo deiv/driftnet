@@ -9,11 +9,16 @@
 
 static const char rcsid[] = "$Id: connection.c,v 1.7 2003/10/16 11:56:37 chris Exp $";
 
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+#include "compat.h"
+
 #include <sys/types.h>
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 #include <time.h>
 

@@ -15,13 +15,18 @@
 
 static const char rcsid[] = "$Id: playaudio.c,v 1.5 2003/08/12 14:12:29 chris Exp $";
 
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+#include "compat.h"
+
 #include <sys/types.h>
 
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -152,10 +157,7 @@ static void *mpeg_play(void *a) {
             m_unlock;
         } else {
             /* No data, sleep for a little bit. */
-            struct timespec tm;
-            tm.tv_sec  = 0;
-            tm.tv_nsec = 100000000;  /* 0.1s */
-            nanosleep(&tm, NULL);
+            xnanosleep(100000000);  /* 0.1s */
         }
     }
 

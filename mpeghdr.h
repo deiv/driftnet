@@ -12,11 +12,10 @@
 #ifndef __MPEGHDR_H_ /* include guard */
 #define __MPEGHDR_H_
 
-#ifdef USE_SYS_TYPES_H
-#	include <sys/types.h>  /* Solaris etc. */
-#else
-#	include <stdint.h>     /* C99 standard. */
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
 #endif
+#include "compat.h"
 
 #include <stdio.h>
 

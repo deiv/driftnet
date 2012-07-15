@@ -14,15 +14,12 @@
 #ifndef __IMG_H_ /* include guard */
 #define __IMG_H_
 
-#ifdef USE_SYS_TYPES_H
-#   include <sys/types.h>   /* Solaris etc. */
-#else
-#   include <stdint.h>          /* C99 standard */
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
 #endif
+#include "compat.h"
 
 #include <stdio.h>
-
-#include "endianness.h"
 
 typedef uint8_t chan;
 typedef uint32_t pel;

@@ -11,12 +11,17 @@
 
 static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp $";
 
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+#include "compat.h"
+
 #include <sys/types.h>
 
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -261,11 +266,10 @@ void button_release_event(GtkWidget *widget, GdkEventButton *event) {
     if (ir && ir == find_image_rectangle((int)event->x, (int)event->y)) {
         /* We draw a little frame around the image while we're saving it, to
          * give some visual feedback. */
-        struct timespec jiffy = { 0, 100000000 };
         gdk_draw_rectangle(drawable, darea->style->white_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
         gdk_flush();    /* force X to actually draw the damn thing. */
         save_image(ir);
-        nanosleep(&jiffy, NULL);
+        xnanosleep(100000000);
         gdk_draw_rectangle(drawable, darea->style->black_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
     }
 }

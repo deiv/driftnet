@@ -12,9 +12,15 @@
 
 static const char rcsid[] = "$Id: http.c,v 1.1 2003/08/12 14:14:15 chris Exp $";
 
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+#include "compat.h"
+
 #include <sys/types.h>
 
-#include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 
 #include "driftnet.h"

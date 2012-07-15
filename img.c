@@ -12,7 +12,7 @@
 static const char rcsid[] = "$Id: img.c,v 1.11 2003/08/25 12:23:43 chris Exp $";
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 
 #include "driftnet.h"

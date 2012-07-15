@@ -12,18 +12,22 @@
 #ifndef __DRIFTNET_H_ /* include guard */
 #define __DRIFTNET_H_
 
-#define PROGNAME    "driftnet"
+#define QUOTE(str) #str
+#define PROGNAME QUOTE(DRIFTNET_PROGNAME)
+
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+#include "compat.h"
 
 #include <sys/types.h>
 
-#include <sys/socket.h>
+#include <stdio.h> 
+#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
+#include <sys/socket.h> /* On Darwin, stdlib.h is a prerequisite.  */
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/time.h>
-#include <stdio.h>
-#ifndef USE_SYS_TYPES_H
-#   include <stdint.h>
-#endif
+
 
 /* alloc_struct S P
  * Make P point to a new struct S, initialised as if in static storage (like
@@ -89,6 +93,7 @@ void *xrealloc(void *w, size_t n);
 void xfree(void *v);
 char *xstrdup(const char *s);
 unsigned char *memstr(const unsigned char *haystack, const size_t hlen, const unsigned char *needle, const size_t nlen);
+void xnanosleep(long nanosecs);
 
 #define TMPNAMELEN      64
 
