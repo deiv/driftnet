@@ -17,6 +17,10 @@ static const char rcsid[] = "$Id: util.c,v 1.1 2003/08/25 12:24:08 chris Exp $";
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 
+#if HAVE_STRING_H
+    #include <string.h>
+#endif
+
 #if HAVE_NANOSLEEP
     #include <time.h>
 //#include <sys/time.h>  
@@ -76,7 +80,7 @@ unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
                              const unsigned char *needle, const size_t nlen) {
     int skip[256], k;
 
-    if (nlen == 0) return (char*)haystack;
+    if (nlen == 0) return (unsigned char*)haystack;
 
     /* Set up the finite state machine we use. */
     for (k = 0; k < 256; ++k) skip[k] = nlen;

@@ -281,7 +281,8 @@ void usage(FILE *fp) {
 "  -f file          Instead of listening on an interface, read captured\n"
 "                   packets from a pcap dump file; file can be a named pipe\n"
 "                   for use with Kismet or similar.\n"
-"  -p               Do not put the listening interface into promiscuous mode.\n""  -a               Adjunct mode: do not display images on screen, but save\n"
+"  -p               Do not put the listening interface into promiscuous mode.\n"
+"  -a               Adjunct mode: do not display images on screen, but save\n"
 "                   them to a temporary directory and announce their names on\n"
 "                   standard output.\n"
 "  -m number        Maximum number of images to keep in temporary directory\n"
@@ -484,7 +485,7 @@ void *packet_capture_thread(void *v) {
 char optstring[] = "abd:f:hi:M:m:pSsvx:";
 
 int main(int argc, char *argv[]) {
-    char *interface = NULL, *filterexpr;
+    char *interface = NULL, *filterexpr = NULL;
     int promisc = 1;
     struct bpf_program filter;
     char ebuf[PCAP_ERRBUF_SIZE];

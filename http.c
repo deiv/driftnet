@@ -48,11 +48,11 @@ unsigned char *find_http_req(const unsigned char *data, const size_t len, unsign
     if (len < 40)
         return (unsigned char*)data;
     
-    if (!(req = memstr(data, len, "GET ", 4)))
+    if (!(req = memstr(data, len, (unsigned char*)"GET ", 4)))
         return (unsigned char*)(data + len - 4);
 
     /* Find the end of the request line. */
-    if (!(le = memstr(req + 4, remaining(req + 4), "\r\n", 2))) {
+    if (!(le = memstr(req + 4, remaining(req + 4), (unsigned char*)"\r\n", 2))) {
         if (remaining(req + 4) > MAX_REQ)
             return (unsigned char*)(req + 4);
         else
@@ -68,7 +68,7 @@ unsigned char *find_http_req(const unsigned char *data, const size_t len, unsign
         return le + 2;
 
     /* Find the end of the request headers. */
-    if (!(blankline = memstr(le + 2, remaining(le + 2), "\r\n\r\n", 4))) {
+    if (!(blankline = memstr(le + 2, remaining(le + 2), (unsigned char*)"\r\n\r\n", 4))) {
         if (remaining(le + 2) > MAX_REQ)
             return (unsigned char*)(data + len - 4);
         else
@@ -80,7 +80,7 @@ unsigned char *find_http_req(const unsigned char *data, const size_t len, unsign
         goto found;
 
     /* Is there a Host: header? */
-    if (!(hosthdr = memstr(le, blankline - le + 2, "\r\nHost: ", 8))) {
+    if (!(hosthdr = memstr(le, blankline - le + 2, (unsigned char*)"\r\nHost: ", 8))) {
         return blankline + 4;
     }
 
@@ -98,7 +98,7 @@ void dispatch_http_req(const char *mname, const unsigned char *data, const size_
     int pathlen, hostlen;
     const unsigned char *p;
     
-    if (!(p = memstr(data, len, "\r\n", 2)))
+    if (!(p = memstr(data, len, (unsigned char*)"\r\n", 2)))
         return;
     
     path = (const char*)(data + 4);
@@ -109,12 +109,12 @@ void dispatch_http_req(const char *mname, const unsigned char *data, const size_
         sprintf(url, "%.*s", pathlen, path);
     } else {
 
-        if (!(p = memstr(p, len - (p - data), "\r\nHost: ", 8)))
+        if (!(p = memstr(p, len - (p - data), (unsigned char*)"\r\nHost: ", 8)))
             return;
 
         host = (const char*)(p + 8);
     
-        if (!(p = memstr(p + 8, len - (p + 8 - data), "\r\n", 2)))
+        if (!(p = memstr(p + 8, len - (p + 8 - data), (unsigned char*)"\r\n", 2)))
             return;
         hostlen = p - (const unsigned char*)host;
 

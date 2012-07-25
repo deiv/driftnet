@@ -24,15 +24,15 @@ static const char rcsid[] = "$Id: image.c,v 1.13 2003/08/25 12:23:43 chris Exp $
 
 unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen) {
     unsigned char *gifhdr, *block;
-    int gotimgblock = 0;
+    /*int gotimgblock = 0;*/
     int ncolours;
 
     *gifdata = NULL;
 
     if (len < 6) return (unsigned char*)data;
 
-    gifhdr = memstr(data, len, "GIF89a", 6);
-    if (!gifhdr) gifhdr = memstr(data, len, "GIF87a", 6);
+    gifhdr = memstr(data, len, (unsigned char*)"GIF89a", 6);
+    if (!gifhdr) gifhdr = memstr(data, len, (unsigned char*)"GIF87a", 6);
     if (!gifhdr) return (unsigned char*)(data + len - 6);
     if (data + len - gifhdr < 14) return gifhdr; /* no space for header */
 
@@ -64,7 +64,7 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
                 } while (*block);
                 ++block;
                 spaceleft;
-                gotimgblock = 1;
+                /*gotimgblock = 1;*/
 
                 break;
 
@@ -168,7 +168,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
 
     *jpegdata = NULL;
 
-    jpeghdr = memstr(data, len, "\xff\xd8", 2); /* JPEG SOI marker */
+    jpeghdr = memstr(data, len, (unsigned char*)"\xff\xd8", 2); /* JPEG SOI marker */
     if (!jpeghdr) return (unsigned char*)(data + len - 1);
 
     /* printf("SOI marker at %p\n", jpeghdr); */
@@ -190,7 +190,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
         if (*block == 0xda) {
             /* start of scan; dunno how to parse this but just look for end of
              * image marker. XXX this is broken, fix it! */
-            block = memstr(block, len - (block - data), "\xff\xd9", 2);
+            block = memstr(block, len - (block - data), (unsigned char*)"\xff\xd9", 2);
             if (block) {
                 *jpegdata = jpeghdr;
                 *jpeglen = block + 2 - jpeghdr;
@@ -222,7 +222,7 @@ unsigned char *find_png_eoi(unsigned char *buffer, const size_t len) {
         
         datalen = ntohl(chunk.datalen);
 
-        if (!strncasecmp(chunk_code, "iend", PNG_CODE_LEN))
+        if (!strncasecmp((char*)chunk_code, "iend", PNG_CODE_LEN))
             return (unsigned char *)(data + sizeof(struct png_chunk) + PNG_CRC_LEN);
 
         /* Would this push us off the end of the buffer? */
@@ -245,7 +245,7 @@ unsigned char *find_png_image(const unsigned char *data, const size_t len, unsig
     if (len < PNG_SIG_LEN) 
        return (unsigned char*)data;
 
-    pnghdr = memstr(data, len, "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", PNG_SIG_LEN);
+    pnghdr = memstr(data, len, (unsigned char*)"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", PNG_SIG_LEN);
     if (!pnghdr)
         return (unsigned char*)(data + len - PNG_SIG_LEN); 
 

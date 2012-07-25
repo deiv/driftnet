@@ -12,8 +12,7 @@
 #ifndef __DRIFTNET_H_ /* include guard */
 #define __DRIFTNET_H_
 
-#define QUOTE(str) #str
-#define PROGNAME QUOTE(DRIFTNET_PROGNAME)
+#define PROGNAME DRIFTNET_PROGNAME
 
 #ifdef HAVE_CONFIG_H
     #include <config.h>
@@ -24,6 +23,11 @@
 
 #include <stdio.h> 
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
+
+#if HAVE_STRING_H
+    #include <string.h>
+#endif
+
 #include <sys/socket.h> /* On Darwin, stdlib.h is a prerequisite.  */
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -32,7 +36,8 @@
 /* alloc_struct S P
  * Make P point to a new struct S, initialised as if in static storage (like
  * = {0}). */
-#define alloc_struct(S, p)  do { struct S as__z = {0}; p = xmalloc(sizeof *p); *p = as__z; } while (0)
+//#define alloc_struct(S, p)  do { struct S as__z = {0}; p = xmalloc(sizeof *p); *p = as__z; } while (0)
+#define alloc_struct(S, p)  p = xmalloc(sizeof *p); memset(p, 0, sizeof *p);
 
 /* enum mediatype:
  * Bit field to characterise types of media which we can extract. */
