@@ -32,6 +32,7 @@ static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp
 
 #include <sys/stat.h>
 
+#include "tmpdir.h"
 #include "driftnet.h"
 #include "img.h"
 
@@ -297,11 +298,6 @@ static ssize_t xread(int fd, void *buf, size_t len) {
     return len;
 }
 
-/* pipe_event:
- * React to events on the connecting pipe by loading images from the temporary
- * directory and displaying them on the window. */
-extern char *tmpdir;    /* in driftnet.c */
-
 gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     static char *path;
     char name[TMPNAMELEN];
@@ -309,7 +305,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     int nimgs = 0;
 
     if (!path)
-        path = xmalloc(strlen(tmpdir) + 34);
+        path = xmalloc(strlen(get_tmpdir()) + 34);
 
     /* We are sent messages of size TMPNAMELEN containing a null-terminated
      * file name. */
@@ -319,7 +315,7 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
 
         ++nimgs;
         
-        sprintf(path, "%s/%s", tmpdir, name);
+        sprintf(path, "%s/%s", get_tmpdir(), name);
 
         if (stat(path, &st) == -1)
             continue;

@@ -24,4 +24,7 @@
     #error "Not a valid integer types include found"
 #endif
 
+#define FALSE 0
+#define TRUE 1
+
 #endif /* __COMPAT_H__ */

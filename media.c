@@ -18,9 +18,9 @@ static const char rcsid[] = "$Id: media.c,v 1.9 2003/08/25 12:23:43 chris Exp $"
 #include <time.h>
 #include <unistd.h>
 
+#include "tmpdir.h"
 #include "driftnet.h"
 
-extern char *tmpdir;    /* in driftnet.c */
 extern int adjunct;
 extern int dpychld_fd;
 
@@ -39,39 +39,14 @@ void dispatch_http_req(const char *mname, const unsigned char *data, const size_
 /* playaudio.c */
 void mpeg_submit_chunk(const unsigned char *data, const size_t len);
 
-/* count_temporary_files:
- * How many of our files remain in the temporary directory? We do this a
- * maximum of once every five seconds. */
-static int count_temporary_files(void) {
-    static int num;
-    static time_t last_counted;
-    if (last_counted < time(NULL) - 5) {
-        DIR *d;
-        struct dirent *de;
-        num = 0;
-        d = opendir(tmpdir);
-        if (d) {
-            while ((de = readdir(d))) {
-                char *p;
-                p = strrchr(de->d_name, '.');
-                if (p && (strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".png") == 0 || strcmp(p, ".mp3") == 0)))
-                    ++num;
-            }
-            closedir(d);
-            last_counted = time(NULL);
-        }
-    }
-    return num;
-}
-
 /* dispatch_image:
  * Throw some image data at the display process. */
 void dispatch_image(const char *mname, const unsigned char *data, const size_t len) {
     char *buf, name[TMPNAMELEN] = {0};
     int fd;
-    buf = xmalloc(strlen(tmpdir) + 64);
+    buf = xmalloc(strlen(get_tmpdir()) + 64);
     sprintf(name, "driftnet-%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
-    sprintf(buf, "%s/%s", tmpdir, name);
+    sprintf(buf, "%s/%s", get_tmpdir(), name);
     fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, 0644);
     if (fd == -1)
         return;
@@ -113,7 +88,6 @@ static struct mediadrv {
  * Attempt to extract media data of the given TYPE from CONNECTION. */
 void connection_extract_media(connection c, const enum mediatype T) {
     struct datablock *b;
-    extern int max_tmpfiles;  /* in driftnet.c */
 
     /* Walk through the list of blocks and try to extract media data from
      * those which have changed. */
@@ -131,7 +105,7 @@ void connection_extract_media(connection c, const enum mediatype T) {
                     while (ptr != oldptr && ptr < c->data + b->off + b->len) {
                         oldptr = ptr;
                         ptr = driver[i].find_data(ptr, (b->off + b->len) - (ptr - c->data), &media, &mlen);
-                        if (media && (!max_tmpfiles || count_temporary_files() < max_tmpfiles))
+                        if (media && !tmpfiles_limit_reached())
                             driver[i].dispatch_data(driver[i].name, media, mlen);
                     }
 

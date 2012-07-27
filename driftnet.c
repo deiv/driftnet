@@ -31,15 +31,15 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Ex
 #include <ctype.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 
-#include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "tmpdir.h"
 #include "driftnet.h"
 
 #define SNAPLEN 262144      /* largest chunk of data we accept from pcap */
@@ -73,45 +73,6 @@ int dodisplay(int argc, char *argv[]);
 
 /* playaudio.c */
 void do_mpeg_player(void);
-
-/* clean_temporary_directory:
- * Ensure that our temporary directory is clear of any files. */
-void clean_temporary_directory(void) {
-    DIR *d;
-    
-    /* If tmpdir_specified is true, the user specified a particular temporary
-     * directory. We presume that the user doesn't want the directory removed
-     * and that we shouldn't nuke any files in that directory which don't look
-     * like ours. */
-
-    d = opendir(tmpdir);
-    if (d) {
-        struct dirent *de;
-        char *buf;
-        size_t buflen;
-
-        buf = xmalloc(buflen = strlen(tmpdir) + 64);
-
-        while ((de = readdir(d))) {
-            char *p;
-            p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
-                if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
-                    buf = xrealloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
-                
-                sprintf(buf, "%s/%s", tmpdir, de->d_name);
-                unlink(buf);
-            }
-        }
-        closedir(d);
-
-        xfree(buf);
-    }
-
-
-    if (!tmpdir_specified && rmdir(tmpdir) == -1 && errno != ENOENT) /* lame attempt to avoid race */
-        fprintf(stderr, PROGNAME": rmdir(%s): %s\n", tmpdir, strerror(errno));
-}
 
 /* alloc_connection:
  * Find a free slot in which to allocate a connection object. */
@@ -626,29 +587,16 @@ int main(int argc, char *argv[]) {
     /* If a directory name has not been specified, then we need to create one.
      * Otherwise, check that it's a directory into which we may write files. */
     if (tmpdir) {
-        struct stat st;
-        if (stat(tmpdir, &st) == -1) {
-            fprintf(stderr, PROGNAME": stat(%s): %s\n", tmpdir, strerror(errno));
-            return -1;
-        } else if (!S_ISDIR(st.st_mode)) {
-            fprintf(stderr, PROGNAME": %s: not a directory\n", tmpdir);
-            return -1;
-        } else if (access(tmpdir, R_OK | W_OK) != 0) { /* access is unsafe but we don't really care. */
-            fprintf(stderr, PROGNAME": %s: %s\n", tmpdir, strerror(errno));
-            return -1;
-        }
+        check_dir_is_rw(tmpdir);
+        set_tmpdir(tmpdir, TMPDIR_USER_OWNED, max_tmpfiles);
+
     } else {
         /* need to make a temporary directory. */
-        for (;;) {
-            tmpdir = strdup(tmpnam(NULL));  /* may generate a warning, but this is safe because we create a directory not a file */
-            if (mkdir(tmpdir, 0700) == 0)
-                break;
-            xfree(tmpdir);
-        }
+        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, max_tmpfiles);
     }
 
     if (verbose) 
-        fprintf(stderr, PROGNAME": using temporary file directory %s\n", tmpdir);
+        fprintf(stderr, PROGNAME": using temporary file directory %s\n", get_tmpdir());
 
     if (!interface && !(interface = pcap_lookupdev(ebuf))) {
         fprintf(stderr, PROGNAME": pcap_lookupdev: %s\n", ebuf);
@@ -791,13 +739,12 @@ int main(int argc, char *argv[]) {
     /* Clean up. */
 /*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
     pcap_close(pc);
-    clean_temporary_directory();
+    clean_tmpdir();
 
     /* Easier for memory-leak debugging if we deallocate all this here.... */
     for (C = slots; C < slots + slotsalloc; ++C)
         if (*C) connection_delete(*C);
     xfree(slots);
-    xfree(tmpdir);
 
     return 0;
 }
