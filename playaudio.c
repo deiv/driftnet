@@ -33,9 +33,8 @@ static const char rcsid[] = "$Id: playaudio.c,v 1.5 2003/08/12 14:12:29 chris Ex
 
 #include <sys/wait.h>
 
+#include "log.h"
 #include "driftnet.h"
-
-extern int verbose; /* in driftnet.c */
 
 /* The program we use to play MPEG data. Can be changed with -M */
 char *audio_mpeg_player = "mpg123 -";
@@ -115,8 +114,7 @@ void mpeg_submit_chunk(const unsigned char *data, const size_t len) {
     m_lock;
 
     if (buffered > MAX_BUFFERED) {
-        if (verbose)
-            fprintf(stderr, PROGNAME": MPEG buffer full with %d bytes\n", buffered);
+        log_msg(LOG_INFO, "MPEG buffer full with %d bytes", buffered);
         goto finish;
     }
     A = audiochunk_new(data, len);
@@ -148,7 +146,7 @@ static void *mpeg_play(void *a) {
         if (A) {
             /* Got some data, submit it to the encoder. */
             if (audiochunk_write(A, mpeg_fd) == -1)
-                fprintf(stderr, PROGNAME": write to MPEG player: %s\n", strerror(errno));
+                log_msg(LOG_ERROR, "write to MPEG player: %s", strerror(errno));
 
             m_lock;
             buffered -= A->len;
@@ -178,25 +176,24 @@ static void mpeg_player_manager(void) {
         time_t whenstarted;
         int st;
 
-        fprintf(stderr, PROGNAME": starting MPEG player `%s'\n", audio_mpeg_player);
+        log_msg(LOG_INFO, "starting MPEG player `%s'", audio_mpeg_player);
 
         whenstarted = time(NULL);
         switch ((mpeg_pid = fork())) {
             case 0:
                 execl("/bin/sh", "/bin/sh", "-c", audio_mpeg_player, NULL);
-                fprintf(stderr, PROGNAME": exec: %s\n", strerror(errno));
+                log_msg(LOG_ERROR, "exec: %s", strerror(errno));
                 exit(-1);
                 break;
 
             case -1:
-                fprintf(stderr, PROGNAME": fork: %s\n", strerror(errno));
+                log_msg(LOG_ERROR, "fork: %s", strerror(errno));
                 exit(-1);  /* gah, not much we can do now. */
                 break;
             
             default:
                 /* parent. */
-                if (verbose)
-                    fprintf(stderr, PROGNAME": MPEG player has PID %d\n", (int)mpeg_pid);
+                log_msg(LOG_INFO, " MPEG player has PID %d", (int)mpeg_pid);
                 break;
         }
 
@@ -204,19 +201,16 @@ static void mpeg_player_manager(void) {
         waitpid(mpeg_pid, &st, 0);
         mpeg_pid = 0;
 
-        if (verbose) {
-            if (WIFEXITED(st))
-                fprintf(stderr, PROGNAME": MPEG player exited with status %d\n", WEXITSTATUS(st));
-            else if (WIFSIGNALED(st))
-                fprintf(stderr, PROGNAME": MPEG player killed by signal %d\n", WTERMSIG(st));
-            /* else ?? */
-        }
-
+        if (WIFEXITED(st))
+            log_msg(LOG_INFO, "MPEG player exited with status %d", WEXITSTATUS(st));
+        else if (WIFSIGNALED(st))
+            log_msg(LOG_INFO, "MPEG player killed by signal %d", WTERMSIG(st));
+        /* else ?? */
 
         if (!foad && time(NULL) - whenstarted < 5) {
             /* The player expired very quickly. Probably something's wrong;
              * sleep for a bit and hope the problem goes away. */
-            fprintf(stderr, PROGNAME": MPEG player expired after %d seconds, sleeping for a bit\n", (int)(time(NULL) - whenstarted));
+            log_msg(LOG_WARNING, "MPEG player expired after %d seconds, sleeping for a bit", (int)(time(NULL) - whenstarted));
             sleep(5);
         }
     }

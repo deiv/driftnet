@@ -137,6 +137,8 @@ AC_C_BIGENDIAN(
     [AC_MSG_ERROR([unknown endianess ?])]
 )
 
+AC_C_INLINE
+
 #
 # Checks for library functions.
 #

@@ -39,6 +39,7 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Ex
 
 #include <sys/wait.h>
 
+#include "log.h"
 #include "tmpdir.h"
 #include "driftnet.h"
 
@@ -213,7 +214,7 @@ int get_link_level_hdr_length(int type)
             
         default:;
     }
-    fprintf(stderr, PROGNAME": unknown data link type %d", type);
+    log_msg(LOG_ERROR, "unknown data link type %d", type);
     exit(1);
 }
 
@@ -340,8 +341,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     int off, len, delta;
     connection *C, c;
 
-    if (verbose)
-        fprintf(stderr, ".");
+    log_msg(LOG_INFO, ".");
 
     memcpy(&ip, pkt + pkt_offset, sizeof(ip));
     memcpy(&s, &ip.ip_src, sizeof(ip.ip_src));
@@ -358,8 +358,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
 
     /* no connection at all, so we need to allocate one. */
     if (!C) {
-        if (verbose)
-            fprintf(stderr, PROGNAME": new connection: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+        log_msg(LOG_INFO, "new connection: %s", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
         C = alloc_connection();
         *C = connection_new(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
         /* This might or might not be an entirely new connection (SYN flag
@@ -383,8 +382,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     if (tcp.th_flags & TH_RST) {
         /* Looks like this connection is bogus, and so might be a
          * connection going the other way. */
-        if (verbose)
-            fprintf(stderr, PROGNAME": connection reset: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+        log_msg(LOG_INFO, "connection reset: %s", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
         
         connection_delete(c);
         *C = NULL;
@@ -413,8 +411,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
         
         if (offset > c->len + WRAPLEN) {
             /* Out-of-order packet. */
-            if (verbose) 
-                fprintf(stderr, PROGNAME": out of order packet: %s\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+            log_msg(LOG_INFO, "out of order packet: %s", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
         } else {
             connection_push(c, pkt + off, offset, len);
             connection_extract_media(c, extract_type);
@@ -423,8 +420,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     if (tcp.th_flags & TH_FIN) {
         /* Connection closing; mark it as closed, but let sweep_connections
          * free it if appropriate. */
-        if (verbose)
-            fprintf(stderr, PROGNAME": connection closing: %s, %d bytes transferred\n", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
+        log_msg(LOG_INFO, "connection closing: %s, %d bytes transferred", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
         c->fin = 1;
     }
 
@@ -472,7 +468,7 @@ int main(int argc, char *argv[]) {
 
             case 'i':
                 if (dumpfile) {
-                    fprintf(stderr, PROGNAME": can't specify -i and -f\n");
+                    log_msg(LOG_ERROR, "can't specify -i and -f");
                     return -1;
                 }
                 interface = optarg;
@@ -484,7 +480,7 @@ int main(int argc, char *argv[]) {
 
             case 'b':
                 if (!isatty(1))
-                    fprintf(stderr, PROGNAME": can't beep unless standard output is a terminal\n");
+                    log_msg(LOG_ERROR, "can't beep unless standard output is a terminal");
                 else 
                     beep = 1;
                 break;
@@ -513,7 +509,7 @@ int main(int argc, char *argv[]) {
             case 'm':
                 max_tmpfiles = atoi(optarg);
                 if (max_tmpfiles <= 0) {
-                    fprintf(stderr, PROGNAME": `%s' does not make sense for -m\n", optarg);
+                    log_msg(LOG_ERROR, "`%s' does not make sense for -m", optarg);
                     return -1;
                 }
                 break;
@@ -525,7 +521,7 @@ int main(int argc, char *argv[]) {
 
             case 'f':
                 if (interface) {
-                    fprintf(stderr, PROGNAME": can't specify -i and -f\n");
+                    log_msg(LOG_ERROR, "can't specify -i and -f");
                     return -1;
                 }
                 dumpfile = optarg;
@@ -541,42 +537,46 @@ int main(int argc, char *argv[]) {
             case '?':
             default:
                 if (strchr(optstring, optopt))
-                    fprintf(stderr, PROGNAME": option -%c requires an argument\n", optopt);
+                    log_msg(LOG_ERROR, "option -%c requires an argument", optopt);
                 else
-                    fprintf(stderr, PROGNAME": unrecognised option -%c\n", optopt);
+                    log_msg(LOG_ERROR, "unrecognised option -%c", optopt);
                 usage(stderr);
                 return 1;
         }
     }
+
+    if (verbose) {
+        set_loglevel(LOG_INFO);
+    }
     
 #ifdef NO_DISPLAY_WINDOW
     if (!adjunct) {
-        fprintf(stderr, PROGNAME": this version of driftnet was compiled without display support\n");
-        fprintf(stderr, PROGNAME": use the -a option to run it in adjunct mode\n");
+        log_msg(LOG_ERROR, "this version of driftnet was compiled without display support");
+        log_msg(LOG_ERROR, "use the -a option to run it in adjunct mode");
         return -1;
     }
 #endif /* !NO_DISPLAY_WINDOW */
     
     /* Let's not be too fascist about option checking.... */
     if (max_tmpfiles && !adjunct) {
-        fprintf(stderr, PROGNAME": warning: -m only makes sense with -a\n");
+        log_msg(LOG_WARNING, "-m only makes sense with -a");
         max_tmpfiles = 0;
     }
 
     if (adjunct && newpfx)
-        fprintf(stderr, PROGNAME": warning: -x ignored -a\n");
+        log_msg(LOG_WARNING, "-x ignored -a");
 
     if (mpeg_player_specified && !(extract_type & m_audio))
-        fprintf(stderr, PROGNAME": warning: -M only makes sense with -s\n");
+        log_msg(LOG_WARNING, "-M only makes sense with -s");
 
     if (mpeg_player_specified && adjunct)
-        fprintf(stderr, PROGNAME": warning: -M ignored with -a\n");
+        log_msg(LOG_WARNING, "-M ignored with -a");
 
-    if (max_tmpfiles && adjunct && verbose)
-        fprintf(stderr, PROGNAME": a maximum of %d images will be buffered\n", max_tmpfiles);
+    if (max_tmpfiles && adjunct)
+        log_msg(LOG_INFO, "a maximum of %d images will be buffered", max_tmpfiles);
 
     if (beep && adjunct)
-        fprintf(stderr, PROGNAME": can't beep in adjunct mode\n");
+        log_msg(LOG_WARNING, "can't beep in adjunct mode");
 
     /* In adjunct mode, it's important that the attached program gets
      * notification of images in a timely manner. Make stdout line-buffered
@@ -595,22 +595,20 @@ int main(int argc, char *argv[]) {
         set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, max_tmpfiles);
     }
 
-    if (verbose) 
-        fprintf(stderr, PROGNAME": using temporary file directory %s\n", get_tmpdir());
+    log_msg(LOG_INFO, "using temporary file directory %s", get_tmpdir());
 
     if (!interface && !(interface = pcap_lookupdev(ebuf))) {
-        fprintf(stderr, PROGNAME": pcap_lookupdev: %s\n", ebuf);
-        fprintf(stderr, PROGNAME": try specifying an interface with -i\n");
+        log_msg(LOG_ERROR, "pcap_lookupdev: %s", ebuf);
+        log_msg(LOG_ERROR, "try specifying an interface with -i");
         return -1;
     }
 
-    if (verbose)
-        fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
+    log_msg(LOG_INFO, "listening on %s%s", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
 
     /* Build up filter. */
     if (optind < argc) {
         if (dumpfile)
-            fprintf(stderr, PROGNAME": filter code ignored with dump file\n");
+            log_msg(LOG_WARNING, "filter code ignored with dump file");
         else {
             char **a;
             int l;
@@ -625,13 +623,12 @@ int main(int argc, char *argv[]) {
         }
     } else filterexpr = "tcp";
 
-    if (verbose)
-        fprintf(stderr, PROGNAME": using filter expression `%s'\n", filterexpr);
+    log_msg(LOG_INFO, "using filter expression `%s'", filterexpr);
     
 
 #ifndef NO_DISPLAY_WINDOW
-    if (verbose && newpfx && !adjunct)
-        fprintf(stderr, PROGNAME": using saved image prefix `%s'\n", savedimgpfx);
+    if (newpfx && !adjunct)
+        log_msg(LOG_INFO, "using saved image prefix `%s'", savedimgpfx);
 #endif
 
     setup_signals();
@@ -660,40 +657,38 @@ int main(int argc, char *argv[]) {
             default:
                 close(pfd[0]);
                 dpychld_fd = pfd[1];
-                if (verbose)
-                    fprintf(stderr, PROGNAME": started display child, pid %d\n", (int)dpychld);
+                log_msg(LOG_INFO, "started display child, pid %d", (int)dpychld);
                 break;
         }
-    } else if (verbose)
-        fprintf(stderr, PROGNAME": operating in adjunct mode\n");
+    } else log_msg(LOG_INFO, "operating in adjunct mode");
 #endif /* !NO_DISPLAY_WINDOW */
  
     /* Start up pcap. */
     if (dumpfile) {
         if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
-            fprintf(stderr, PROGNAME": pcap_open_offline: %s\n", ebuf);
+            log_msg(LOG_ERROR, "pcap_open_offline: %s", ebuf);
             return -1;
         }   
     } else {
         if (!(pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf))) {
-            fprintf(stderr, PROGNAME": pcap_open_live: %s\n", ebuf);
+            log_msg(LOG_ERROR, "pcap_open_live: %s", ebuf);
 
             if (getuid() != 0)
-                fprintf(stderr, PROGNAME": perhaps you need to be root?\n");
+                log_msg(LOG_ERROR, "perhaps you need to be root?");
             else if (!interface)
-                fprintf(stderr, PROGNAME": perhaps try selecting an interface with the -i option?\n");
+                log_msg(LOG_ERROR, "perhaps try selecting an interface with the -i option?");
                 
             return -1;
         }
     
         /* Only apply a filter to live packets. Is this right? */
         if (pcap_compile(pc, &filter, (char*)filterexpr, 1, 0) == -1) {
-            fprintf(stderr, PROGNAME": pcap_compile: %s\n", pcap_geterr(pc));
+            log_msg(LOG_ERROR, "pcap_compile: %s", pcap_geterr(pc));
             return -1;
         }
         
         if (pcap_setfilter(pc, &filter) == -1) {
-            fprintf(stderr, PROGNAME": pcap_setfilter: %s\n", pcap_geterr(pc));
+            log_msg(LOG_ERROR, "pcap_setfilter: %s", pcap_geterr(pc));
             return -1;
         }
     }
@@ -701,8 +696,7 @@ int main(int argc, char *argv[]) {
     /* Figure out the offset from the start of a returned packet to the data in
      * it. */
     pkt_offset = get_link_level_hdr_length(pcap_datalink(pc));
-    if (verbose)
-        fprintf(stderr, PROGNAME": link-level header length is %d bytes\n", pkt_offset);
+    log_msg(LOG_INFO, "link-level header length is %d bytes", pkt_offset);
 
     slotsused = 0;
     slotsalloc = 64;
@@ -722,15 +716,15 @@ int main(int argc, char *argv[]) {
             int st;
             while ((pp = waitpid(-1, &st, WNOHANG)) > 0) {
                 if (WIFEXITED(st))
-                    fprintf(stderr, PROGNAME": child process %d exited with status %d\n", (int)pp, WEXITSTATUS(st));
+                    log_msg(LOG_INFO, "child process %d exited with status %d", (int)pp, WEXITSTATUS(st));
                 else if (WIFSIGNALED(st))
-                    fprintf(stderr, PROGNAME": child process %d killed by signal %d\n", (int)pp, WTERMSIG(st));
+                    log_msg(LOG_INFO, "child process %d killed by signal %d", (int)pp, WTERMSIG(st));
                 else
-                    fprintf(stderr, PROGNAME": child process %d died, not sure why\n", (int)pp);
+                    log_msg(LOG_INFO, "child process %d died, not sure why", (int)pp);
             }
             
         } else
-            fprintf(stderr, PROGNAME": caught signal %d\n", foad);
+            log_msg(LOG_INFO, "caught signal %d", foad);
     }
     
     pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */

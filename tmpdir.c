@@ -29,6 +29,7 @@
 
 #include <assert.h>
 
+#include "log.h"
 #include "driftnet.h"  /* XXX: clean headers */
 #include "tmpdir.h"
 
@@ -102,7 +103,7 @@ const char* make_tmpdir(void)
 		
 		if (tmp == NULL) {
 			xfree(template); /* useless... */
-			fprintf(stderr, PROGNAME": make_tmpdir(), mkdtemp: %s\n", strerror(errno));
+			log_msg(LOG_ERROR, "make_tmpdir(), mkdtemp: %s", strerror(errno));
             exit (-1);
 		}
 		
@@ -111,10 +112,10 @@ const char* make_tmpdir(void)
 
     if (n < 0) {
         /* we have an error on snprintf */
-        fprintf(stderr, PROGNAME": make_tmpdir(), snprintf: %s\n", strerror(errno));
+        log_msg(LOG_ERROR, "make_tmpdir(), snprintf: %s", strerror(errno));
     } else {
         /* logic error... */
-        fprintf(stderr, PROGNAME": make_tmpdir(), internal error\n");
+        log_msg(LOG_ERROR, "make_tmpdir(), internal error");
     }
 
     exit (-1);
@@ -163,7 +164,7 @@ void clean_tmpdir()
 
     if (tmpdir.type == TMPDIR_APP_OWNED) {
         if ( rmdir(tmpdir.path) == -1 && errno != ENOENT) /* lame attempt to avoid race */
-            fprintf(stderr, PROGNAME": rmdir(%s): %s\n", tmpdir.path, strerror(errno));
+            log_msg(LOG_ERROR, "rmdir(%s): %s", tmpdir.path, strerror(errno));
     }
 
     xfree((void*)tmpdir.path);    /* we don't need it anymore */
@@ -175,13 +176,13 @@ int check_dir_is_rw(const char* dir)
     struct stat st;
 
     if (stat(dir, &st) == -1) {
-        fprintf(stderr, PROGNAME": stat(%s): %s\n", dir, strerror(errno));
+        log_msg(LOG_ERROR, "stat(%s): %s", dir, strerror(errno));
         exit (-1);
     } else if (!S_ISDIR(st.st_mode)) {
-        fprintf(stderr, PROGNAME": %s: not a directory\n", dir);
+        log_msg(LOG_ERROR, "%s: not a directory", dir);
         exit (-1);
     } else if (access(dir, R_OK | W_OK) != 0) { /* access is unsafe but we don't really care. */
-        fprintf(stderr, PROGNAME": %s: %s\n", dir, strerror(errno));
+        log_msg(LOG_ERROR, "%s: %s", dir, strerror(errno));
         exit (-1);
     }
 

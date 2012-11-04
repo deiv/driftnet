@@ -32,6 +32,7 @@ static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp
 
 #include <sys/stat.h>
 
+#include "log.h"
 #include "tmpdir.h"
 #include "driftnet.h"
 #include "img.h"
@@ -39,7 +40,7 @@ static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp
 /* The border, in pixels, around images displayed in the window. */
 #define BORDER  6
 
-extern int verbose, beep; /* in driftnet.c */
+extern int beep; /* in driftnet.c */
 
 static GtkWidget *window, *darea;
 static GdkWindow *drawable;
@@ -56,8 +57,7 @@ static int nimgrects;
 static struct imgrect *imgrects;
 
 gint delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    if (verbose)
-        fprintf(stderr, PROGNAME ": display child shutting down\n");
+    log_msg(LOG_INFO, "display child shutting down\n");
     return FALSE;   /* do destroy window */
 }
 
@@ -220,17 +220,17 @@ void save_image(struct imgrect *ir) {
     do
         sprintf(name, "%s%d%s", savedimgpfx, num++, strrchr(ir->filename, '.'));
     while (stat(name, &st) == 0);
-    fprintf(stderr, PROGNAME": saving `%s' as `%s'\n", ir->filename, name);
+    log_msg(LOG_INFO, "saving `%s' as `%s'", ir->filename, name);
 
     fd1 = open(ir->filename, O_RDONLY);
     if (fd1 == -1) {
-        fprintf(stderr, PROGNAME": %s: %s\n", ir->filename, strerror(errno));
+        log_msg(LOG_ERROR, "%s: %s", ir->filename, strerror(errno));
         return;
     }
     
     fd2 = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd2 == -1) {
-        fprintf(stderr, PROGNAME": %s: %s\n", name, strerror(errno));
+        log_msg(LOG_ERROR, "%s: %s", name, strerror(errno));
         close(fd1);
         return;
     }
@@ -238,7 +238,7 @@ void save_image(struct imgrect *ir) {
     /* XXX interrupts */
     while ((l = read(fd1, buf, sizeof buf)) > 0) {
         if (write(fd2, buf, l) == -1) {
-            fprintf(stderr, PROGNAME": %s: %s\n", name, strerror(errno));
+            log_msg(LOG_ERROR, "%s: %s", name, strerror(errno));
             close(fd1);
             close(fd2);
             return;
@@ -246,7 +246,7 @@ void save_image(struct imgrect *ir) {
     }
 
     if (l == -1)
-        fprintf(stderr, PROGNAME": %s: %s\n", ir->filename, strerror(errno));
+        log_msg(LOG_ERROR, "%s: %s", ir->filename, strerror(errno));
 
     close(fd1);
     close(fd2);
@@ -320,14 +320,13 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
         if (stat(path, &st) == -1)
             continue;
            
-        if (verbose)
-            fprintf(stderr, PROGNAME": received image %s of size %d\n", name, (int)st.st_size);
+        log_msg(LOG_INFO, "received image %s of size %d", name, (int)st.st_size);
         /* Check to see whether this looks like an image we're interested in. */
         if (st.st_size > 100) {
             /* Small images are probably bollocks. */
             img i = img_new();
             if (!img_load_file(i, path, header, unknown))
-                fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", name, i->err);
+                log_msg(LOG_WARNING, "%s: bogus image (err = %d)", name, i->err);
             else {
                 if (i->width > 8 && i->height > 8) {
                     if (img_load(i, full, i->type)) {
@@ -360,12 +359,12 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         update_window();
 
                         wrx += w + BORDER;
-                    } else fprintf(stderr, PROGNAME": %s: bogus image (err = %d)\n", name, i->err);
-                } else if (verbose) fprintf(stderr, PROGNAME": %s: image dimensions (%d x %d) too small to bother with\n", name, i->width, i->height);
+                    } else log_msg(LOG_WARNING, "%s: bogus image (err = %d)", name, i->err);
+                } else log_msg(LOG_WARNING, "%s: image dimensions (%d x %d) too small to bother with", name, i->width, i->height);
             }
 
             img_delete(i);
-        } else if (verbose) fprintf(stderr, PROGNAME": image data too small (%d bytes) to bother with\n", (int)st.st_size);
+        } else log_msg(LOG_WARNING, "image data too small (%d bytes) to bother with", (int)st.st_size);
 
         if (!saveimg)
             unlink(name);
