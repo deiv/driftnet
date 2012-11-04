@@ -33,6 +33,7 @@ static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp
 #include <sys/stat.h>
 
 #include "log.h"
+#include "options.h"
 #include "tmpdir.h"
 #include "driftnet.h"
 #include "img.h"
@@ -352,8 +353,9 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
                         add_image_rectangle(path, wrx, wry - h, w, h);
                         saveimg = 1;
-
-                        if (beep)
+			 
+			/* XXX: remove get_options()->beep access; pass 'beep' in display start */
+                        if (get_options()->beep)
                             write(1, "\a", 1);
 
                         update_window();

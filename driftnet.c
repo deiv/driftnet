@@ -40,6 +40,7 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Ex
 #include <sys/wait.h>
 
 #include "log.h"
+#include "options.h"
 #include "tmpdir.h"
 #include "driftnet.h"
 
@@ -49,16 +50,6 @@ static const char rcsid[] = "$Id: driftnet.c,v 1.32 2003/10/16 11:56:37 chris Ex
 /* slots for storing information about connections */
 connection *slots;
 unsigned int slotsused, slotsalloc;
-
-/* flags: verbose, adjunct mode, temporary directory to use, media types to
- * extract, beep on image. */
-int extract_images = 1;
-int verbose, adjunct, beep;
-int tmpdir_specified;
-char *tmpdir;
-int max_tmpfiles;
-
-enum mediatype extract_type = m_image;
 
 /* ugh. */
 pcap_t *pc;
@@ -124,7 +115,9 @@ void sweep_connections(void) {
             if ((now - c->last) > TIMEOUT
                 || (c->fin && (!c->blocks || !c->blocks->next))
                 || c->len > MAXCONNECTIONDATA) {
-                connection_extract_media(c, extract_type);
+                /* XXX: remove get_options->extract_type later on media and
+                 * connection code refactor */
+                connection_extract_media(c, get_options()->extract_type);
                 connection_delete(c);
                 *C = NULL;
             }
@@ -216,69 +209,6 @@ int get_link_level_hdr_length(int type)
     }
     log_msg(LOG_ERROR, "unknown data link type %d", type);
     exit(1);
-}
-
-
-/* usage:
- * Print usage information. */
-void usage(FILE *fp) {
-    fprintf(fp,
-"driftnet, version %s\n"
-"Capture images from network traffic and display them in an X window.\n"
-#ifdef NO_DISPLAY_WINDOW
-"\n"
-"Actually, this version of driftnet was compiled with the NO_DISPLAY_WINDOW\n"
-"option, so that it can only be used in adjunct mode. See below.\n"
-#endif /* NO_DISPLAY_WINDOW */
-"\n"
-"Synopsis: driftnet [options] [filter code]\n"
-"\n"
-"Options:\n"
-"\n"
-"  -h               Display this help message.\n"
-"  -v               Verbose operation.\n"
-"  -b               Beep when a new image is captured.\n"
-"  -i interface     Select the interface on which to listen (default: all\n"
-"                   interfaces).\n"
-"  -f file          Instead of listening on an interface, read captured\n"
-"                   packets from a pcap dump file; file can be a named pipe\n"
-"                   for use with Kismet or similar.\n"
-"  -p               Do not put the listening interface into promiscuous mode.\n"
-"  -a               Adjunct mode: do not display images on screen, but save\n"
-"                   them to a temporary directory and announce their names on\n"
-"                   standard output.\n"
-"  -m number        Maximum number of images to keep in temporary directory\n"
-"                   in adjunct mode.\n"
-"  -d directory     Use the named temporary directory.\n"
-"  -x prefix        Prefix to use when saving images.\n"
-"  -s               Attempt to extract streamed audio data from the network,\n"
-"                   in addition to images. At present this supports MPEG data\n"
-"                   only.\n"
-"  -S               Extract streamed audio but not images.\n"
-"  -M command       Use the given command to play MPEG audio data extracted\n"
-"                   with the -s option; this should process MPEG frames\n"
-"                   supplied on standard input. Default: `mpg123 -'.\n"
-"\n"
-"Filter code can be specified after any options in the manner of tcpdump(8).\n"
-"The filter code will be evaluated as `tcp and (user filter code)'\n"
-"\n"
-"You can save images to the current directory by clicking on them.\n"
-"\n"
-"Adjunct mode is designed to be used by other programs which want to use\n"
-"driftnet to gather images from the network. With the -m option, driftnet will\n"
-"silently drop images if more than the specified number of images are saved\n"
-"in its temporary directory. It is assumed that some other process is\n"
-"collecting and deleting the image files.\n"
-"\n"
-"driftnet, copyright (c) 2001-2 Chris Lightfoot <chris@ex-parrot.com>\n"
-"home page: http://www.ex-parrot.com/~chris/driftnet/\n"
-"\n"
-"This program is free software; you can redistribute it and/or modify\n"
-"it under the terms of the GNU General Public License as published by\n"
-"the Free Software Foundation; either version 2 of the License, or\n"
-"(at your option) any later version.\n"
-"\n",
-            DRIFTNET_VERSION);
 }
 
 /* terminate_on_signal:
@@ -414,7 +344,9 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
             log_msg(LOG_INFO, "out of order packet: %s", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
         } else {
             connection_push(c, pkt + off, offset, len);
-            connection_extract_media(c, extract_type);
+            /* XXX: remove get_options->extract_type later on media and
+             * connection code refactor */
+            connection_extract_media(c, get_options()->extract_type);
         }
     }
     if (tcp.th_flags & TH_FIN) {
@@ -439,207 +371,59 @@ void *packet_capture_thread(void *v) {
 /* main:
  * Entry point. Process command line options, start up pcap and enter capture
  * loop. */
-char optstring[] = "abd:f:hi:M:m:pSsvx:";
 
-int main(int argc, char *argv[]) {
-    char *interface = NULL, *filterexpr = NULL;
-    int promisc = 1;
+int main(int argc, char *argv[]) 
+{
     struct bpf_program filter;
     char ebuf[PCAP_ERRBUF_SIZE];
-    int c;
-#ifndef NO_DISPLAY_WINDOW
-    extern char *savedimgpfx;       /* in display.c */
-#endif
-    extern char *audio_mpeg_player; /* in playaudio.c */
-    int newpfx = 0;
-    int mpeg_player_specified = 0;
-    char *dumpfile = NULL;
-    
     pthread_t packetth;
     connection *C;
+    options_t *options;
 
-    /* Handle command-line options. */
-    opterr = 0;
-    while ((c = getopt(argc, argv, optstring)) != -1) {
-        switch(c) {
-            case 'h':
-                usage(stdout);
-                return 0;
+    options = parse_options(argc, argv);
 
-            case 'i':
-                if (dumpfile) {
-                    log_msg(LOG_ERROR, "can't specify -i and -f");
-                    return -1;
-                }
-                interface = optarg;
-                break;
-
-            case 'v':
-                verbose = 1;
-                break;
-
-            case 'b':
-                if (!isatty(1))
-                    log_msg(LOG_ERROR, "can't beep unless standard output is a terminal");
-                else 
-                    beep = 1;
-                break;
-
-            case 'p':
-                promisc = 0;
-                break;
-
-            case 's':
-                extract_type |= m_audio;
-                break;
-
-            case 'S':
-                extract_type = m_audio;
-                break;
-
-            case 'M':
-                audio_mpeg_player = optarg;
-                mpeg_player_specified = 1;
-                break;
-
-            case 'a':
-                adjunct = 1;
-                break;
-
-            case 'm':
-                max_tmpfiles = atoi(optarg);
-                if (max_tmpfiles <= 0) {
-                    log_msg(LOG_ERROR, "`%s' does not make sense for -m", optarg);
-                    return -1;
-                }
-                break;
-
-            case 'd':
-                tmpdir = optarg;
-                tmpdir_specified = 1; /* so we don't delete it. */
-                break;
-
-            case 'f':
-                if (interface) {
-                    log_msg(LOG_ERROR, "can't specify -i and -f");
-                    return -1;
-                }
-                dumpfile = optarg;
-                break;
-
-#ifndef NO_DISPLAY_WINDOW
-            case 'x':
-                savedimgpfx = optarg;
-                newpfx = 1;
-                break;
-#endif
-
-            case '?':
-            default:
-                if (strchr(optstring, optopt))
-                    log_msg(LOG_ERROR, "option -%c requires an argument", optopt);
-                else
-                    log_msg(LOG_ERROR, "unrecognised option -%c", optopt);
-                usage(stderr);
-                return 1;
-        }
-    }
-
-    if (verbose) {
+    if (options->verbose)
         set_loglevel(LOG_INFO);
-    }
     
-#ifdef NO_DISPLAY_WINDOW
-    if (!adjunct) {
-        log_msg(LOG_ERROR, "this version of driftnet was compiled without display support");
-        log_msg(LOG_ERROR, "use the -a option to run it in adjunct mode");
-        return -1;
-    }
-#endif /* !NO_DISPLAY_WINDOW */
-    
-    /* Let's not be too fascist about option checking.... */
-    if (max_tmpfiles && !adjunct) {
-        log_msg(LOG_WARNING, "-m only makes sense with -a");
-        max_tmpfiles = 0;
-    }
-
-    if (adjunct && newpfx)
-        log_msg(LOG_WARNING, "-x ignored -a");
-
-    if (mpeg_player_specified && !(extract_type & m_audio))
-        log_msg(LOG_WARNING, "-M only makes sense with -s");
-
-    if (mpeg_player_specified && adjunct)
-        log_msg(LOG_WARNING, "-M ignored with -a");
-
-    if (max_tmpfiles && adjunct)
-        log_msg(LOG_INFO, "a maximum of %d images will be buffered", max_tmpfiles);
-
-    if (beep && adjunct)
-        log_msg(LOG_WARNING, "can't beep in adjunct mode");
-
     /* In adjunct mode, it's important that the attached program gets
      * notification of images in a timely manner. Make stdout line-buffered
      * for this reason. */
-    if (adjunct)
+    if (options->adjunct)
         setvbuf(stdout, NULL, _IOLBF, 0);
 
     /* If a directory name has not been specified, then we need to create one.
      * Otherwise, check that it's a directory into which we may write files. */
-    if (tmpdir) {
-        check_dir_is_rw(tmpdir);
-        set_tmpdir(tmpdir, TMPDIR_USER_OWNED, max_tmpfiles);
-
+    if (options->tmpdir) {
+        check_dir_is_rw(options->tmpdir);
+        set_tmpdir(options->tmpdir, TMPDIR_USER_OWNED, options->max_tmpfiles);
     } else {
         /* need to make a temporary directory. */
-        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, max_tmpfiles);
+        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, options->max_tmpfiles);
     }
-
     log_msg(LOG_INFO, "using temporary file directory %s", get_tmpdir());
 
-    if (!interface && !(interface = pcap_lookupdev(ebuf))) {
-        log_msg(LOG_ERROR, "pcap_lookupdev: %s", ebuf);
-        log_msg(LOG_ERROR, "try specifying an interface with -i");
-        return -1;
+    if (!options->dumpfile) {
+        if (!options->interface && !(options->interface = pcap_lookupdev(ebuf))) {
+            log_msg(LOG_ERROR, "pcap_lookupdev: %s", ebuf);
+            log_msg(LOG_ERROR, "try specifying an interface with -i");
+            log_msg(LOG_ERROR, "or a pcap capture file with -f");
+            return -1;
+        }
     }
 
-    log_msg(LOG_INFO, "listening on %s%s", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
-
-    /* Build up filter. */
-    if (optind < argc) {
-        if (dumpfile)
-            log_msg(LOG_WARNING, "filter code ignored with dump file");
-        else {
-            char **a;
-            int l;
-            for (a = argv + optind, l = sizeof("tcp and ()"); *a; l += strlen(*a) + 1, ++a);
-            filterexpr = calloc(l, 1);
-            strcpy(filterexpr, "tcp and (");
-            for (a = argv + optind; *a; ++a) {
-                strcat(filterexpr, *a);
-                if (*(a + 1)) strcat(filterexpr, " ");
-            }
-            strcat(filterexpr, ")");
-        }
-    } else filterexpr = "tcp";
-
-    log_msg(LOG_INFO, "using filter expression `%s'", filterexpr);
-    
-
-#ifndef NO_DISPLAY_WINDOW
-    if (newpfx && !adjunct)
-        log_msg(LOG_INFO, "using saved image prefix `%s'", savedimgpfx);
-#endif
+    log_msg(LOG_INFO, "listening on %s%s", 
+            options->interface ? options->interface : "all interfaces", 
+            options->promisc ? " in promiscuous mode" : "");
 
     setup_signals();
     
     /* Start up the audio player, if required. */
-    if (!adjunct && (extract_type & m_audio))
+    if (!options->adjunct && (options->extract_type & m_audio))
         do_mpeg_player();
     
 #ifndef NO_DISPLAY_WINDOW
     /* Possibly fork to start the display child process */
-    if (!adjunct && (extract_type & m_image)) {
+    if (!options->adjunct && (options->extract_type & m_image)) {
         int pfd[2];
         pipe(pfd);
         switch (dpychld = fork()) {
@@ -664,25 +448,27 @@ int main(int argc, char *argv[]) {
 #endif /* !NO_DISPLAY_WINDOW */
  
     /* Start up pcap. */
-    if (dumpfile) {
-        if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
+    if (options->dumpfile) {
+        if (!(pc = pcap_open_offline(options->dumpfile, ebuf))) {
             log_msg(LOG_ERROR, "pcap_open_offline: %s", ebuf);
             return -1;
         }   
     } else {
-        if (!(pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf))) {
+        if (!(pc = pcap_open_live(options->interface, SNAPLEN, options->promisc, 1000, ebuf))) {
             log_msg(LOG_ERROR, "pcap_open_live: %s", ebuf);
 
             if (getuid() != 0)
                 log_msg(LOG_ERROR, "perhaps you need to be root?");
-            else if (!interface)
+            else if (!options->interface) {
+                /* XXX: check before in validate_options() */
                 log_msg(LOG_ERROR, "perhaps try selecting an interface with the -i option?");
+            }
                 
             return -1;
         }
     
         /* Only apply a filter to live packets. Is this right? */
-        if (pcap_compile(pc, &filter, (char*)filterexpr, 1, 0) == -1) {
+        if (pcap_compile(pc, &filter, (char*)options->filterexpr, 1, 0) == -1) {
             log_msg(LOG_ERROR, "pcap_compile: %s", pcap_geterr(pc));
             return -1;
         }
@@ -710,7 +496,7 @@ int main(int argc, char *argv[]) {
     while (!foad)
         sleep(1);
 
-    if (verbose) {
+    if (options->verbose) {
         if (foad == SIGCHLD) {
             pid_t pp;
             int st;

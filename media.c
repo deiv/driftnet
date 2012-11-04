@@ -18,6 +18,7 @@ static const char rcsid[] = "$Id: media.c,v 1.9 2003/08/25 12:23:43 chris Exp $"
 #include <time.h>
 #include <unistd.h>
 
+#include "options.h"
 #include "tmpdir.h"
 #include "driftnet.h"
 
@@ -53,7 +54,8 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
     write(fd, data, len);
     close(fd);
 
-    if (adjunct)
+    /* XXX: remove get_options()->adjunct access */
+    if (get_options()->adjunct)
         printf("%s\n", buf);
 #ifndef NO_DISPLAY_WINDOW
     else
