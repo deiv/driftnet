@@ -219,8 +219,12 @@ static int is_tempfile(const char* file)
 
     char *p = strrchr(file, '.');    /* get the file extension */
 
-    if (p && (strncmp(file, "driftnet-", 9) == 0) && 
-        (strcmp(p, ".jpeg")==0 || strcmp(p, ".gif")==0 || strcmp(p, ".mp3")==0 )) {
+    /* XXX: get media files extensions from their respect media driver */
+    if (p && (strncmp (file, "driftnet-", 9) == 0) && 
+        (strcmp (p, ".jpeg")==0 || 
+         strcmp (p, ".gif")==0 || 
+         strcmp (p, ".mp3")==0 || 
+         strcmp (p, ".png")==0 )) {
         
         return TRUE;
     }
