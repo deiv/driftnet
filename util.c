@@ -2,18 +2,20 @@
  * util.c:
  * Various utility functions.
  *
+ * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Email: david.sephirot@gmail.com
+ *
  * Copyright (c) 2003 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
-
-static const char rcsid[] = "$Id: util.c,v 1.1 2003/08/25 12:24:08 chris Exp $";
 
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
 #include "compat.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 
@@ -23,12 +25,12 @@ static const char rcsid[] = "$Id: util.c,v 1.1 2003/08/25 12:24:08 chris Exp $";
 
 #if HAVE_NANOSLEEP
     #include <time.h>
-//#include <sys/time.h>  
+//#include <sys/time.h>
 #elif HAVE_USLEEP
     #include <unistd.h>
 #endif
 
-#include "driftnet.h"
+#include "util.h"
 
 /* xmalloc COUNT
  * Malloc, and abort if malloc fails. */
@@ -100,15 +102,31 @@ void xnanosleep(long nanosecs)
 {
 #if HAVE_NANOSLEEP
     struct timespec tm = {0, nanosecs};
-    
+
     nanosleep(&tm, NULL);
-    
+
 #elif HAVE_USLEEP
     unsigned int microsecs = (nanosecs < 1000) ? 1 : nanosecs / 1000;
 
     usleep(microsecs); /* obsolete: POSIX.1-2001 */
+
 #else
     /* sleep() can't help ... */
     #error cannot find an usable sleep function
 #endif
+}
+
+/*
+ * dump_data
+ *
+ * Print some binary data on a file descriptor.
+ *
+ * XXX: Unused
+ */
+void dump_data(FILE *fp, const unsigned char *data, const unsigned int len) {
+    const unsigned char *p;
+    for (p = data; p < data + len; ++p) {
+        if (isprint((int)*p)) fputc(*p, fp);
+        else fprintf(fp, "\\x%02x", (unsigned int)*p);
+    }
 }

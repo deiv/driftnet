@@ -24,17 +24,17 @@
 struct mpeg_audio_hdr {
     enum { m_vers_unknown = 0, m_vers_1, m_vers_2, m_vers_2_5 } version;
     enum { m_layer_unknown = 0, m_layer_1, m_layer_2, m_layer_3 } layer;
-    
+
     int has_crc;
     uint16_t crc;
 
     int bitrate;
     int samplerate;
-    
+
     int padded;
 
     int priv;
-    
+
     enum { m_chan_stereo = 0, m_chan_joint, m_chan_dual, m_chan_mono} channels;
 
     uint8_t mode_extn;

@@ -9,13 +9,13 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: img.c,v 1.11 2003/08/25 12:23:43 chris Exp $";
-
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 
+#include "util.h"
 #include "driftnet.h"
+
 #include "img.h"
 
 #define INLINE  inline
@@ -267,14 +267,14 @@ void img_blt(img dest, const int dx, const int dy, img src, const int sx, const 
     width -= Dx; height -= Dy;
 
     if (width <= 0 || height <= 0) return;  /* Nothing to copy. */
-    
+
     /* Dest BR. */
     Dx = img_clip_adj_x(dest, destx + width - 1);
     Dy = img_clip_adj_y(dest, desty + height - 1);
     width -= Dx; height -= Dy;
 
     if (width <= 0 || height <= 0) return;  /* Nothing to copy. */
-    
+
     if (dest == src) {
         if (srcx == destx && srcy == desty) return;
         else if (srcy + height < desty || desty + height < srcy || srcx + width < destx || destx + width < srcx)

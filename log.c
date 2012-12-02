@@ -15,7 +15,9 @@
 #include <stdarg.h>
 #include <time.h>
 
+#include "util.h"
 #include "driftnet.h"
+
 #include "log.h"
 
 static loglevel_t loglevel = LOG_WARNING;
@@ -65,7 +67,7 @@ void log_msg(loglevel_t level, const char *fmt, ...)
     }
 
     levelstring = get_levelstring(level);
-    timestring  = get_timestring(); 
+    timestring  = get_timestring();
 
     fprintf(stderr, "%s [%s] %s: %s\n", timestring, PROGNAME, levelstring, msg);
 

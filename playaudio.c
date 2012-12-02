@@ -13,8 +13,6 @@
  *
  */
 
-static const char rcsid[] = "$Id: playaudio.c,v 1.5 2003/08/12 14:12:29 chris Exp $";
-
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
@@ -30,11 +28,13 @@ static const char rcsid[] = "$Id: playaudio.c,v 1.5 2003/08/12 14:12:29 chris Ex
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
 #include <sys/wait.h>
 
+#include "util.h"
 #include "log.h"
 #include "driftnet.h"
+
+#include "playaudio.h"
 
 /* The program we use to play MPEG data. Can be changed with -M */
 char *audio_mpeg_player = "mpg123 -";
@@ -91,7 +91,7 @@ static int audiochunk_write(const audiochunk A, int fd) {
         size_t d = WRCHUNK;
         if (p + d > A->data + A->len)
             d = A->data + A->len - p;
-            
+
         n = write(fd, p, d);
         if (n == -1 && errno != EINTR)
             return -1;
@@ -110,7 +110,7 @@ static size_t buffered;
  * Put some MPEG data into the queue to be played. */
 void mpeg_submit_chunk(const unsigned char *data, const size_t len) {
     audiochunk A;
-    
+
     m_lock;
 
     if (buffered > MAX_BUFFERED) {
@@ -122,7 +122,7 @@ void mpeg_submit_chunk(const unsigned char *data, const size_t len) {
     wr = wr->next;
 
     buffered += len;
-    
+
 finish:
     m_unlock;
 }
@@ -135,14 +135,14 @@ int mpeg_fd;     /* the file descriptor into which we write data. */
 static void *mpeg_play(void *a) {
     /*audiochunk A;
     A = (audiochunk)a;*/
-    
+
     while (1) { /*(!foad) {*/
         audiochunk A;
- 
+
         m_lock;
         A = rd->next;
         m_unlock;
-        
+
         if (A) {
             /* Got some data, submit it to the encoder. */
             if (audiochunk_write(A, mpeg_fd) == -1)
@@ -153,6 +153,7 @@ static void *mpeg_play(void *a) {
             audiochunk_delete(rd);
             rd = A;
             m_unlock;
+
         } else {
             /* No data, sleep for a little bit. */
             xnanosleep(100000000);  /* 0.1s */
@@ -171,7 +172,7 @@ static void mpeg_player_manager(void) {
 
     sa.sa_handler = SIG_DFL;
     sigaction(SIGCHLD, &sa, NULL);
-    
+
     while (!foad) {
         time_t whenstarted;
         int st;
@@ -190,7 +191,7 @@ static void mpeg_player_manager(void) {
                 log_msg(LOG_ERROR, "fork: %s", strerror(errno));
                 exit(-1);  /* gah, not much we can do now. */
                 break;
-            
+
             default:
                 /* parent. */
                 log_msg(LOG_INFO, " MPEG player has PID %d", (int)mpeg_pid);
@@ -230,7 +231,7 @@ void do_mpeg_player(void) {
     rd = wr = list = audiochunk_new(NULL, 0);
 
     pipe(pp);
-    
+
     mpeg_mgr_pid = fork();
     if (mpeg_mgr_pid == 0) {
         close(pp[1]);

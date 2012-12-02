@@ -18,7 +18,7 @@ AC_ARG_ENABLE([display],
 if test "x$enable_display" = xno; then
     AC_DEFINE([NO_DISPLAY_WINDOW], [1], [Compile without support for a display window])
 fi
-#AM_CONDITIONAL(DISABLE_DISPLAY, test "x$ac_disable_display" != xno)  
+#AM_CONDITIONAL(DISABLE_DISPLAY, test "x$ac_disable_display" != xno)
 
 AC_ARG_ENABLE([debug],
 	[AC_HELP_STRING([--disable-debug], [disable debugging (default is no)])],
@@ -45,12 +45,12 @@ PKG_PROG_PKG_CONFIG
 # Checks for libraries.
 #
 
-AC_CHECK_LIB([jpeg], 
+AC_CHECK_LIB([jpeg],
     [jpeg_read_header],
     [],
     [AC_MSG_ERROR([cannot find lib jpeg])] )
 
-AC_CHECK_LIB([pcap], 
+AC_CHECK_LIB([pcap],
     [pcap_open_live],
     [],
     [AC_MSG_ERROR([cannot find lib pcap])] )
@@ -72,39 +72,39 @@ AC_CHECK_LIB([gif],
 
 if test "x$enable_display" = xyes; then
 
-	AC_CHECK_LIB([glib-2.0], 
-        [g_free], 
+	AC_CHECK_LIB([glib-2.0],
+        [g_free],
         [],
 		[AC_MSG_ERROR([cannot find lib glib-2.x])])
 
-	AC_CHECK_LIB([gobject-2.0], 
-        [g_signal_connect_data], 
+	AC_CHECK_LIB([gobject-2.0],
+        [g_signal_connect_data],
         [],
 		[AC_MSG_ERROR([cannot find lib libgobject-2.0])])
 
-	AC_CHECK_LIB([gtk-x11-2.0], 
-        [gtk_main], 
+	AC_CHECK_LIB([gtk-x11-2.0],
+        [gtk_main],
         [],
 		[AC_MSG_ERROR([cannot find lib gtk-2.x])])
 
-#	AC_CHECK_LIB([gthread-2.0], 
-#        [g_thread_init], 
+#	AC_CHECK_LIB([gthread-2.0],
+#        [g_thread_init],
 #        [],
 #		[AC_MSG_ERROR([cannot find lib libgthread-2.0])])
 
-	AC_CHECK_LIB([gdk-x11-2.0], 
-        [gdk_window_get_state], 
+	AC_CHECK_LIB([gdk-x11-2.0],
+        [gdk_window_get_state],
         [],
 		[AC_MSG_ERROR([cannot find lib gdk-x11-2.0])])
 
-#	AC_CHECK_LIB([Xrender], 
-#        [XRenderComposite], 
+#	AC_CHECK_LIB([Xrender],
+#        [XRenderComposite],
 #        [],
 #		[AC_MSG_ERROR([cannot find lib XRender])])
 
 	GTK_CFLAGS="$(${PKG_CONFIG} --cflags gtk+-x11-2.0 glib-2.0 gobject-2.0 gdk-x11-2.0)"
     #gthread-2.0)"
-    
+
     AC_SUBST(GTK_CFLAGS)
 fi
 
@@ -142,23 +142,22 @@ AC_C_INLINE
 #
 # Checks for library functions.
 #
- 
+
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([dup2 inet_ntoa memchr memset mkdir rmdir strcasecmp strchr strdup strerror strncasecmp strrchr])
 
-
+# nanosleep seems to exist in librt or libposix4 on Solaris
 sleep_func=no
-#.deps/connection.Tpo nanosleep seems to exist in librt or libposix4 on Solaris
 AC_SEARCH_LIBS([nanosleep],
     [libc rt posix4],
     [AC_CHECK_FUNCS([nanosleep], sleep_func=nanosleep, [])],
     [])
 
 if test x$sleep_func = xno; then
-    AC_CHECK_FUNCS([usleep], 
-        [sleep_func=usleep], 
+    AC_CHECK_FUNCS([usleep],
+        [sleep_func=usleep],
         [AC_MSG_ERROR([cannot find any usable sleep function])])
 fi
 

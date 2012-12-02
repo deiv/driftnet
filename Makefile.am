@@ -1,9 +1,12 @@
 
 bin_PROGRAMS = driftnet
 
-driftnet_SOURCES = audio.c mpeghdr.c gif.c img.c jpeg.c png.c driftnet.c image.c \
-        display.c playaudio.c connection.c media.c util.c http.c img.h driftnet.h \
-		mpeghdr.h compat.h tmpdir.c tmpdir.h log.c log.h options.c options.h
+driftnet_SOURCES = audio.c audio.h compat.h connection.c connection.h \
+				   display.c display.h  driftnet.c driftnet.h gif.c \
+				   http.c http.h image.c image.h img.c img.h jpeg.c \
+				   log.c log.h media.c media.h mpeghdr.c mpeghdr.h \
+				   options.c options.h packetcapture.c packetcapture.h \
+				   playaudio.c playaudio.h png.c tmpdir.c tmpdir.h util.c util.h
 
 dist_doc_DATA = README TODO
 EXTRA_DIST = driftnet.1.in CHANGES CREDITS

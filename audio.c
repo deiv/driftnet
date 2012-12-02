@@ -11,12 +11,11 @@
  *
  */
 
-static const char rcsid[] = "$Id: audio.c,v 1.3 2002/06/10 21:25:48 chris Exp $";
-
 #include <string.h>
 
-#include "driftnet.h"
 #include "mpeghdr.h"
+
+#include "audio.h"
 
 /* The minimum chunk of MPEG data, in frames, which we accept. MPEG layer 2/3
  * frames have 1152 samples, so there are something like 40 frames/s at

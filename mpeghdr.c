@@ -7,8 +7,6 @@
  *
  */
 
-static const char rcsid[] = "$Id: mpeghdr.c,v 1.4 2002/06/10 21:25:48 chris Exp $";
-
 #include <stdio.h>
 
 #include "mpeghdr.h"
@@ -58,20 +56,20 @@ int mpeg_hdr_parse(const uint8_t *data, struct mpeg_audio_hdr *h) {
     int i;
 
     *h = hz;
-    
+
     if (data[0] != 0xff || (data[1] & 0xe0) != 0xe0)
         return 0;
 
     hh = (data[1] << 16) | (data[2] << 8) | data[3];
 
 /*fprintf(stderr, "%08x\n", hh);*/
-    
+
     /* Version. */
     switch (bits(hh, 20, 19)) {
         case 0: h->version = m_vers_2_5;    break;
         case 2: h->version = m_vers_2;      break;
         case 3: h->version = m_vers_1;      break;
-        
+
         default:    return 0;
     }
 
@@ -88,7 +86,7 @@ int mpeg_hdr_parse(const uint8_t *data, struct mpeg_audio_hdr *h) {
     h->has_crc = bits(hh, 16, 16);
     if (h->has_crc)
         h->crc = (data[5] << 8) | (data[6]);
-    
+
     /* Bit rate. */
     i = (h->version == m_vers_1) ? 0 : 3;
     i += h->layer - 1;

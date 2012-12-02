@@ -9,7 +9,10 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: gif.c,v 1.4 2002/07/08 20:57:17 chris Exp $";
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+#include "compat.h"
 
 #include <gif_lib.h>
 
@@ -107,7 +110,7 @@ int gif_load_img(img I) {
             COPYROW(gifsrc, I->data[i]);
             gifsrc += I->width;
         }
-    } else 
+    } else
         for (p = (unsigned char*)si->RasterBits, end = p + I->width * I->height, q = I->flat; p < end; ++p, ++q)
             *q = PELA(pal[*p].Red, pal[*p].Green, pal[*p].Blue, *p == g->SBackGroundColor ? 255 : 0);
 
@@ -115,7 +118,7 @@ int gif_load_img(img I) {
 fail:
 
     DGifCloseFile(g);
-    
+
     return ret;
 }
 

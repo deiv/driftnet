@@ -11,16 +11,20 @@
     #include <config.h>
 #endif
 
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <unistd.h>
+#if HAVE_STRING_H
+    #include <string.h>
+#endif
 
 #include "compat.h"
 #include "log.h"
-#include "driftnet.h"
+#include "packetcapture.h"
+
 #include "options.h"
 
-options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE, 
+options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
         NULL, NULL, NULL, m_image, NULL, FALSE, FALSE
 #ifndef NO_DISPLAY_WINDOW
     ,NULL
@@ -30,7 +34,7 @@ options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
 static void validate_options(options_t* options);
 static void usage(FILE *fp);
 
-/* 
+/*
  * Handle command-line options
  */
 options_t* parse_options(int argc, char *argv[])
@@ -60,7 +64,7 @@ options_t* parse_options(int argc, char *argv[])
             case 'b':
                 if (!isatty(1))
                     log_msg(LOG_WARNING, "can't beep unless standard output is a terminal");
-                else 
+                else
                     options.beep = TRUE;
                 break;
 
@@ -154,16 +158,11 @@ options_t* parse_options(int argc, char *argv[])
     return &options;
 }
 
-inline options_t* get_options(void)
-{
-    return &options;
-}
-
 void validate_options(options_t* options)
 {
 #ifdef NO_DISPLAY_WINDOW
     if (!options->adjunct) {
-        /* 
+        /*
          * TODO: assume adjuct mode by default if we were compiled without
          * display support.
          */
@@ -172,7 +171,14 @@ void validate_options(options_t* options)
         exit (-1);
     }
 #endif /* !NO_DISPLAY_WINDOW */
-    
+
+    if (!options->dumpfile) {
+        if (!options->interface) {
+            /* TODO: on linux works "any" for all interfaces */
+            options->interface = get_default_interface();
+        }
+    }
+
     /* Let's not be too fascist about option checking.... */
     if (options->max_tmpfiles && !options->adjunct) {
         log_msg(LOG_WARNING, "-m only makes sense with -a");
@@ -197,7 +203,7 @@ void validate_options(options_t* options)
 
 /* usage:
  * Print usage information. */
-void usage(FILE *fp) 
+void usage(FILE *fp)
 {
     fprintf(fp,
 "driftnet, version %s\n"

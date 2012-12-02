@@ -14,7 +14,7 @@
     #include <config.h>
 #endif
 
-#include "driftnet.h" /* for enum mediatype */
+#include "media.h" /* for enum mediatype */
 
 typedef struct {
     const char *tmpdir;
@@ -28,7 +28,7 @@ typedef struct {
     char *dumpfile;
     char *interface;
     char *filterexpr;
-    enum mediatype extract_type;
+    mediatype_t extract_type;
     char *audio_mpeg_player;
     int mpeg_player_specified;
     int newpfx;
@@ -38,11 +38,6 @@ typedef struct {
 } options_t;
 
 options_t* parse_options(int argc, char *argv[]);
-/* 
- * Allow global access to options...
- * This will get removed when code refactoring are complete.
- */
-inline options_t* get_options(void);
 
 #endif /* __OPTIONS_H__ */
 

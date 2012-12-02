@@ -13,8 +13,6 @@
 
 #include "img.h"
 
-static const char rcsid[] = "$Id: png.c,v 1.4 2003/08/25 12:23:43 chris Exp $";
-
 int png_load_hdr(img I) {
     unsigned char sig[PNG_SIG_LEN];
     png_structp png_ptr;
@@ -47,7 +45,7 @@ int png_load_hdr(img I) {
         I->err = IE_HDRFORMAT;
         return 0;
     }
-    
+
     rewind(I->fp);
     png_init_io(png_ptr, I->fp);
 
@@ -55,7 +53,7 @@ int png_load_hdr(img I) {
 
     I->width = png_get_image_width(png_ptr, info_ptr);
     I->height = png_get_image_height(png_ptr, info_ptr);
-    
+
     png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 
     return(1);
@@ -90,7 +88,7 @@ int png_load_img(img I) {
         I->err = IE_HDRFORMAT;
         return 0;
     }
-    
+
     rewind(I->fp);
     png_init_io(png_ptr, I->fp);
 
@@ -119,12 +117,12 @@ int png_load_img(img I) {
     if (bit_depth == 16)
         png_set_strip_16(png_ptr);
 
-    /* The gdk img widget appears to expect 8-bit RGB followed by a 
+    /* The gdk img widget appears to expect 8-bit RGB followed by a
      * filler byte. */
     png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
-    
+
     /* Update the info structure after the transforms */
-    png_read_update_info(png_ptr, info_ptr); 
+    png_read_update_info(png_ptr, info_ptr);
 /*    png_set_rows(png_ptr, info_ptr, row_pointers)*/
 
     /* Allocate space before reading the image */
@@ -132,10 +130,10 @@ int png_load_img(img I) {
     for (i = 0; i < height; i++) {
         row_pointers[i] = png_malloc(png_ptr, png_get_rowbytes(png_ptr, info_ptr));
     }
-    
+
     /* Read in the image and copy it to the gdk img structure */
     png_read_image(png_ptr, row_pointers);
-    
+
     p = (unsigned char **)I->data;
     q = (unsigned char **)row_pointers;
 

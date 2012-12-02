@@ -1,22 +1,21 @@
 /*
  * image.c:
- * Attempt to find GIF/JPEG data embedded in buffers.
+ * Attempt to find GIF/JPEG/PNG data embedded in buffers.
  *
  * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
 
-static const char rcsid[] = "$Id: image.c,v 1.13 2003/08/25 12:23:43 chris Exp $";
-
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
-#include <netinet/in.h>
 
-#include "img.h"
+#include <netinet/in.h> /* ntohl */
 
-#include "driftnet.h"
+#include "util.h"
+
+#include "img.h" /* XXX: refactor, extract png macros needed */
 
 /* If we run out of space, put us back to the last candidate GIF header. */
 /*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/
@@ -124,7 +123,7 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
                     return gifhdr + 6;
                 }
                 break;
-                
+
             case 0x3b:
                 /* end of file block: we win. */
                 /* printf("gif data from %p to %p\n", gifhdr, block); */
@@ -172,7 +171,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     if (!jpeghdr) return (unsigned char*)(data + len - 1);
 
     /* printf("SOI marker at %p\n", jpeghdr); */
-    
+
     if (jpeghdr + 2 > data + len) return jpeghdr;
     block = jpeg_next_marker(jpeghdr + 2, len - 2 - (jpeghdr - data));
     /* printf("next block at %p\n", block); */
@@ -218,8 +217,8 @@ unsigned char *find_png_eoi(unsigned char *buffer, const size_t len) {
         memcpy(&chunk, data, sizeof chunk);
 /*        chunk = (struct png_chunk *)data; */ /* can't do that. */
         memset(chunk_code, '\0', PNG_CODE_LEN + 1);
-        memcpy(chunk_code, chunk.code, PNG_CODE_LEN);  
-        
+        memcpy(chunk_code, chunk.code, PNG_CODE_LEN);
+
         datalen = ntohl(chunk.datalen);
 
         if (!strncasecmp((char*)chunk_code, "iend", PNG_CODE_LEN))
@@ -228,8 +227,8 @@ unsigned char *find_png_eoi(unsigned char *buffer, const size_t len) {
         /* Would this push us off the end of the buffer? */
         if (datalen > (len - (data - buffer)))
             return NULL;
-        
-        data += (sizeof(struct png_chunk) + datalen + PNG_CRC_LEN);        
+
+        data += (sizeof(struct png_chunk) + datalen + PNG_CRC_LEN);
     }
 
     return NULL;
@@ -242,12 +241,12 @@ unsigned char *find_png_image(const unsigned char *data, const size_t len, unsig
 
     *pngdata = NULL;
 
-    if (len < PNG_SIG_LEN) 
+    if (len < PNG_SIG_LEN)
        return (unsigned char*)data;
 
     pnghdr = memstr(data, len, (unsigned char*)"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", PNG_SIG_LEN);
     if (!pnghdr)
-        return (unsigned char*)(data + len - PNG_SIG_LEN); 
+        return (unsigned char*)(data + len - PNG_SIG_LEN);
 
     data_end = (unsigned char *)(data + len);
 

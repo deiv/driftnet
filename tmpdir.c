@@ -16,7 +16,10 @@
 
 #include "compat.h"
 
-#include <stdio.h> 
+#include <sys/types.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 #include <unistd.h>
@@ -29,11 +32,12 @@
 
 #include <assert.h>
 
+#include "util.h"
 #include "log.h"
-#include "driftnet.h"  /* XXX: clean headers */
+
 #include "tmpdir.h"
 
-/* 
+/*
  * 'P_tmpdir' is an XSI (X/Open System Interfaces) extension to POSIX which
  * need not be provided by otherwise conforming implementations.
  */
@@ -43,14 +47,15 @@
 	#define DEFAULT_TMPDIR "/tmp"
 #endif
 
+#define TEMPFILE_PREFIX "driftnet-"
+
 typedef struct {
     const char *path;
     tmpdir_type_t type;
     int max_files;
 } tmpdir_t;
 
-static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0}; 
-
+static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0};
 
 static int is_tempfile(const char* p);
 static int count_tmpfiles(void);
@@ -63,9 +68,11 @@ void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files)
     tmpdir.path      = dir;
     tmpdir.type      = type;
     tmpdir.max_files = max_files;
+
+    log_msg(LOG_INFO, "using temporary file directory %s", tmpdir.path);
 }
 
-const char* get_tmpdir(void)
+inline const char* get_tmpdir(void)
 {
     assert (tmpdir.path != NULL);
 
@@ -100,19 +107,20 @@ const char* make_tmpdir(void)
         char *tmp;
 
 		tmp = mkdtemp(template);
-		
+
 		if (tmp == NULL) {
 			xfree(template); /* useless... */
 			log_msg(LOG_ERROR, "make_tmpdir(), mkdtemp: %s", strerror(errno));
             exit (-1);
 		}
-		
+
 		return tmp;
 	}
 
     if (n < 0) {
         /* we have an error on snprintf */
         log_msg(LOG_ERROR, "make_tmpdir(), snprintf: %s", strerror(errno));
+
     } else {
         /* logic error... */
         log_msg(LOG_ERROR, "make_tmpdir(), internal error");
@@ -121,23 +129,23 @@ const char* make_tmpdir(void)
     exit (-1);
 }
 
-/* 
+/*
  * clean_tmpdir:
  *   Ensure that our temporary directory is clear of any files.
  */
-void clean_tmpdir() 
+void clean_tmpdir()
 {
     DIR *d;
-    
+
     assert (tmpdir.path != NULL);
 
-    /* 
+    /*
      * If user_specified is true, the user specified a particular temporary
      * directory. We presume that the user doesn't want the directory removed
      * and that we shouldn't nuke any files in that directory which don't look
      * like ours
      *
-     * If not, remove it. 
+     * If not, remove it.
      */
     d = opendir(tmpdir.path);
 
@@ -152,7 +160,7 @@ void clean_tmpdir()
             if (is_tempfile(de->d_name)) {
                 if (buflen < strlen(tmpdir.path) + strlen(de->d_name) + 1)
                     buf = xrealloc(buf, buflen = strlen(tmpdir.path) + strlen(de->d_name) + 64);
-                
+
                 sprintf(buf, "%s/%s", tmpdir.path, de->d_name);
                 unlink(buf);
             }
@@ -178,10 +186,13 @@ int check_dir_is_rw(const char* dir)
     if (stat(dir, &st) == -1) {
         log_msg(LOG_ERROR, "stat(%s): %s", dir, strerror(errno));
         exit (-1);
+
     } else if (!S_ISDIR(st.st_mode)) {
         log_msg(LOG_ERROR, "%s: not a directory", dir);
         exit (-1);
-    } else if (access(dir, R_OK | W_OK) != 0) { /* access is unsafe but we don't really care. */
+
+    /* access is unsafe but we don't really care. */
+    } else if (access(dir, R_OK | W_OK) != 0) {
         log_msg(LOG_ERROR, "%s: %s", dir, strerror(errno));
         exit (-1);
     }
@@ -189,10 +200,33 @@ int check_dir_is_rw(const char* dir)
     return 0;
 }
 
+const char* tmpfile_write(const char* mname, const unsigned char *data, const size_t len)
+{
+    static char name[TMPNAMELEN] = {0};
+    char *buf;
+    int fd;
+
+    buf = xmalloc(strlen(tmpdir.path) + TMPNAMELEN);
+    sprintf(name, TEMPFILE_PREFIX"%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
+    sprintf(buf, "%s/%s", tmpdir.path, name);
+
+    fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, 0644);
+    if (fd == -1) {
+        log_msg(LOG_WARNING, "can't open %s for writing", buf);
+        return NULL;
+    }
+    write(fd, data, len);
+    close(fd);
+
+    xfree(buf);
+
+    return name;
+}
+
 /* count_temporary_files:
  * How many of our files remain in the temporary directory? We do this a
  * maximum of once every five seconds. */
-int count_tmpfiles(void) 
+int count_tmpfiles(void)
 {
     static int num;
     static time_t last_counted;
@@ -220,12 +254,12 @@ static int is_tempfile(const char* file)
     char *p = strrchr(file, '.');    /* get the file extension */
 
     /* XXX: get media files extensions from their respect media driver */
-    if (p && (strncmp (file, "driftnet-", 9) == 0) && 
-        (strcmp (p, ".jpeg")==0 || 
-         strcmp (p, ".gif")==0 || 
-         strcmp (p, ".mp3")==0 || 
+    if (p && (strncmp (file, TEMPFILE_PREFIX, 9) == 0) &&
+        (strcmp (p, ".jpeg")==0 ||
+         strcmp (p, ".gif")==0 ||
+         strcmp (p, ".mp3")==0 ||
          strcmp (p, ".png")==0 )) {
-        
+
         return TRUE;
     }
 

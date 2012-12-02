@@ -9,15 +9,12 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp $";
-
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
 #include "compat.h"
 
 #include <sys/types.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -32,16 +29,21 @@ static const char rcsid[] = "$Id: display.c,v 1.19 2004/04/26 14:42:36 chris Exp
 
 #include <sys/stat.h>
 
+#include "util.h"
 #include "log.h"
-#include "options.h"
 #include "tmpdir.h"
-#include "driftnet.h"
 #include "img.h"
+#include "driftnet.h"
+
+#include "display.h"
 
 /* The border, in pixels, around images displayed in the window. */
 #define BORDER  6
 
-extern int beep; /* in driftnet.c */
+static int imgpipe_readfd;
+static int imgpipe_writefd;
+static int beep_on_image;
+static char *savedimg_prefix;
 
 static GtkWidget *window, *darea;
 static GdkWindow *drawable;
@@ -56,6 +58,46 @@ struct imgrect {
 
 static int nimgrects;
 static struct imgrect *imgrects;
+
+static void do_gtkdisplay(void);
+
+void display_send_img(const char *name, size_t len)
+{
+    write(imgpipe_writefd, name, len);
+}
+
+void do_image_display(char *img_prefix, int beep)
+{
+    /* PID of display child and file descriptor on pipe to same. */
+    pid_t dpychld;
+    int pfd[2];
+
+    pipe(pfd);
+
+    switch (dpychld = fork()) {
+        case 0:
+            /* we are the child */
+            close (pfd[1]);
+            imgpipe_readfd  = pfd[0];
+            beep_on_image   = beep;
+            savedimg_prefix = img_prefix;
+            do_gtkdisplay();
+            exit (-1); /* not reached */
+
+        case -1:
+            perror(PROGNAME "fork");
+            //log_msg(LOG_FATAL, "fork failed");
+            exit (-1);
+
+        default:
+            close (pfd[0]);
+            imgpipe_writefd  = pfd[1];
+            log_msg(LOG_INFO, "started display child, pid %d", (int)dpychld);
+            return;
+    }
+
+    return;
+}
 
 gint delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     log_msg(LOG_INFO, "display child shutting down\n");
@@ -99,7 +141,7 @@ void make_backing_image() {
 
         /* Adjust placement of new images. */
         if (wrx >= w2) wrx = w2;
-        
+
         img_delete(backing_image);
     }
     backing_image = I;
@@ -124,7 +166,7 @@ void update_window() {
 void scroll_backing_image(const int dy) {
     pel **row1, **row2;
     struct imgrect *ir;
-    
+
     for (row1 = backing_image->data, row2 = backing_image->data + dy;
          row2 < backing_image->data + height; ++row1, ++row2)
         memcpy(*row1, *row2, width * sizeof(pel));
@@ -201,10 +243,6 @@ void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     update_window();
 }
 
-/* char *savedimgpfx:
- * The filename prefix with which we save images. */
-char *savedimgpfx = "driftnet-";
-
 /* save_image:
  * Save an image which the user has selected. */
 void save_image(struct imgrect *ir) {
@@ -216,10 +254,10 @@ void save_image(struct imgrect *ir) {
     struct stat st;
 
     if (!name)
-        name = xcalloc(strlen(savedimgpfx) + 16, 1);
+        name = xcalloc(strlen(savedimg_prefix) + 16, 1);
 
     do
-        sprintf(name, "%s%d%s", savedimgpfx, num++, strrchr(ir->filename, '.'));
+        sprintf(name, "%s%d%s", savedimg_prefix, num++, strrchr(ir->filename, '.'));
     while (stat(name, &st) == 0);
     log_msg(LOG_INFO, "saving `%s' as `%s'", ir->filename, name);
 
@@ -228,7 +266,7 @@ void save_image(struct imgrect *ir) {
         log_msg(LOG_ERROR, "%s: %s", ir->filename, strerror(errno));
         return;
     }
-    
+
     fd2 = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd2 == -1) {
         log_msg(LOG_ERROR, "%s: %s", name, strerror(errno));
@@ -280,8 +318,6 @@ void destroy(GtkWidget *widget, gpointer data) {
     gtk_main_quit();
 }
 
-extern int dpychld_fd;  /* in driftnet.c */
-
 /* xread:
  * Like read(2) but read the whole supplied length. */
 static ssize_t xread(int fd, void *buf, size_t len) {
@@ -306,21 +342,21 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     int nimgs = 0;
 
     if (!path)
-        path = xmalloc(strlen(get_tmpdir()) + 34);
+        path = xmalloc(strlen(get_tmpdir()) + TMPNAMELEN);
 
     /* We are sent messages of size TMPNAMELEN containing a null-terminated
      * file name. */
-    while (nimgs < 4 && (rr = xread(dpychld_fd, name, sizeof name)) == sizeof name) {
+    while (nimgs < 4 && (rr = xread(imgpipe_readfd, name, sizeof name)) == sizeof name) {
         int saveimg = 0;
         struct stat st;
 
         ++nimgs;
-        
+
         sprintf(path, "%s/%s", get_tmpdir(), name);
 
         if (stat(path, &st) == -1)
             continue;
-           
+
         log_msg(LOG_INFO, "received image %s of size %d", name, (int)st.st_size);
         /* Check to see whether this looks like an image we're interested in. */
         if (st.st_size > 100) {
@@ -353,9 +389,8 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
                         img_simple_blt(backing_image, wrx, wry - h, i, 0, 0, w, h);
                         add_image_rectangle(path, wrx, wry - h, w, h);
                         saveimg = 1;
-			 
-			/* XXX: remove get_options()->beep access; pass 'beep' in display start */
-                        if (get_options()->beep)
+
+                        if (beep_on_image)
                             write(1, "\a", 1);
 
                         update_window();
@@ -381,20 +416,21 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
     return TRUE;
 }
 
-int dodisplay(int argc, char *argv[]) {
+static void do_gtkdisplay(void)
+{
     GIOChannel *chan;
     struct imgrect *ir;
 
     /* have our main loop poll the pipe file descriptor */
-    chan = g_io_channel_unix_new(dpychld_fd);
+    chan = g_io_channel_unix_new(imgpipe_readfd);
     g_io_add_watch(chan, G_IO_IN | G_IO_ERR | G_IO_HUP, (GIOFunc)pipe_event, NULL);
-    fcntl(dpychld_fd, F_SETFL, O_NONBLOCK);
+    fcntl(imgpipe_readfd, F_SETFL, O_NONBLOCK);
 
     /* set up list of image rectangles. */
     imgrects = xcalloc(nimgrects = 16, sizeof *imgrects);
-       
+
     /* do some init thing */
-    gtk_init(&argc, &argv);
+    gtk_init(0, NULL);
 
     gtk_widget_push_colormap(gdk_rgb_get_colormap());
 
@@ -411,7 +447,7 @@ int dodisplay(int argc, char *argv[]) {
 
     g_signal_connect(G_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
     g_signal_connect(G_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
-    
+
     /* mouse button press/release for saving images */
     g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
     g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
@@ -426,10 +462,10 @@ int dodisplay(int argc, char *argv[]) {
             unlink(ir->filename);
 
     img_delete(backing_image);
-    
+
     gtk_exit(0);
 
-    return 0; /* NOTREACHED */
+    return; /* NOTREACHED */
 }
 
 #endif /* !NO_DISPLAY_WINDOW */

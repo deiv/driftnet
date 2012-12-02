@@ -9,13 +9,14 @@
 
 #ifndef NO_DISPLAY_WINDOW
 
-static const char rcsid[] = "$Id: jpeg.c,v 1.6 2003/08/12 14:09:57 chris Exp $";
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <setjmp.h>
+
 #include <jpeglib.h>
 
+#include "util.h"
 #include "driftnet.h"
 #include "img.h"
 
@@ -58,7 +59,7 @@ int jpeg_load_hdr(img I) {
     jpeg_read_header(cinfo, TRUE);
 
     jpeg_start_decompress(cinfo);
-    
+
     I->width = cinfo->output_width;
     I->height = cinfo->output_height;
 
@@ -90,7 +91,7 @@ int jpeg_load_img(img I) {
 
     cinfo->out_color_space = JCS_RGB;
     cinfo->out_color_components = cinfo->output_components = 3;
-    
+
     /* Start decompression. */
     buffer = cinfo->mem->alloc_sarray((j_common_ptr)cinfo, JPOOL_IMAGE, cinfo->output_width * cinfo->output_components, 1);
 
@@ -155,7 +156,7 @@ int jpeg_save_img(const img I, FILE *fp) {
             *q++ = (unsigned char)GETG(*p);
             *q++ = (unsigned char)GETB(*p);
         }
-        
+
         /* Write scanline. */
         jpeg_write_scanlines(&cinfo, buffer, 1);
     }

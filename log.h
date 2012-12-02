@@ -24,4 +24,4 @@ void set_loglevel(loglevel_t level);
 
 void log_msg(loglevel_t level, const char *fmt, ...);
 
-#endif /* __LOG_H__ */ 
+#endif /* __LOG_H__ */
