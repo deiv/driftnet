@@ -15,7 +15,7 @@
 
 #include "util.h"
 
-#include "img.h" /* XXX: refactor, extract png macros needed */
+#include "pngformat.h"
 
 /* If we run out of space, put us back to the last candidate GIF header. */
 /*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/

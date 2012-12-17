@@ -7,11 +7,10 @@
  *
  */
 
-#ifndef NO_DISPLAY_WINDOW
-
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
+
 #include "compat.h"
 
 #include <sys/types.h>
@@ -85,7 +84,7 @@ void do_image_display(char *img_prefix, int beep)
             exit (-1); /* not reached */
 
         case -1:
-            perror(PROGNAME "fork");
+            log_msg(LOG_ERROR, "fork failed, reason: %s", strerror(errno));
             //log_msg(LOG_FATAL, "fork failed");
             exit (-1);
 
@@ -407,8 +406,9 @@ gboolean pipe_event(GIOChannel chan, GIOCondition cond, gpointer data) {
             unlink(name);
     }
     if (rr == -1 && errno != EINTR && errno != EAGAIN) {
-        perror(PROGNAME": read");
+        log_msg(LOG_ERROR, "display pipe read() failed, reason: %s", strerror(errno));
         gtk_main_quit();
+
     } else if (rr == 0) {
         /* pipe closed, exit. */
         gtk_main_quit();
@@ -467,5 +467,3 @@ static void do_gtkdisplay(void)
 
     return; /* NOTREACHED */
 }
-
-#endif /* !NO_DISPLAY_WINDOW */

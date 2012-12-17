@@ -7,7 +7,9 @@
  *
  */
 
-#ifndef NO_DISPLAY_WINDOW
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -288,5 +290,3 @@ void img_blt(img dest, const int dx, const int dy, img src, const int sx, const 
 }
 
 #endif
-
-#endif /* !NO_DISPLAY_WINDOW */

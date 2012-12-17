@@ -202,4 +202,3 @@ void connection_push(connection c, const unsigned char *data, unsigned int off, 
         }
     } while (a);
 }
-

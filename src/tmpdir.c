@@ -274,4 +274,3 @@ int tmpfiles_limit_reached(void)
 
     return TRUE;
 }
-

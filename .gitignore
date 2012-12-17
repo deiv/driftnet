@@ -15,8 +15,11 @@ config.h
 config.log
 config.status
 stamp-h1
+ar-lib
+driftnet
 
 *.o
+*.a
 
 *~
 *.swp

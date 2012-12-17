@@ -18,7 +18,9 @@
 
 #include "util.h"
 #include "tmpdir.h"
+#ifndef NO_DISPLAY_WINDOW
 #include "display.h"
+#endif
 #include "image.h"
 #include "audio.h"
 #include "http.h"

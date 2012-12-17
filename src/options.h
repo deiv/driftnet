@@ -40,4 +40,3 @@ typedef struct {
 options_t* parse_options(int argc, char *argv[]);
 
 #endif /* __OPTIONS_H__ */
-

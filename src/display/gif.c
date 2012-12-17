@@ -7,11 +7,10 @@
  *
  */
 
-#ifndef NO_DISPLAY_WINDOW
-
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
+
 #include "compat.h"
 
 #include <gif_lib.h>
@@ -121,5 +120,3 @@ fail:
 
     return ret;
 }
-
-#endif /* !NO_DISPLAY_WINDOW */

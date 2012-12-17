@@ -1,21 +1,8 @@
 
-bin_PROGRAMS = driftnet
-
-driftnet_SOURCES = audio.c audio.h compat.h connection.c connection.h \
-				   display.c display.h  driftnet.c driftnet.h gif.c \
-				   http.c http.h image.c image.h img.c img.h jpeg.c \
-				   log.c log.h media.c media.h mpeghdr.c mpeghdr.h \
-				   options.c options.h packetcapture.c packetcapture.h \
-				   playaudio.c playaudio.h png.c tmpdir.c tmpdir.h util.c util.h
+SUBDIRS = src
 
 dist_doc_DATA = README TODO
 EXTRA_DIST = driftnet.1.in CHANGES CREDITS
-
-AM_CFLAGS  = -Wall
-AM_CFLAGS += @GTK_CFLAGS@
-AM_CFLAGS += -D_BSD_SOURCE # Get BSDish definitions of the TCP/IP structs (linux).
-AM_CFLAGS += -DDRIFTNET_VERSION=\"$(VERSION)\"
-AM_CFLAGS += -DDRIFTNET_PROGNAME=\"$(PACKAGE)\"
 
 MANPAGE = driftnet.1.gz
 MAN1DIR = $(DESTDIR)$(mandir)/man1/
@@ -27,4 +14,3 @@ install-data-local: driftnet.1.in
 	cat $(srcdir)/driftnet.1.in | sed s/@*VERSION@*/$(VERSION)/ | GZIP=$(GZIP_ENV) gzip > $(MANPAGE)
 	$(MKDIR_P) $(MAN1DIR)
 	$(INSTALL_DATA) $(MANPAGE) $(MAN1DIR) || exit $$?
-

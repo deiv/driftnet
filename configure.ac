@@ -6,9 +6,8 @@ AC_PREREQ([2.69])
 AC_INIT([driftnet], [0.2], [david.sephirot@gmail.com])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
-AC_CONFIG_SRCDIR([driftnet.c])
-AC_CONFIG_HEADERS([config.h])
-
+AC_CONFIG_SRCDIR([src/driftnet.c])
+AC_CONFIG_HEADERS(src/[config.h])
 
 AC_ARG_ENABLE([display],
     [AC_HELP_STRING([--disable-display], [disable display (default is no)])],
@@ -18,7 +17,7 @@ AC_ARG_ENABLE([display],
 if test "x$enable_display" = xno; then
     AC_DEFINE([NO_DISPLAY_WINDOW], [1], [Compile without support for a display window])
 fi
-#AM_CONDITIONAL(DISABLE_DISPLAY, test "x$ac_disable_display" != xno)
+AM_CONDITIONAL(ENABLE_DISPLAY, test "x$enable_display" = xyes)
 
 AC_ARG_ENABLE([debug],
 	[AC_HELP_STRING([--disable-debug], [disable debugging (default is no)])],
@@ -40,6 +39,9 @@ AC_PROG_CC
 AC_PROG_INSTALL
 #AM_PROG_CC_C_O
 PKG_PROG_PKG_CONFIG
+
+AM_PROG_AR
+AC_PROG_RANLIB
 
 #
 # Checks for libraries.
@@ -161,8 +163,7 @@ if test x$sleep_func = xno; then
         [AC_MSG_ERROR([cannot find any usable sleep function])])
 fi
 
-
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/media/Makefile src/display/Makefile])
 AC_OUTPUT
 
 echo \

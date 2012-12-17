@@ -7,11 +7,15 @@
  *
  */
 
-#ifndef NO_DISPLAY_WINDOW
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
 
 #include <png.h>
 
 #include "img.h"
+
+#include "pngformat.h"
 
 int png_load_hdr(img I) {
     unsigned char sig[PNG_SIG_LEN];
@@ -155,5 +159,3 @@ int png_load_img(img I) {
 int png_save_img(const img I, FILE *fp) {
     return 1;
 }
-
-#endif /* !NO_DISPLAY_WINDOW */

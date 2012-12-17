@@ -7,7 +7,9 @@
  *
  */
 
-#ifndef NO_DISPLAY_WINDOW
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,5 +168,3 @@ int jpeg_save_img(const img I, FILE *fp) {
 
     return 1;
 }
-
-#endif /* !NO_DISPLAY_WINDOW */

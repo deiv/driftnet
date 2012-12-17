@@ -263,4 +263,3 @@ void usage(FILE *fp)
 "\n",
             DRIFTNET_VERSION);
 }
-
