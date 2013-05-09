@@ -38,6 +38,8 @@
 
 /* The border, in pixels, around images displayed in the window. */
 #define BORDER  6
+#define DEFAULT_WIDTH   320
+#define DEFAULT_HEIGHT  240
 
 static int imgpipe_readfd;
 static int imgpipe_writefd;
@@ -436,8 +438,8 @@ static void do_gtkdisplay(void)
 
     /* Make our own window. */
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_size_request(window, 100, 100);
-
+    gtk_widget_set_size_request(window, DEFAULT_WIDTH + 2 * BORDER, DEFAULT_HEIGHT + 2 * BORDER);
+    
     darea = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(window), darea);
     gtk_widget_set_events(darea, GDK_EXPOSURE_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK);
