@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <errno.h>
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -102,6 +103,7 @@ static void print_exit_reason(void)
                 log_msg(LOG_INFO, "child process %d killed by signal %d", (int)pp, WTERMSIG(st));
             else
                 log_msg(LOG_INFO, "child process %d died, not sure why", (int)pp);
+
         }
 
     } else
@@ -120,6 +122,7 @@ int main(int argc, char *argv[])
 
     if (options->verbose)
         set_loglevel(LOG_INFO);
+
 
     /*
      * In adjunct mode, it's important that the attached program gets

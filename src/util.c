@@ -80,13 +80,13 @@ char *xstrdup(const char *s) {
 unsigned char *memstr(const unsigned char *haystack, const size_t hlen,
 		const unsigned char *needle, const size_t nlen)
 {
-	char *p;
+	const unsigned char *p = haystack;
 
-	for (p = haystack; p <= (haystack - nlen + hlen); p++)
-	{
+	for (; p <= (haystack - nlen + hlen); p++) {
 		if (memcmp(p, needle, nlen) == 0)
-			return p; /* found */
+			return (unsigned char*) p; /* found */
 	}
+
 	return NULL;
 }
 

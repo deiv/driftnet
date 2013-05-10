@@ -35,21 +35,20 @@
 #include "media.h"
 #include "connection.h"
 #include "options.h"
+#include "layer3.h"
+#include "layer2.h"
 
 #include "packetcapture.h"
 
 static void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt);
-static void get_packet_dataoffset(void);
-static int get_link_level_hdr_length(int type);
+static datalink_info_t get_datalink_info(pcap_t *pcap);
 
 #define SNAPLEN 262144      /* largest chunk of data we accept from pcap */
 #define WRAPLEN 262144      /* out-of-order packet margin */
 
 /* ugh. */
 pcap_t *pc;
-
-int pkt_offset; /* offset of IP packet within wire packet */
-
+datalink_info_t datalink_info;
 
 void packetcapture_open_offline(char* dumpfile)
 {
@@ -60,9 +59,9 @@ void packetcapture_open_offline(char* dumpfile)
         exit (-1);
     }
 
-    get_packet_dataoffset();
-
     log_msg(LOG_INFO, "reading packets from %s", dumpfile);
+
+    datalink_info = get_datalink_info(pc);
 }
 
 void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
@@ -92,11 +91,11 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
         exit (-1);
     }
 
-    get_packet_dataoffset();
-
     log_msg(LOG_INFO, "listening on %s%s",
         interface ? interface : "all interfaces",
         promisc ? " in promiscuous mode" : "");
+
+    datalink_info = get_datalink_info(pc);
 }
 
 void packetcapture_close(void)
@@ -130,30 +129,34 @@ inline void packetcapture_dispatch(void)
  * Callback which processes a packet captured by libpcap. */
 void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt)
 {
-    struct ip ip;
     struct tcphdr tcp;
-    struct in_addr s, d;
     int off, len, delta;
     connection *C, c;
+    struct sockaddr_storage src, dst;
+    struct sockaddr *s, *d;
+    uint8_t proto;
+    
+    s = (struct sockaddr *)&src;
+    d = (struct sockaddr *)&dst;
 
-    memcpy(&ip, pkt + pkt_offset, sizeof(ip));
-    memcpy(&s, &ip.ip_src, sizeof(ip.ip_src));
-    memcpy(&d, &ip.ip_dst, sizeof(ip.ip_dst));
+    if (handle_link_layer(&datalink_info, pkt, &proto, &off))
+    	return;
+	
+    if (layer3_find_tcp(pkt, proto, &off, s, d, &tcp))
+    	return;
 
-    memcpy(&tcp, pkt + pkt_offset + (ip.ip_hl << 2), sizeof(tcp));
-    off = pkt_offset + (ip.ip_hl << 2) + (tcp.th_off << 2);
     len = hdr->caplen - off;
 
     /* XXX fragmented packets and other nasties. */
 
     /* try to find the connection slot associated with this. */
-    C = find_connection(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
+    C = find_connection(s, d);
 
     /* no connection at all, so we need to allocate one. */
     if (!C) {
-        log_msg(LOG_INFO, "new connection: %s", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+        log_msg(LOG_INFO, "new connection: %s", connection_string(s,d));
         C = alloc_connection();
-        *C = connection_new(&s, &d, ntohs(tcp.th_sport), ntohs(tcp.th_dport));
+        *C = connection_new(s, d);
         /* This might or might not be an entirely new connection (SYN flag
          * set). Either way we need a sequence number to start at. */
         (*C)->isn = ntohl(tcp.th_seq);
@@ -175,12 +178,12 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     if (tcp.th_flags & TH_RST) {
         /* Looks like this connection is bogus, and so might be a
          * connection going the other way. */
-        log_msg(LOG_INFO, "connection reset: %s", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+        log_msg(LOG_INFO, "connection reset: %s", connection_string(s, d));
 
         connection_delete(c);
         *C = NULL;
 
-        if ((C = find_connection(&d, &s, ntohs(tcp.th_dport), ntohs(tcp.th_sport)))) {
+        if ((C = find_connection(d, s))) {
             connection_delete(*C);
             *C = NULL;
         }
@@ -204,7 +207,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
 
         if (offset > c->len + WRAPLEN) {
             /* Out-of-order packet. */
-            log_msg(LOG_INFO, "out of order packet: %s", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)));
+            log_msg(LOG_INFO, "out of order packet: %s", connection_string(s, d));
         } else {
             connection_push(c, pkt + off, offset, len);
             extract_media(c);
@@ -213,7 +216,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     if (tcp.th_flags & TH_FIN) {
         /* Connection closing; mark it as closed, but let sweep_connections
          * free it if appropriate. */
-        log_msg(LOG_INFO, "connection closing: %s, %d bytes transferred", connection_string(s, ntohs(tcp.th_sport), d, ntohs(tcp.th_dport)), c->len);
+        log_msg(LOG_INFO, "connection closing: %s, %d bytes transferred", connection_string(s, d), c->len);
         c->fin = 1;
     }
 
@@ -221,15 +224,22 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     sweep_connections();
 }
 
-void get_packet_dataoffset(void)
+
+datalink_info_t get_datalink_info(pcap_t *pcap)
 {
-    /* Figure out the offset from the start of a returned packet to the data in
-     * it. */
-    pkt_offset = get_link_level_hdr_length(pcap_datalink(pc));
-    log_msg(LOG_INFO, "link-level header length is %d bytes", pkt_offset);
+	datalink_info_t info;
+
+    //pkt_offset = get_link_level_hdr_length(pcap_datalink(pc));
+
+	info.type = pcap_datalink(pcap);
+	info.name = pcap_datalink_val_to_name(pcap_datalink(pcap));
+
+    //log_msg(LOG_INFO, "link-level header length is %d bytes", pkt_offset);
+
+    return info;
 }
 
-
+#if 0
 /* get_link_level_hdr_length:
  * Find out how long the link-level header is, based on the datalink layer
  * type. This is based on init_linktype in the libpcap distribution; I
@@ -305,3 +315,4 @@ int get_link_level_hdr_length(int type)
     log_msg(LOG_ERROR, "unknown data link type %d", type);
     exit(1);
 }
+#endif

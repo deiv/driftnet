@@ -114,6 +114,7 @@ void dispatch_http_req(const char *mname, const unsigned char *data, const size_
 
         if (!(p = memstr(p + 8, len - (p + 8 - data), (unsigned char*)"\r\n", 2)))
             return;
+
         hostlen = p - (const unsigned char*)host;
 
         if (hostlen == 0)
