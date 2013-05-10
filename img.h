@@ -33,13 +33,13 @@ struct png_chunk {
 
 #ifndef NO_DISPLAY_WINDOW
 
-#include "endianness.h"
+#include <glib.h>
 
 typedef uint8_t chan;
 typedef uint32_t pel;
 
 /* Yuk. GDKRGB expects data in a specific ordering. */
-#if defined(DRIFTNET_LITTLE_ENDIAN)
+#if (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 #   define PEL(r, g, b)        ((pel)((chan)(r) | ((chan)(g) << 8) | ((chan)(b) << 16)))
 #   define PELA(r, g, b, a)    ((pel)((chan)(r) | ((chan)(g) << 8) | ((chan)(b) << 16) | ((chan)(a) << 24)))
 
@@ -47,7 +47,7 @@ typedef uint32_t pel;
 #   define GETG(p)             ((chan)(((p) & (pel)0x0000ff00) >>  8))
 #   define GETB(p)             ((chan)(((p) & (pel)0x00ff0000) >> 16))
 #   define GETA(p)             ((chan)(((p) & (pel)0xff000000) >> 24))
-#elif defined(DRIFTNET_BIG_ENDIAN)
+#elif (G_BYTE_ORDER == G_BIG_ENDIAN)
 #   define PEL(r, g, b)        ((pel)(((chan)(r) << 24) | ((chan)(g) << 16) | ((chan)(b) << 8)))
 #   define PELA(r, g, b, a)    ((pel)(((chan)(r) << 24) | ((chan)(g) << 16) | ((chan)(b) << 8) | ((chan)(a))))
 
