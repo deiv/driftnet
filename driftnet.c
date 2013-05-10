@@ -75,6 +75,10 @@ void do_mpeg_player(void);
 void clean_temporary_directory(void) {
     DIR *d;
     
+    /* If in adjunct mode, do not delete any temporary files */
+    if (adjunct)
+	return;
+
     /* If tmpdir_specified is true, the user specified a particular temporary
      * directory. We presume that the user doesn't want the directory removed
      * and that we shouldn't nuke any files in that directory which don't look
@@ -645,14 +649,19 @@ int main(int argc, char *argv[]) {
     if (verbose) 
         fprintf(stderr, PROGNAME": using temporary file directory %s\n", tmpdir);
 
-    if (!interface && !(interface = pcap_lookupdev(ebuf))) {
+    if (!dumpfile && !interface && !(interface = pcap_lookupdev(ebuf))) {
         fprintf(stderr, PROGNAME": pcap_lookupdev: %s\n", ebuf);
         fprintf(stderr, PROGNAME": try specifying an interface with -i\n");
         return -1;
     }
 
-    if (verbose)
-        fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
+    if (verbose) {
+        if (interface) {
+            fprintf(stderr, PROGNAME": listening on %s%s\n", interface ? interface : "all interfaces", promisc ? " in promiscuous mode" : "");
+        } else if (dumpfile) {
+            fprintf(stderr, PROGNAME": processing packets from dumpfile '%s'\n", dumpfile);
+        }
+    }
 
     /* Build up filter. */
     if (optind < argc) {
@@ -792,7 +801,7 @@ int main(int argc, char *argv[]) {
     for (C = slots; C < slots + slotsalloc; ++C)
         if (*C) connection_delete(*C);
     xfree(slots);
-    xfree(tmpdir);
+    /*xfree(tmpdir); */
 
     return 0;
 }
