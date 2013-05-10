@@ -81,6 +81,7 @@ connection *find_connection(const struct in_addr *src, const struct in_addr *dst
 
 /* media.c */
 void connection_extract_media(connection c, const enum mediatype T);
+int is_driftnet_file(char *filename);
 
 /* util.c */
 void *xmalloc(size_t n);

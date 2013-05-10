@@ -93,9 +93,7 @@ void clean_temporary_directory(void) {
         buf = xmalloc(buflen = strlen(tmpdir) + 64);
 
         while ((de = readdir(d))) {
-            char *p;
-            p = strrchr(de->d_name, '.');
-            if (!tmpdir_specified || (p && strncmp(de->d_name, "driftnet-", 9) == 0 && (strcmp(p, ".jpeg") == 0 || strcmp(p, ".gif") == 0 || strcmp(p, ".mp3") == 0))) {
+            if (!tmpdir_specified || is_driftnet_file(de->d_name)) {
                 if (buflen < strlen(tmpdir) + strlen(de->d_name) + 1)
                     buf = xrealloc(buf, buflen = strlen(tmpdir) + strlen(de->d_name) + 64);
                 
@@ -638,12 +636,20 @@ int main(int argc, char *argv[]) {
         }
     } else {
         /* need to make a temporary directory. */
-        for (;;) {
-            tmpdir = strdup(tmpnam(NULL));  /* may generate a warning, but this is safe because we create a directory not a file */
-            if (mkdir(tmpdir, 0700) == 0)
-                break;
-            xfree(tmpdir);
-        }
+	char *tmp;
+	char template[PATH_MAX+11];
+
+	if (!(tmp = getenv("TMPDIR")))
+	    if (!(tmp = getenv("TEMP")))
+		if (!(tmp = getenv("TMP")))
+		    tmp = "/tmp";
+
+	snprintf(template, PATH_MAX+11, "%s/drifnet-XXXXXX", tmp);
+	tmpdir = mkdtemp(template);
+	if (!tmpdir) {
+	    perror(PROGNAME": mkdtemp");
+	    return -1;
+	}
     }
 
     if (verbose) 
