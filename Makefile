@@ -34,8 +34,8 @@ LDLIBS += -lpcap -lpthread #-lefence
 
 # Optional C compiler and linker flags. Typical driftnet builds have support
 # for displaying captured images in an X window, and need the following flags:
-CFLAGS  += `pkg-config --cflags gtk+-2.0`
-LDLIBS  += -ljpeg -lgif -lpng `pkg-config --libs gtk+-2.0`
+CFLAGS  += `pkg-config --cflags gtk+-2.0` `pkg-config --cflags libpng`	
+LDLIBS  += -ljpeg -lungif `pkg-config --libs gtk+-2.0` `pkg-config --cflags libpng`
 
 # Alternatively, you can build a version of driftnet which can only be used
 # in `adjunct' mode as the back end for some other image-processing program. To
