@@ -96,6 +96,7 @@ static void print_exit_reason(void)
     if (foad == SIGCHLD) {
         pid_t pp;
         int st;
+
         while ((pp = waitpid(-1, &st, WNOHANG)) > 0) {
             if (WIFEXITED(st))
                 log_msg(LOG_INFO, "child process %d exited with status %d", (int)pp, WEXITSTATUS(st));
@@ -122,7 +123,6 @@ int main(int argc, char *argv[])
 
     if (options->verbose)
         set_loglevel(LOG_INFO);
-
 
     /*
      * In adjunct mode, it's important that the attached program gets

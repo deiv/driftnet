@@ -139,7 +139,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     s = (struct sockaddr *)&src;
     d = (struct sockaddr *)&dst;
 
-    if (handle_link_layer(&datalink_info, pkt, &proto, &off))
+    if (handle_link_layer(&datalink_info, pkt, hdr->caplen, &proto, &off))
     	return;
 	
     if (layer3_find_tcp(pkt, proto, &off, s, d, &tcp))

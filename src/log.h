@@ -5,9 +5,6 @@
  * Copyright (c) 2012 David Suárez. All rights reserved.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
- * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
- *
  */
 
 #ifndef __LOG_H__

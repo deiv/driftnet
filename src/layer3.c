@@ -9,7 +9,9 @@
 #include "log.h"
 #include "layer3.h"
 
-int layer3_find_tcp(const u_char *pkt, uint8_t nextproto, int * offset, struct sockaddr * src, struct sockaddr * dst, struct tcphdr * tcp) {
+int layer3_find_tcp(const u_char *pkt, uint8_t nextproto, int * offset,
+		struct sockaddr * src, struct sockaddr * dst, struct tcphdr * tcp)
+{
 	u_int16_t *sport = NULL;
 	u_int16_t *dport = NULL;
 
@@ -103,11 +105,19 @@ int layer3_find_tcp(const u_char *pkt, uint8_t nextproto, int * offset, struct s
 			}
 			break;
 
+		/* ignored */
+		case IPPROTO_ICMP:
+		case IPPROTO_ICMPV6:
+		case IPPROTO_IGMP:
+		case IPPROTO_UDP:
+			return -1;
+
 		default:
 			/* unsupported proto */
 			goto end;
 		}
 	}
+
 end:
 	log_msg(LOG_WARNING, "unsupported protocol dataframe (%d)", nextproto);
 
