@@ -1,8 +1,6 @@
 TODO for driftnet
 $Id: TODO,v 1.12 2003/08/12 14:13:14 chris Exp $
 
-* PNG files.
-
 * More intelligent layout algorithm for images.
 
 * Memory leaks? Buffer overruns? Static-sized buffers.
