@@ -1,5 +1,53 @@
 Changelog for driftnet
-$Id: CHANGES,v 1.19 2004/04/26 14:42:36 chris Exp $
+
+1.0
+
+    Add ipv6 support
+      Based on work of Sebastien Decugis.
+      See https://bugs.launchpad.net/ubuntu/+source/driftnet/+bug/16279
+
+    Update TODO file
+
+    Update manual
+
+    Deal better with libpng errors
+
+    Fix memstr() implementation non-working on 64bit systems.
+      Taken from: https://bugzilla.redhat.com/show_bug.cgi?id=201412
+
+    Do not delete temporary files in adjunct mode
+
+    Fix typo in button press_press-release
+
+    Change window initial size
+
+    Refactor source-files structure
+
+    Refactor code
+
+    Update 'is_tempfile()' with png media file extension
+
+    Refactor options handling code
+
+    Improve logging code
+
+    Changes in temporary directory code
+
+    Fix compiler warnings
+
+    Update build system to Autotools
+      - remove makedepend
+      - configure-time option to disable the display window
+      - link against GTK libraries only if we need them
+      - make endian test more portable
+      - more portable sleep function
+      - other minor changes
+
+    Switch from CVS to git
+
+0.1.6+cvs20040426
+
+PNG support
 
 Driftnet now uses GTK2, rather than GTK1.
 
