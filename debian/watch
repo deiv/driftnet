@@ -1,5 +1,6 @@
 # This package is currently built from a cvs repository, so no
 # non-trivial watch file is possible
 #
-# version=3
 
+version=3
+https://github.com/deiv/driftnet/tags .*/v?(\d[\d\.]+)\.tar\.gz

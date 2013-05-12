@@ -3,8 +3,10 @@ Section: admin
 Priority: extra
 Maintainer: David Suarez <david.sephirot@gmail.com>
 Build-Depends: debhelper (>= 9), libgtk2.0-dev, libpcap-dev, libjpeg-dev, libgif-dev, libpng-dev, xutils-dev
-Standards-Version: 3.9.3
-Homepage: http://www.ex-parrot.com/~chris/driftnet/
+Standards-Version: 3.9.4
+Homepage: https://github.com/deiv/driftnet
+Vcs-Browser: https://github.com/deiv/driftnet
+Vcs-Git: git://github.com/deiv/driftnet.git -b debian
 
 Package: driftnet
 Architecture: any

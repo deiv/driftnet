@@ -1,3 +1,13 @@
+driftnet (1.0-1) unstable; urgency=low
+
+  * Add support for IPV6 and PNG (closes: #608369)
+  * Add a working uscan file
+  * Update standards version 3.9.4
+  * Add control file Vcs-* headers to point to git repository
+  * Change the initial size of main window
+
+ -- David Suarez <david.sephirot@gmail.com>  Sun, 12 May 2013 19:37:20 +0200
+
 driftnet (0.1.6+cvs20040426-3) unstable; urgency=low
 
   * Fix some typos in the previous changelog
