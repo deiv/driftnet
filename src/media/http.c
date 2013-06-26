@@ -32,7 +32,7 @@
 unsigned char *find_http_req(const unsigned char *data, const size_t len, unsigned char **http, size_t *httplen) {
     unsigned char *req, *le, *blankline, *hosthdr;
 
-	#define remaining(x)    (len - (data - (x)))
+	#define remaining(x)    (len - ((x) - data))
 	#define MAX_REQ         16384
 	#define HTTPGET_LEN 4
 	#define HTTPPOST_LEN 5
