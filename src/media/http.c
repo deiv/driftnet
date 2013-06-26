@@ -32,8 +32,10 @@
 unsigned char *find_http_req(const unsigned char *data, const size_t len, unsigned char **http, size_t *httplen) {
     unsigned char *req, *le, *blankline, *hosthdr;
 
-#define remaining(x)    (len - (data - (x)))
-#define MAX_REQ         16384
+	#define remaining(x)    (len - (data - (x)))
+	#define MAX_REQ         16384
+	#define HTTPGET_LEN 4
+	#define HTTPPOST_LEN 5
 
     /* HTTP requests look like:
      *
@@ -46,13 +48,14 @@ unsigned char *find_http_req(const unsigned char *data, const size_t len, unsign
     if (len < 40)
         return (unsigned char*)data;
 
-    if (!(req = memstr(data, len, (unsigned char*)"GET ", 4)))
-        return (unsigned char*)(data + len - 4);
+    if (!(req = memstr(data, len, (unsigned char*)"GET ", HTTPGET_LEN)) &&
+    	!(req = memstr(data, len, (unsigned char*)"POST ", HTTPPOST_LEN))	)
+        return (unsigned char*)(data + len - HTTPGET_LEN);
 
     /* Find the end of the request line. */
-    if (!(le = memstr(req + 4, remaining(req + 4), (unsigned char*)"\r\n", 2))) {
-        if (remaining(req + 4) > MAX_REQ)
-            return (unsigned char*)(req + 4);
+    if (!(le = memstr(req + HTTPGET_LEN, remaining(req + HTTPGET_LEN), (unsigned char*)"\r\n", 2))) {
+        if (remaining(req + HTTPGET_LEN) > MAX_REQ)
+            return (unsigned char*)(req + HTTPGET_LEN);
         else
             return (unsigned char*)req;
     }
@@ -73,13 +76,14 @@ unsigned char *find_http_req(const unsigned char *data, const size_t len, unsign
             return req;
     }
 
-    if (memcmp(req + 4, "http://", 7) == 0)
+    if ((memcmp(req + HTTPGET_LEN, "http://", 7) == 0) ||
+    	(memcmp(req + HTTPPOST_LEN, "http://", 7) == 0))
         /* Probably a cache request; in any case, don't need to look for a Host:. */
         goto found;
 
     /* Is there a Host: header? */
     if (!(hosthdr = memstr(le, blankline - le + 2, (unsigned char*)"\r\nHost: ", 8))) {
-        return blankline + 4;
+        return blankline + HTTPGET_LEN;
     }
 
 found:
