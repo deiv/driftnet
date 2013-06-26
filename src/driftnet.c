@@ -28,6 +28,7 @@
 #include "log.h"
 #include "options.h"
 #include "tmpdir.h"
+#include "pid.h"
 #include "connection.h"
 #include "packetcapture.h"
 #ifndef NO_DISPLAY_WINDOW
@@ -37,6 +38,16 @@
 
 #include "driftnet.h"
 
+void unexpected_exit(int ret)
+{
+	/* clean things a litle */
+    packetcapture_close();
+    connection_free_slots();
+    clean_tmpdir();
+    close_pifile();
+
+	exit(ret);
+}
 
 /* terminate_on_signal:
  * Terminate on receipt of an appropriate signal. */
@@ -124,6 +135,9 @@ int main(int argc, char *argv[])
     if (options->verbose)
         set_loglevel(LOG_INFO);
 
+    if (options->adjunct)
+    	create_pifile();
+
     /*
      * In adjunct mode, it's important that the attached program gets
      * notification of images in a timely manner. Make stdout line-buffered
@@ -138,11 +152,11 @@ int main(int argc, char *argv[])
      */
     if (options->tmpdir) {
         check_dir_is_rw(options->tmpdir);
-        set_tmpdir(options->tmpdir, TMPDIR_USER_OWNED, options->max_tmpfiles);
+        set_tmpdir(options->tmpdir, TMPDIR_USER_OWNED, options->max_tmpfiles, options->adjunct);
 
     } else {
         /* need to make a temporary directory. */
-        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, options->max_tmpfiles);
+        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, options->max_tmpfiles, options->adjunct);
     }
 
     setup_signals();
@@ -188,10 +202,14 @@ int main(int argc, char *argv[])
     /* Clean up. */
     /*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
     packetcapture_close();
-    clean_tmpdir(options->adjunct);
 
     /* Easier for memory-leak debugging if we deallocate all this here.... */
     connection_free_slots();
+
+    clean_tmpdir();
+
+    if (options->adjunct)
+    	close_pifile();
 
     return 0;
 }

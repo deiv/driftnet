@@ -28,7 +28,7 @@ void png_catch_error(png_structp png_ptr, png_const_charp error_msg)
 
    if (setjmp(png_jmpbuf(png_ptr))) {
 	  log_msg(LOG_ERROR, "libpng, unrecoverable error, terminating.");
-      exit(-1);
+      unexpected_exit(-1);
    }
 }
 

@@ -26,7 +26,7 @@
 
 /* slots for storing information about connections */
 connection *slots = NULL;
-unsigned int slotsused, slotsalloc;
+unsigned int slotsused, slotsalloc=0;
 
 static char* print_ipport_pair(const struct sockaddr *addr, char *buf, size_t buf_len);
 

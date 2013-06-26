@@ -47,7 +47,7 @@ static datalink_info_t get_datalink_info(pcap_t *pcap);
 #define WRAPLEN 262144      /* out-of-order packet margin */
 
 /* ugh. */
-pcap_t *pc;
+pcap_t *pc = NULL;
 datalink_info_t datalink_info;
 
 void packetcapture_open_offline(char* dumpfile)
@@ -56,7 +56,7 @@ void packetcapture_open_offline(char* dumpfile)
 
     if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
         log_msg(LOG_ERROR, "pcap_open_offline: %s", ebuf);
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     log_msg(LOG_INFO, "reading packets from %s", dumpfile);
@@ -77,18 +77,18 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
         else if (!interface)
             log_msg(LOG_ERROR, "perhaps try selecting an interface with the -i option?");
 
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     /* Only apply a filter to live packets. Is this right? */
     if (pcap_compile(pc, &filter, filterexpr, 1, 0) == -1) {
         log_msg(LOG_ERROR, "pcap_compile: %s", pcap_geterr(pc));
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     if (pcap_setfilter(pc, &filter) == -1) {
         log_msg(LOG_ERROR, "pcap_setfilter: %s", pcap_geterr(pc));
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     log_msg(LOG_INFO, "listening on %s%s",
@@ -100,7 +100,8 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
 
 void packetcapture_close(void)
 {
-    pcap_close(pc);
+	if (pc != NULL)
+		pcap_close(pc);
 }
 
 inline char* get_default_interface()
@@ -114,7 +115,7 @@ inline char* get_default_interface()
         log_msg(LOG_ERROR, "pcap_lookupdev: %s", ebuf);
         log_msg(LOG_ERROR, "try specifying an interface with -i");
         log_msg(LOG_ERROR, "or a pcap capture file with -f");
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     return interface;
@@ -313,6 +314,6 @@ int get_link_level_hdr_length(int type)
         default:;
     }
     log_msg(LOG_ERROR, "unknown data link type %d", type);
-    exit(1);
+    unexpected_exit(1);
 }
 #endif

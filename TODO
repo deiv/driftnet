@@ -22,7 +22,5 @@ $Id: TODO,v 1.12 2003/08/12 14:13:14 chris Exp $
 
 * Drop privileges after starting up pcap.
 
-* PID file?
-
 * Delay between reading packets from dump file?
 

@@ -18,6 +18,8 @@
 
 #define PROGNAME DRIFTNET_PROGNAME
 
+void unexpected_exit(int ret);
+
 /* alloc_struct S P
  * Make P point to a new struct S, initialised as if in static storage (like = {0}).
  */

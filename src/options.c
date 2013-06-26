@@ -52,7 +52,7 @@ options_t* parse_options(int argc, char *argv[])
             case 'i':
                 if (options.dumpfile) {
                     log_msg(LOG_ERROR, "can't specify -i and -f");
-                    exit (-1);
+                    unexpected_exit (-1);
                 }
                 options.interface = optarg;
                 break;
@@ -93,19 +93,19 @@ options_t* parse_options(int argc, char *argv[])
                 options.max_tmpfiles = atoi(optarg);
                 if (options.max_tmpfiles <= 0) {
                     log_msg(LOG_ERROR, "`%s' does not make sense for -m", optarg);
-                    exit (-1);
+                    unexpected_exit (-1);
                 }
                 break;
 
             case 'd':
-                options.tmpdir = optarg;
+                options.tmpdir = strdup(optarg);
                 options.tmpdir_especified = TRUE; /* so we don't delete it. */
                 break;
 
             case 'f':
                 if (options.interface) {
                     log_msg(LOG_ERROR, "can't specify -i and -f");
-                    exit (-1);
+                    unexpected_exit (-1);
                 }
                 options.dumpfile = optarg;
                 break;
@@ -124,7 +124,7 @@ options_t* parse_options(int argc, char *argv[])
                 else
                     log_msg(LOG_ERROR, "unrecognised option -%c", optopt);
                 usage(stderr);
-                exit (1);
+                unexpected_exit (1);
         }
     }
 
@@ -168,7 +168,7 @@ void validate_options(options_t* options)
          */
         log_msg(LOG_ERROR, "this version of driftnet was compiled without display support");
         log_msg(LOG_ERROR, "use the -a option to run it in adjunct mode");
-        exit (-1);
+        unexpected_exit (-1);
     }
 #endif /* !NO_DISPLAY_WINDOW */
 

@@ -83,12 +83,12 @@ void do_image_display(char *img_prefix, int beep)
             beep_on_image   = beep;
             savedimg_prefix = img_prefix;
             do_gtkdisplay();
-            exit (-1); /* not reached */
+            unexpected_exit (-1); /* not reached */
 
         case -1:
             log_msg(LOG_ERROR, "fork failed, reason: %s", strerror(errno));
             //log_msg(LOG_FATAL, "fork failed");
-            exit (-1);
+            unexpected_exit (-1);
 
         default:
             close (pfd[0]);
