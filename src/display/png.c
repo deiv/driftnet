@@ -19,6 +19,7 @@
 #include <png.h>
 
 #include "log.h"
+#include "driftnet.h"
 #include "img.h"
 #include "pngformat.h"
 

@@ -32,6 +32,7 @@
 #include <pcap.h>
 
 #include "log.h"
+#include "driftnet.h"
 #include "media.h"
 #include "connection.h"
 #include "options.h"

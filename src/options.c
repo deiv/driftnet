@@ -20,6 +20,7 @@
 
 #include "compat.h"
 #include "log.h"
+#include "driftnet.h"
 #include "packetcapture.h"
 
 #include "options.h"

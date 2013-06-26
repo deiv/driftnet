@@ -104,4 +104,6 @@ inline char* get_levelstring(loglevel_t level)
             fprintf(stderr, PROGNAME ": get_level_string(): internal error");
             unexpected_exit(-1);
     }
+
+    return NULL;
 }

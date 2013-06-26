@@ -3,7 +3,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([driftnet], [1.0], [david.sephirot@gmail.com])
+AC_INIT([driftnet], [1.1], [david.sephirot@gmail.com])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/driftnet.c])

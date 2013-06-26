@@ -34,6 +34,7 @@
 
 #include "util.h"
 #include "log.h"
+#include "driftnet.h"
 
 #include "tmpdir.h"
 
@@ -129,6 +130,8 @@ const char* make_tmpdir(void)
     }
 
     unexpected_exit (-1);
+
+    return NULL; /* make GCC happy */
 }
 
 /*
