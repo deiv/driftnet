@@ -2,10 +2,10 @@
  * util.c:
  * Various utility functions.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2003 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2003 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */

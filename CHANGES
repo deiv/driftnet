@@ -1,5 +1,12 @@
 Changelog for driftnet
 
+1.1
+	Look in HTTP POST too
+
+	Create pidfile
+
+    Add radiotap and 802.11 headers support
+
 1.0
 
     Add ipv6 support

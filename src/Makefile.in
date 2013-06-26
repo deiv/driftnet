@@ -69,7 +69,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_driftnet_OBJECTS = connection.$(OBJEXT) driftnet.$(OBJEXT) \
 	log.$(OBJEXT) options.$(OBJEXT) packetcapture.$(OBJEXT) \
 	tmpdir.$(OBJEXT) util.$(OBJEXT) layer2.$(OBJEXT) \
-	layer3.$(OBJEXT)
+	layer3.$(OBJEXT) pid.$(OBJEXT)
 driftnet_OBJECTS = $(am_driftnet_OBJECTS)
 driftnet_DEPENDENCIES = media/libmedia.a $(am__append_3)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -236,7 +236,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 driftnet_SOURCES = compat.h connection.c connection.h driftnet.c driftnet.h \
 				   log.c log.h options.c options.h packetcapture.c packetcapture.h \
-				   tmpdir.c tmpdir.h util.c util.h layer2.c layer2.h layer3.c layer3.h
+				   tmpdir.c tmpdir.h util.c util.h layer2.c layer2.h layer3.c layer3.h \
+				   pid.c pid.h
 
 SUBDIRS = media $(am__append_1)
 AM_CFLAGS = -I$(srcdir)/media $(am__append_2) -Wall -D_BSD_SOURCE \
@@ -350,6 +351,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packetcapture.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tmpdir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@
 

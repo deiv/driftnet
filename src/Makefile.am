@@ -3,7 +3,8 @@ bin_PROGRAMS = driftnet
 
 driftnet_SOURCES = compat.h connection.c connection.h driftnet.c driftnet.h \
 				   log.c log.h options.c options.h packetcapture.c packetcapture.h \
-				   tmpdir.c tmpdir.h util.c util.h layer2.c layer2.h layer3.c layer3.h
+				   tmpdir.c tmpdir.h util.c util.h layer2.c layer2.h layer3.c layer3.h \
+				   pid.c pid.h
 
 SUBDIRS = media
 AM_CFLAGS = -I$(srcdir)/media

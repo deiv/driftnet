@@ -2,10 +2,10 @@
  * tmpdir.c:
  * Temporary directory helpers.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
@@ -34,6 +34,7 @@
 
 #include "util.h"
 #include "log.h"
+#include "driftnet.h"
 
 #include "tmpdir.h"
 
@@ -53,6 +54,7 @@ typedef struct {
     const char *path;
     tmpdir_type_t type;
     int max_files;
+    int preserve_files;
 } tmpdir_t;
 
 static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0};
@@ -60,14 +62,15 @@ static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0};
 static int is_tempfile(const char* p);
 static int count_tmpfiles(void);
 
-void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files)
+void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files, int preserve_files)
 {
     assert (tmpdir.path == NULL);    /* we only be called once */
     assert (dir != NULL);
 
-    tmpdir.path      = dir;
-    tmpdir.type      = type;
-    tmpdir.max_files = max_files;
+    tmpdir.path           = dir;
+    tmpdir.type           = type;
+    tmpdir.max_files      = max_files;
+    tmpdir.preserve_files = preserve_files;
 
     log_msg(LOG_INFO, "using temporary file directory %s", tmpdir.path);
 }
@@ -111,7 +114,7 @@ const char* make_tmpdir(void)
 		if (tmp == NULL) {
 			xfree(template); /* useless... */
 			log_msg(LOG_ERROR, "make_tmpdir(), mkdtemp: %s", strerror(errno));
-            exit (-1);
+            unexpected_exit (-1);
 		}
 
 		return tmp;
@@ -126,20 +129,23 @@ const char* make_tmpdir(void)
         log_msg(LOG_ERROR, "make_tmpdir(), internal error");
     }
 
-    exit (-1);
+    unexpected_exit (-1);
+
+    return NULL; /* make GCC happy */
 }
 
 /*
  * clean_tmpdir:
  *   Ensure that our temporary directory is clear of any files.
  */
-void clean_tmpdir(int preserve_files)
+void clean_tmpdir()
 {
     DIR *d;
 
-    assert (tmpdir.path != NULL);
+    if (tmpdir.path == NULL)
+    	return;
 
-    if (preserve_files) {
+    if (!tmpdir.preserve_files) {
 		/*
 		 * If user_specified is true, the user specified a particular temporary
 		 * directory. We presume that the user doesn't want the directory removed
@@ -187,16 +193,16 @@ int check_dir_is_rw(const char* dir)
 
     if (stat(dir, &st) == -1) {
         log_msg(LOG_ERROR, "stat(%s): %s", dir, strerror(errno));
-        exit (-1);
+        unexpected_exit (-1);
 
     } else if (!S_ISDIR(st.st_mode)) {
         log_msg(LOG_ERROR, "%s: not a directory", dir);
-        exit (-1);
+        unexpected_exit (-1);
 
     /* access is unsafe but we don't really care. */
     } else if (access(dir, R_OK | W_OK) != 0) {
         log_msg(LOG_ERROR, "%s: %s", dir, strerror(errno));
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     return 0;

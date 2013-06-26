@@ -6,7 +6,7 @@
  * to find the stream-start packet as well-- in practice, we probably would be
  * able to, but it's a bit of a hassle.
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */

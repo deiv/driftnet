@@ -2,7 +2,7 @@
  * driftnet.h:
  * Pick out images from passing network traffic.
  *
- * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  * $Id: driftnet.h,v 1.13 2004/04/08 23:06:29 chris Exp $
@@ -17,6 +17,8 @@
 #endif
 
 #define PROGNAME DRIFTNET_PROGNAME
+
+void unexpected_exit(int ret);
 
 /* alloc_struct S P
  * Make P point to a new struct S, initialised as if in static storage (like = {0}).

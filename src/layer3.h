@@ -3,7 +3,7 @@
  *
  * Layer3 handling.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */

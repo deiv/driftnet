@@ -2,10 +2,10 @@
  * png.c:
  * PNG image support.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2003 Drew Roedersheimer, Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2003 Drew Roedersheimer, Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
@@ -19,6 +19,7 @@
 #include <png.h>
 
 #include "log.h"
+#include "driftnet.h"
 #include "img.h"
 #include "pngformat.h"
 
@@ -28,7 +29,7 @@ void png_catch_error(png_structp png_ptr, png_const_charp error_msg)
 
    if (setjmp(png_jmpbuf(png_ptr))) {
 	  log_msg(LOG_ERROR, "libpng, unrecoverable error, terminating.");
-      exit(-1);
+      unexpected_exit(-1);
    }
 }
 

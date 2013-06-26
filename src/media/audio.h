@@ -2,10 +2,10 @@
  * audio.h:
  * Attempt to extract audio frames embedded in buffers.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */

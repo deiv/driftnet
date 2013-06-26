@@ -2,7 +2,7 @@
  * jpeg.c:
  * JPEG file support. Based on example.c in the IJG jpeg-6b distribution.
  *
- * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */

@@ -2,10 +2,10 @@
  * pcap.h:
  * Network packet capture handling.
  *
- * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -32,6 +32,7 @@
 #include <pcap.h>
 
 #include "log.h"
+#include "driftnet.h"
 #include "media.h"
 #include "connection.h"
 #include "options.h"
@@ -47,7 +48,7 @@ static datalink_info_t get_datalink_info(pcap_t *pcap);
 #define WRAPLEN 262144      /* out-of-order packet margin */
 
 /* ugh. */
-pcap_t *pc;
+pcap_t *pc = NULL;
 datalink_info_t datalink_info;
 
 void packetcapture_open_offline(char* dumpfile)
@@ -56,7 +57,7 @@ void packetcapture_open_offline(char* dumpfile)
 
     if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
         log_msg(LOG_ERROR, "pcap_open_offline: %s", ebuf);
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     log_msg(LOG_INFO, "reading packets from %s", dumpfile);
@@ -77,18 +78,18 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
         else if (!interface)
             log_msg(LOG_ERROR, "perhaps try selecting an interface with the -i option?");
 
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     /* Only apply a filter to live packets. Is this right? */
     if (pcap_compile(pc, &filter, filterexpr, 1, 0) == -1) {
         log_msg(LOG_ERROR, "pcap_compile: %s", pcap_geterr(pc));
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     if (pcap_setfilter(pc, &filter) == -1) {
         log_msg(LOG_ERROR, "pcap_setfilter: %s", pcap_geterr(pc));
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     log_msg(LOG_INFO, "listening on %s%s",
@@ -100,7 +101,8 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
 
 void packetcapture_close(void)
 {
-    pcap_close(pc);
+	if (pc != NULL)
+		pcap_close(pc);
 }
 
 inline char* get_default_interface()
@@ -114,7 +116,7 @@ inline char* get_default_interface()
         log_msg(LOG_ERROR, "pcap_lookupdev: %s", ebuf);
         log_msg(LOG_ERROR, "try specifying an interface with -i");
         log_msg(LOG_ERROR, "or a pcap capture file with -f");
-        exit (-1);
+        unexpected_exit (-1);
     }
 
     return interface;
@@ -139,7 +141,7 @@ void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *p
     s = (struct sockaddr *)&src;
     d = (struct sockaddr *)&dst;
 
-    if (handle_link_layer(&datalink_info, pkt, &proto, &off))
+    if (handle_link_layer(&datalink_info, pkt, hdr->caplen, &proto, &off))
     	return;
 	
     if (layer3_find_tcp(pkt, proto, &off, s, d, &tcp))
@@ -313,6 +315,6 @@ int get_link_level_hdr_length(int type)
         default:;
     }
     log_msg(LOG_ERROR, "unknown data link type %d", type);
-    exit(1);
+    unexpected_exit(1);
 }
 #endif
