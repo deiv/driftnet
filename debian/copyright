@@ -1,11 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: driftnet
-Source: http://www.ex-parrot.com/~chris/driftnet/
- The upstream sources were dowloaded from a cvs repository and repackaged
- like this (cvs password: anonymous):
-  cvs -d :pserver:anonymous@sphinx.mythic-beasts.com:/home/chris/vcvs/repos login
-  cvs :pserver:anonymous@sphinx.mythic-beasts.com:/home/chris/vcvs/repos export -D "20040427" driftnet
-  tar -czf driftnet_0.1.6+cvs20040426.orig.tar.gz driftnet
+Source: https://github.com/deiv/driftnet
 
 Files: *
 Copyright: 2012-2013 David Suarez <david.sephirot@gmail.com>
