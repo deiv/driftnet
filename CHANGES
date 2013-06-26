@@ -1,5 +1,9 @@
 Changelog for driftnet
 
+1.0.1
+
+    Add radiotap and 802.11 headers support
+
 1.0
 
     Add ipv6 support

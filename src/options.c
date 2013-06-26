@@ -2,7 +2,7 @@
  * options.h:
  * Options parsing.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */

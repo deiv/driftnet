@@ -2,10 +2,10 @@
  * png.c:
  * PNG image support.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2003 Drew Roedersheimer, Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2003 Drew Roedersheimer, Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */

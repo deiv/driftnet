@@ -2,7 +2,7 @@
  * mpeghdr.h:
  * MPEG audio header stuff.
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  * $Id: mpeghdr.h,v 1.4 2003/05/20 16:49:08 chris Exp $

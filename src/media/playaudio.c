@@ -8,7 +8,7 @@
  * dead if we present it with random stuff we picked up off the network, we
  * arrange to restart it if it dies.
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
