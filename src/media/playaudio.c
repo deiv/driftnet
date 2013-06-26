@@ -8,7 +8,7 @@
  * dead if we present it with random stuff we picked up off the network, we
  * arrange to restart it if it dies.
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
@@ -184,12 +184,12 @@ static void mpeg_player_manager(void) {
             case 0:
                 execl("/bin/sh", "/bin/sh", "-c", audio_mpeg_player, NULL);
                 log_msg(LOG_ERROR, "exec: %s", strerror(errno));
-                exit(-1);
+                unexpected_exit(-1);
                 break;
 
             case -1:
                 log_msg(LOG_ERROR, "fork: %s", strerror(errno));
-                exit(-1);  /* gah, not much we can do now. */
+                unexpected_exit(-1);  /* gah, not much we can do now. */
                 break;
 
             default:
@@ -237,7 +237,7 @@ void do_mpeg_player(void) {
         close(pp[1]);
         dup2(pp[0], 0); /* make pipe our standard input */
         mpeg_player_manager();
-        exit(-1);
+        unexpected_exit(-1);
     } else {
         close(pp[0]);
         mpeg_fd = pp[1];

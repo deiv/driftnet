@@ -2,10 +2,10 @@
  * log.c:
  * Logging functions.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
@@ -102,6 +102,8 @@ inline char* get_levelstring(loglevel_t level)
 
         default:
             fprintf(stderr, PROGNAME ": get_level_string(): internal error");
-            exit(-1);
+            unexpected_exit(-1);
     }
+
+    return NULL;
 }

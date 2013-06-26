@@ -2,7 +2,7 @@
  * connection.c:
  * Connection objects.
  *
- * Copyright (c) 2002 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
@@ -26,7 +26,7 @@
 
 /* slots for storing information about connections */
 connection *slots = NULL;
-unsigned int slotsused, slotsalloc;
+unsigned int slotsused, slotsalloc=0;
 
 static char* print_ipport_pair(const struct sockaddr *addr, char *buf, size_t buf_len);
 

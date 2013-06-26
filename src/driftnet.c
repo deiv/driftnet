@@ -2,10 +2,10 @@
  * driftnet.c:
  * Pick out images from passing network traffic.
  *
- * Copyright (c) 2012 David Suárez. All rights reserved.
+ * Copyright (c) 2012 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2001 Chris Lightfoot. All rights reserved.
+ * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
@@ -28,6 +28,7 @@
 #include "log.h"
 #include "options.h"
 #include "tmpdir.h"
+#include "pid.h"
 #include "connection.h"
 #include "packetcapture.h"
 #ifndef NO_DISPLAY_WINDOW
@@ -37,6 +38,16 @@
 
 #include "driftnet.h"
 
+void unexpected_exit(int ret)
+{
+	/* clean things a litle */
+    packetcapture_close();
+    connection_free_slots();
+    clean_tmpdir();
+    close_pifile();
+
+	exit(ret);
+}
 
 /* terminate_on_signal:
  * Terminate on receipt of an appropriate signal. */
@@ -96,6 +107,7 @@ static void print_exit_reason(void)
     if (foad == SIGCHLD) {
         pid_t pp;
         int st;
+
         while ((pp = waitpid(-1, &st, WNOHANG)) > 0) {
             if (WIFEXITED(st))
                 log_msg(LOG_INFO, "child process %d exited with status %d", (int)pp, WEXITSTATUS(st));
@@ -123,6 +135,8 @@ int main(int argc, char *argv[])
     if (options->verbose)
         set_loglevel(LOG_INFO);
 
+    if (options->adjunct)
+    	create_pifile();
 
     /*
      * In adjunct mode, it's important that the attached program gets
@@ -138,11 +152,11 @@ int main(int argc, char *argv[])
      */
     if (options->tmpdir) {
         check_dir_is_rw(options->tmpdir);
-        set_tmpdir(options->tmpdir, TMPDIR_USER_OWNED, options->max_tmpfiles);
+        set_tmpdir(options->tmpdir, TMPDIR_USER_OWNED, options->max_tmpfiles, options->adjunct);
 
     } else {
         /* need to make a temporary directory. */
-        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, options->max_tmpfiles);
+        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, options->max_tmpfiles, options->adjunct);
     }
 
     setup_signals();
@@ -188,10 +202,14 @@ int main(int argc, char *argv[])
     /* Clean up. */
     /*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
     packetcapture_close();
-    clean_tmpdir(options->adjunct);
 
     /* Easier for memory-leak debugging if we deallocate all this here.... */
     connection_free_slots();
+
+    clean_tmpdir();
+
+    if (options->adjunct)
+    	close_pifile();
 
     return 0;
 }
