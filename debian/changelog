@@ -1,3 +1,10 @@
+driftnet (1.1.1-1) unstable; urgency=low
+
+  * Imported Upstream version 1.1.1
+  * Now builds on kfreebsd
+
+ -- David Suarez <david.sephirot@gmail.com>  Mon, 15 Jul 2013 22:54:19 +0200
+
 driftnet (1.1-1) unstable; urgency=low
 
   * Imported Upstream version 1.1
