@@ -44,7 +44,7 @@ void unexpected_exit(int ret)
     packetcapture_close();
     connection_free_slots();
     clean_tmpdir();
-    close_pifile();
+    close_pidfile();
 
 	exit(ret);
 }
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
         set_loglevel(LOG_INFO);
 
     if (options->adjunct)
-    	create_pifile();
+        create_pidfile();
 
     /*
      * In adjunct mode, it's important that the attached program gets
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
     clean_tmpdir();
 
     if (options->adjunct)
-    	close_pifile();
+        close_pidfile();
 
     return 0;
 }
