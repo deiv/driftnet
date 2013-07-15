@@ -26,7 +26,7 @@
 
 static int pidfile_fd = -1;
 
-void create_pifile()
+void create_pidfile()
 {
     int flags;
     char buf[PID_BUFSIZE];
@@ -92,7 +92,7 @@ void create_pifile()
     }
 }
 
-void close_pifile()
+void close_pidfile()
 {
 	if (pidfile_fd > 0) {
 		close (pidfile_fd);

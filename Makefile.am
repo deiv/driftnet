@@ -2,7 +2,7 @@
 SUBDIRS = src
 
 dist_doc_DATA = README TODO
-EXTRA_DIST = driftnet.1.in CHANGES CREDITS
+EXTRA_DIST = driftnet.1.in CREDITS Changelog
 
 MANPAGE = driftnet.1.gz
 MAN1DIR = $(DESTDIR)$(mandir)/man1/

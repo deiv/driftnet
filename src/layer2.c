@@ -12,6 +12,11 @@
 #include "log.h"
 #include "layer2.h"
 
+/* ETH_P_PAE is named ETHERTYPE_PAE in freebsd, define it  */
+#ifndef ETH_P_PAE
+#define ETH_P_PAE 0x888E
+#endif
+
 struct ieee80211_radiotap_header {
 	u_int8_t        it_version;     /* set to 0 */
 	u_int8_t        it_pad;
