@@ -105,7 +105,7 @@ void packetcapture_close(void)
 		pcap_close(pc);
 }
 
-inline char* get_default_interface()
+char* get_default_interface()
 {
     char ebuf[PCAP_ERRBUF_SIZE];
     char *interface;
@@ -122,7 +122,7 @@ inline char* get_default_interface()
     return interface;
 }
 
-inline void packetcapture_dispatch(void)
+void packetcapture_dispatch(void)
 {
     pcap_dispatch(pc, -1, process_packet, NULL);
 }

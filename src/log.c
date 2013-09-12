@@ -22,8 +22,8 @@
 
 static loglevel_t loglevel = LOG_WARNING;
 
-inline static char* get_levelstring(loglevel_t level);
-inline char* get_timestring(void);
+static char* get_levelstring(loglevel_t level);
+char* get_timestring(void);
 
 loglevel_t get_loglevel(void)
 {
@@ -74,7 +74,7 @@ void log_msg(loglevel_t level, const char *fmt, ...)
     xfree(msg);
 }
 
-inline char* get_timestring(void)
+char* get_timestring(void)
 {
     time_t timee;
     struct tm *timeinfo;
@@ -88,7 +88,7 @@ inline char* get_timestring(void)
     return time_s;
 }
 
-inline char* get_levelstring(loglevel_t level)
+char* get_levelstring(loglevel_t level)
 {
     switch (level) {
         case LOG_INFO:
