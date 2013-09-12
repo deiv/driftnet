@@ -1,3 +1,10 @@
+driftnet (1.1.2-1) unstable; urgency=low
+
+  * Imported Upstream version 1.1.2
+  * Now builds with clang
+
+ -- David Suarez <david.sephirot@gmail.com>  Thu, 12 Sep 2013 19:33:25 +0200
+
 driftnet (1.1.1-1) unstable; urgency=low
 
   * Imported Upstream version 1.1.1
