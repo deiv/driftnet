@@ -75,7 +75,7 @@ void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files, int preserve
     log_msg(LOG_INFO, "using temporary file directory %s", tmpdir.path);
 }
 
-inline const char* get_tmpdir(void)
+const char* get_tmpdir(void)
 {
     assert (tmpdir.path != NULL);
 

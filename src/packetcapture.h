@@ -23,8 +23,8 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc);
 void packetcapture_open_offline(char* dumpfile);
 void packetcapture_close(void);
 
-inline void packetcapture_dispatch(void);
+void packetcapture_dispatch(void);
 
-inline char* get_default_interface();
+char* get_default_interface();
 
 #endif  /* __PACKETCAPTURE_H__ */
