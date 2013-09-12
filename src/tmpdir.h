@@ -20,7 +20,7 @@
 typedef enum { TMPDIR_APP_OWNED = 0, TMPDIR_USER_OWNED = 1 } tmpdir_type_t;
 
 void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files, int preserve_files);
-inline const char* get_tmpdir(void);
+const char* get_tmpdir(void);
 void clean_tmpdir();
 
 const char* make_tmpdir(void);
