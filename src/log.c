@@ -63,7 +63,7 @@ void log_msg(loglevel_t level, const char *fmt, ...)
         else           /* glibc 2.0 */
             size *= 2;  /* twice the old size */
 
-        msg = realloc (msg, size);
+        msg = xrealloc (msg, size);
     }
 
     levelstring = get_levelstring(level);
