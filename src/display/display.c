@@ -13,13 +13,11 @@
 
 #include "compat.h"
 
-#include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 
 #include <gtk/gtk.h>

@@ -14,7 +14,10 @@
     #include <config.h>
 #endif
 
+#include "compat.h"
+
 #include <stdlib.h>
+#include <stdio.h>                      /* for rewind, FILE */
 
 #include <png.h>
 

@@ -11,7 +11,7 @@
 #ifndef __PID_H__
 #define __PID_H__
 
-void create_pidfile();
-void close_pidfile();
+void create_pidfile(void);
+void close_pidfile(void);
 
 #endif /* __PID_H__ */

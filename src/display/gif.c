@@ -13,6 +13,8 @@
 
 #include "compat.h"
 
+#include <stdio.h>                      /* for fileno */
+
 #include <gif_lib.h>
 
 #include "img.h"

@@ -10,6 +10,12 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "compat.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -38,7 +44,7 @@ void set_loglevel(loglevel_t level)
 void log_msg(loglevel_t level, const char *fmt, ...)
 {
     int n;
-    int size = 100;     /* guess we need no more than 100 bytes */
+    size_t size = 100;     /* guess we need no more than 100 bytes */
     char *msg;
     va_list ap;
     char *levelstring;

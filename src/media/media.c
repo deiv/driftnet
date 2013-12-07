@@ -10,11 +10,13 @@
  *
  */
 
-#include <assert.h>
-#include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+
+#include "compat.h"
+
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
 
 #include "util.h"
 #include "tmpdir.h"

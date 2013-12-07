@@ -16,9 +16,8 @@
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
-#include "compat.h"
 
-#include <sys/types.h>
+#include "compat.h"
 
 #include <errno.h>
 #include <pthread.h>

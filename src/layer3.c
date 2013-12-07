@@ -1,3 +1,10 @@
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "compat.h"
+
 #include "driftnet.h"
 
 #include <string.h>
