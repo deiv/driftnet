@@ -137,7 +137,7 @@ int png_load_img(img I) {
     if (color_type == PNG_COLOR_TYPE_GRAY ||
         color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
         if (bit_depth < 8) {
-            png_set_gray_1_2_4_to_8(png_ptr);
+            png_set_expand_gray_1_2_4_to_8(png_ptr);
         }
         png_set_gray_to_rgb(png_ptr);
     }
