@@ -11,6 +11,12 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+
+#include "compat.h"
+
 #include <string.h>
 
 #include "mpeghdr.h"

@@ -8,7 +8,13 @@
  *
  */
 
-#include <sys/stat.h>
+#ifdef HAVE_CONFIG_H
+    #include <config.h>
+#endif
+
+#include "compat.h"
+
+//#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
@@ -26,7 +32,7 @@
 
 static int pidfile_fd = -1;
 
-void create_pidfile()
+void create_pidfile(void)
 {
     int flags;
     char buf[PID_BUFSIZE];
@@ -92,7 +98,7 @@ void create_pidfile()
     }
 }
 
-void close_pidfile()
+void close_pidfile(void)
 {
 	if (pidfile_fd > 0) {
 		close (pidfile_fd);

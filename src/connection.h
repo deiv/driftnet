@@ -17,8 +17,11 @@
     #include <config.h>
 #endif
 
+#include "compat.h"
+
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
+#include <time.h>                       // for time_t
 
 #include <sys/socket.h> /* On Darwin, stdlib.h is a prerequisite.  */
 #include <netinet/in.h> /* needs to be before <arpa/inet.h> on OpenBSD */
@@ -30,7 +33,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-struct datablock;
+//struct datablock;
 
 /*
  * Object representing one half of a TCP stream connection. Each connection

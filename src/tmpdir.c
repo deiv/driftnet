@@ -16,9 +16,7 @@
 
 #include "compat.h"
 
-#include <sys/types.h>
-#include <errno.h>
-#include <fcntl.h>
+#include <fcntl.h> /* for O_CREAT, O_EXCL, O_WRONLY */
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
@@ -27,7 +25,6 @@
 #include <time.h>
 
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <dirent.h>
 
 #include <assert.h>
@@ -57,7 +54,7 @@ typedef struct {
     int preserve_files;
 } tmpdir_t;
 
-static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0};
+static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0, 1};
 
 static int is_tempfile(const char* p);
 static int count_tmpfiles(void);
@@ -138,7 +135,7 @@ const char* make_tmpdir(void)
  * clean_tmpdir:
  *   Ensure that our temporary directory is clear of any files.
  */
-void clean_tmpdir()
+void clean_tmpdir(void)
 {
     DIR *d;
 

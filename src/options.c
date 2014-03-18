@@ -11,14 +11,16 @@
     #include <config.h>
 #endif
 
+#include "compat.h"
+
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <unistd.h>
 #if HAVE_STRING_H
     #include <string.h>
 #endif
+#include <getopt.h>                     // for optarg, optind, optopt, etc
 
-#include "compat.h"
 #include "log.h"
 #include "driftnet.h"
 #include "packetcapture.h"

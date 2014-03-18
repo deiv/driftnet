@@ -10,9 +10,9 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
 #include "compat.h"
 
-#include <sys/types.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -25,8 +25,8 @@
 #include "connection.h"
 
 /* slots for storing information about connections */
-connection *slots = NULL;
-unsigned int slotsused, slotsalloc=0;
+static connection *slots = NULL;
+static unsigned int slotsused, slotsalloc=0;
 
 static char* print_ipport_pair(const struct sockaddr *addr, char *buf, size_t buf_len);
 
