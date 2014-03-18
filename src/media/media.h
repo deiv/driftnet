@@ -19,7 +19,7 @@
 
 /* define before connection.h include: circular dependency */
 #define NMEDIATYPES 5
-struct connection;
+//struct connection;
 
 #include "connection.h"
 

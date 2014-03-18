@@ -14,6 +14,8 @@
     #include <config.h>
 #endif
 
+#include "compat.h"
+
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
@@ -48,8 +50,8 @@ static datalink_info_t get_datalink_info(pcap_t *pcap);
 #define WRAPLEN 262144      /* out-of-order packet margin */
 
 /* ugh. */
-pcap_t *pc = NULL;
-datalink_info_t datalink_info;
+static pcap_t *pc = NULL;
+static datalink_info_t datalink_info;
 
 void packetcapture_open_offline(char* dumpfile)
 {
@@ -105,7 +107,7 @@ void packetcapture_close(void)
 		pcap_close(pc);
 }
 
-char* get_default_interface()
+char* get_default_interface(void)
 {
     char ebuf[PCAP_ERRBUF_SIZE];
     char *interface;

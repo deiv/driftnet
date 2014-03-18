@@ -14,9 +14,6 @@
     #include <config.h>
 #endif
 
-#include <assert.h>
-#include <errno.h>
-
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -37,6 +34,10 @@
 #include "playaudio.h"
 
 #include "driftnet.h"
+
+static void terminate_on_signal(int s);
+static void setup_signals(void);
+static void *capture_thread(void *v);
 
 void unexpected_exit(int ret)
 {

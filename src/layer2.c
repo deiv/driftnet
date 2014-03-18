@@ -1,15 +1,22 @@
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "compat.h"
+
 #include "driftnet.h"
 
 #include <string.h>
-#include <assert.h>
 
 #include <netinet/ether.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 
-#include <pcap.h>
+#include <pcap.h>                 /* for DLT_IEEE802_11_RADIO, DLT_IEEE802_11 */
 
 #include "log.h"
+#include "packetcapture.h"          /* for datalink_info_t */
 #include "layer2.h"
 
 /* ETH_P_PAE is named ETHERTYPE_PAE in freebsd, define it  */

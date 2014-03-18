@@ -115,6 +115,7 @@ void xnanosleep(long nanosecs)
  *
  * XXX: Unused
  */
+#if 0
 void dump_data(FILE *fp, const unsigned char *data, const unsigned int len) {
     const unsigned char *p;
     for (p = data; p < data + len; ++p) {
@@ -122,3 +123,4 @@ void dump_data(FILE *fp, const unsigned char *data, const unsigned int len) {
         else fprintf(fp, "\\x%02x", (unsigned int)*p);
     }
 }
+#endif

@@ -25,6 +25,6 @@ void packetcapture_close(void);
 
 void packetcapture_dispatch(void);
 
-char* get_default_interface();
+char* get_default_interface(void);
 
 #endif  /* __PACKETCAPTURE_H__ */
