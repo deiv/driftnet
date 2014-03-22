@@ -6,4 +6,4 @@ Exec=driftnet
 Icon=driftnet
 Type=Application
 Categories=Network;Monitor;
-
+Keywords=Sniffer;Network capture;
