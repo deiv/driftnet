@@ -105,6 +105,8 @@ syntax. User filter code is evaluated as `tcp and (\fIfilter code\fP)'.
 
 .SH AUTHOR
 Chris Lightfoot <chris@ex-parrot.com>
+.br
+David Suárez <david.sephirot@gmail.com>
 
 .SH VERSION
 \fBDriftnet\fP, version @@@VERSION@@@.

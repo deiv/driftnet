@@ -30,7 +30,7 @@
 options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
         NULL, NULL, NULL, m_image, NULL, FALSE, FALSE
 #ifndef NO_DISPLAY_WINDOW
-    ,NULL
+    ,"driftnet-"
 #endif
 };
 
