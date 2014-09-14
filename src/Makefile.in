@@ -297,8 +297,8 @@ driftnet_SOURCES = compat.h connection.c connection.h driftnet.c driftnet.h \
 				   pid.c pid.h
 
 SUBDIRS = media $(am__append_1)
-AM_CFLAGS = -I$(srcdir)/media $(am__append_2) -Wall -D_BSD_SOURCE \
-	-DDRIFTNET_VERSION=\"$(VERSION)\" \
+AM_CFLAGS = -I$(srcdir)/media $(am__append_2) -Wall -D__FAVOR_BSD \
+	-D_BSD_SOURCE -DDRIFTNET_VERSION=\"$(VERSION)\" \
 	-DDRIFTNET_PROGNAME=\"$(PACKAGE)\"
 driftnet_LDADD = media/libmedia.a $(am__append_3)
 all: config.h
