@@ -11,11 +11,11 @@ and fix the errors which get displayed. Driftnet is at a very early stage of
 development and probably won't work for you at all.
 
 You will need libpcap, libjpeg and libungif. On most Linux distributions these
-are available as packages. If you don't want a version of driftnet which will
-display images itself, but just want to use it to gather images for some other
-application, you only need libpcap -- see comments in the Makefile for more
-information. To play MPEG audio, you need an MPEG player-- by default,
-driftnet will use mpg123.
+are available as libpcap-dev, libjpeg-dev and giflib-tools. If you don't want
+a version of driftnet which will display images itself, but just want to use
+it to gather images for some other application, you only need libpcap -- see
+comments in the Makefile for more information. To play MPEG audio, you need an
+MPEG player-- by default, driftnet will use mpg123.
 
 Driftnet needs to run with sufficient privilege to obtain raw packets from the
 network. On most systems, this means running it as root.
