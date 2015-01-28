@@ -10,10 +10,12 @@ To compile, read the Makefile and make any changes required, then type `make'
 and fix the errors which get displayed. Driftnet is at a very early stage of
 development and probably won't work for you at all.
 
-You will need libpcap, libjpeg and libungif. On most Linux distributions these
-are available as libpcap-dev, libjpeg-dev and giflib-tools. If you don't want
-a version of driftnet which will display images itself, but just want to use
-it to gather images for some other application, you only need libpcap -- see
+Dependencies
+
+You will need libpcap, libjpeg, libungif and libpng. On most Linux distributions these
+are available as libpcap-dev, libjpeg-dev, Note, selecting libpng12-dev and giflib-tools. 
+If you don't want a version of driftnet which will display images itself, but just want 
+to use it to gather images for some other application, you only need libpcap -- see
 comments in the Makefile for more information. To play MPEG audio, you need an
 MPEG player-- by default, driftnet will use mpg123.
 
