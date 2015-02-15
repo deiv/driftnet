@@ -13,7 +13,7 @@ You will need:
 On most Linux distributions these can be installed by executing `sudo apt-get install libpcap-dev libjpeg-dev libpng12-dev giflib-tools`. If you don't want a version of driftnet which will display images itself, but just want  to use it to gather images for some other application, you only need `libpcap`. See comments in the Makefile for more information. To play MPEG audio, you need an MPEG player. By default, driftnet will use [mpg123](http://www.mpg123.de/).
 
 
-Compiliation
+Compilation
 ------------
 To compile, read the Makefile and make any changes required, then type `make` and fix the errors which get displayed. Driftnet is at a very early stage of development and probably won't work for you at all.
 
