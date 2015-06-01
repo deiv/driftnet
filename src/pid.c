@@ -103,5 +103,9 @@ void close_pidfile(void)
 	if (pidfile_fd > 0) {
 		close (pidfile_fd);
 		pidfile_fd = -1;
+
+        if (unlink(PID_FILE)) {
+            log_msg(LOG_ERROR, "cannot delete pidfile %s: %s", PID_FILE, strerror(errno));
+        }
 	}
 }
