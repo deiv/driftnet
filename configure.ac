@@ -47,30 +47,15 @@ AC_PROG_RANLIB
 # Checks for libraries.
 #
 
-AC_CHECK_LIB([jpeg],
-    [jpeg_read_header],
-    [],
-    [AC_MSG_ERROR([cannot find lib jpeg])] )
-
 AC_CHECK_LIB([pcap],
     [pcap_open_live],
     [],
     [AC_MSG_ERROR([cannot find lib pcap])] )
 
-AC_CHECK_LIB([png],
-    [png_read_info],
-    [],
-    [AC_MSG_ERROR([cannot find lib png])] )
-
 AC_CHECK_LIB([pthread],
     [pthread_create],
     [],
     [AC_MSG_ERROR([cannot find lib pthread])] )
-
-AC_CHECK_LIB([gif],
-    [DGifOpenFileHandle],
-    [],
-    [AC_MSG_ERROR([cannot find lib gif])] )
 
 if test "x$enable_display" = xyes; then
 
@@ -108,6 +93,21 @@ if test "x$enable_display" = xyes; then
     #gthread-2.0)"
 
     AC_SUBST(GTK_CFLAGS)
+
+    AC_CHECK_LIB([gif],
+    [DGifOpenFileHandle],
+    [],
+    [AC_MSG_ERROR([cannot find lib gif])] )
+
+    AC_CHECK_LIB([png],
+    [png_read_info],
+    [],
+    [AC_MSG_ERROR([cannot find lib png])] )
+
+    AC_CHECK_LIB([jpeg],
+    [jpeg_read_header],
+    [],
+    [AC_MSG_ERROR([cannot find lib jpeg])] )
 fi
 
 #
