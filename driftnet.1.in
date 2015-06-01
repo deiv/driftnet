@@ -87,6 +87,9 @@ Use the named \fIcommand\fP to play MPEG audio data. The \fIcommand\fP, which
 is executed using the shell, should accept MPEG frames on standard input.
 The default is `mpg123 -'.
 .TP
+\fB-Z\fP \fIusername\fP
+Drop privileges to user \fIusername\fP after starting pcap.
+.TP
 \fIfilter code\fP
 Additional filter code to restrict the packets captured, in the libpcap
 syntax. User filter code is evaluated as `tcp and (\fIfilter code\fP)'.

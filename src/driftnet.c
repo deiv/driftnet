@@ -32,6 +32,7 @@
 #include "display.h"
 #endif
 #include "playaudio.h"
+#include "uid.h"
 
 #include "driftnet.h"
 
@@ -136,6 +137,19 @@ int main(int argc, char *argv[])
     if (options->verbose)
         set_loglevel(LOG_INFO);
 
+    /* Start up pcap as soon as posible to later drop root privileges. */
+    if (options->dumpfile)
+        packetcapture_open_offline(options->dumpfile);
+    else
+        packetcapture_open_live(options->interface, options->filterexpr, options->promisc);
+
+    /* If we are root and an username was specified, drop privileges to that user */
+    if (getuid() == 0 || geteuid() == 0) {
+        if (options->drop_username) {
+            drop_root(options->drop_username);
+        }
+    }
+
     if (options->adjunct)
         create_pidfile();
 
@@ -175,12 +189,6 @@ int main(int argc, char *argv[])
 #endif /* !NO_DISPLAY_WINDOW */
 
     init_mediadrv(options->extract_type, !options->adjunct);
-
-    /* Start up pcap. */
-    if (options->dumpfile)
-        packetcapture_open_offline(options->dumpfile);
-    else
-        packetcapture_open_live(options->interface, options->filterexpr, options->promisc);
 
     connection_alloc_slots();
 

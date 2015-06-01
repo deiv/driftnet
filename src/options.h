@@ -35,6 +35,7 @@ typedef struct {
 #ifndef NO_DISPLAY_WINDOW
     char *savedimgpfx;
 #endif
+    char *drop_username;
 } options_t;
 
 options_t* parse_options(int argc, char *argv[]);

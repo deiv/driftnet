@@ -32,6 +32,7 @@ options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
 #ifndef NO_DISPLAY_WINDOW
     ,"driftnet-"
 #endif
+    , NULL
 };
 
 static void validate_options(options_t* options);
@@ -42,7 +43,7 @@ static void usage(FILE *fp);
  */
 options_t* parse_options(int argc, char *argv[])
 {
-    char optstring[] = "abd:f:hi:M:m:pSsvx:";
+    char optstring[] = "abd:f:hi:M:m:pSsvx:Z:";
     int c;
 
     opterr = 0;
@@ -119,6 +120,9 @@ options_t* parse_options(int argc, char *argv[])
                 options.newpfx = TRUE;
                 break;
 #endif
+            case 'Z':
+                options.drop_username = strdup(optarg);
+                break;
 
             case '?':
             default:
@@ -244,6 +248,7 @@ void usage(FILE *fp)
 "  -M command       Use the given command to play MPEG audio data extracted\n"
 "                   with the -s option; this should process MPEG frames\n"
 "                   supplied on standard input. Default: `mpg123 -'.\n"
+"  -Z username      Drop privileges to user 'username' after starting pcap.\n"
 "\n"
 "Filter code can be specified after any options in the manner of tcpdump(8).\n"
 "The filter code will be evaluated as `tcp and (user filter code)'\n"
