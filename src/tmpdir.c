@@ -86,7 +86,7 @@ const char* make_tmpdir(void)
     int len;
     int n;
 
-    #define TEMPLATE_FILENAME "/drifnet-XXXXXX"
+    #define TEMPLATE_FILENAME "/driftnet-XXXXXX"
 
 	/* NOTE: don't use TMPDIR if program is SUID or SGID enabled. */
 	if (!(systmp = getenv("TMPDIR")))
