@@ -132,7 +132,7 @@ fail:
 #if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
     DGifCloseFile(g, NULL);
 #else
-    DGifCloseFile(g, NULL);
+    DGifCloseFile(g);
 #endif
 
     return ret;
