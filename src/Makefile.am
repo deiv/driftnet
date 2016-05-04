@@ -17,6 +17,6 @@ driftnet_LDADD += display/libdisplay.a
 endif
 
 AM_CFLAGS += -Wall
-AM_CFLAGS += -D__FAVOR_BSD -D_BSD_SOURCE # Get BSDish definitions of the TCP/IP structs (linux).
+AM_CFLAGS += -D__FAVOR_BSD -D_BSD_SOURCE -D_DEFAULT_SOURCE # Get BSDish definitions of the TCP/IP structs (linux).
 AM_CFLAGS += -DDRIFTNET_VERSION=\"$(VERSION)\"
 AM_CFLAGS += -DDRIFTNET_PROGNAME=\"$(PACKAGE)\"
