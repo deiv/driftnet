@@ -14,7 +14,9 @@
 
 #include "compat.h"
 
-//#include <sys/stat.h>
+#ifdef __FreeBSD__
+#include <sys/stat.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
