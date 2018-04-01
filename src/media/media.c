@@ -17,7 +17,6 @@
 #include "compat.h"
 
 #include <string.h>
-#include <sys/types.h>
 
 #include "util.h"
 #include "tmpdir.h"

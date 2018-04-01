@@ -19,10 +19,6 @@
 #include <string.h>
 #include <time.h>
 
-#ifdef __FreeBSD__
-#include <sys/types.h>
-#endif
-
 #include "util.h"
 #include "media.h"
 #include "driftnet.h"

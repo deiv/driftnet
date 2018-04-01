@@ -11,7 +11,6 @@
 #include <assert.h>
 
 #ifdef __FreeBSD__
-#include <sys/types.h>
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
