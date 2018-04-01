@@ -35,6 +35,11 @@ fi
 # Checks for programs.
 #
 
+# Check for pkg-config
+AC_CHECK_PROG([have_pkg_config],[pkg-config],[yes],[no])
+AM_CONDITIONAL([FOUND_PKGCONFIG], [test "x$have_pkg_config" = xyes])
+AM_COND_IF([FOUND_PKGCONFIG],,[AC_MSG_ERROR([required program 'pkg-config' not found])])
+
 AC_PROG_CC
 AC_PROG_INSTALL
 #AM_PROG_CC_C_O
