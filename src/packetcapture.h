@@ -19,6 +19,7 @@ typedef struct {
 	const char* name;
 } datalink_info_t;
 
+void packetcapture_list_interfaces(void);
 void packetcapture_open_live(char* interface, char* filterexpr, int promisc);
 void packetcapture_open_offline(char* dumpfile);
 void packetcapture_close(void);

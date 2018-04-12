@@ -94,7 +94,7 @@ const char* get_sys_tmpdir(void)
 
 const char* make_tmpdir(void)
 {
-	char* sys_tmpdir;
+	const char* sys_tmpdir;
 	char *template;
     int len;
     int n;

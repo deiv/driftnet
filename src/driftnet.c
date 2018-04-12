@@ -133,9 +133,14 @@ int main(int argc, char *argv[])
     options_t *options;
 
     options = parse_options(argc, argv);
-
-    if (options->verbose)
+	
+	if (options->verbose)
         set_loglevel(LOG_INFO);
+	
+	if (options->list_interfaces == 1) {
+		packetcapture_list_interfaces();
+		return 0;
+	}
 
     /* Start up pcap as soon as posible to later drop root privileges. */
     if (options->dumpfile)

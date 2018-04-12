@@ -53,6 +53,31 @@ static datalink_info_t get_datalink_info(pcap_t *pcap);
 static pcap_t *pc = NULL;
 static datalink_info_t datalink_info;
 
+void packetcapture_list_interfaces(void)
+{ 
+	pcap_if_t *alldevs;
+    pcap_if_t *d;
+    int i=0;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    
+    if (pcap_findalldevs(&alldevs, errbuf) == -1) {
+        log_msg(LOG_ERROR, "Error listing interfaces: %s", errbuf);
+        unexpected_exit(1);
+    }
+    
+    for(d = alldevs; d != NULL; d= d->next) {
+		log_msg(LOG_SIMPLY, "- %d.: %s", ++i, d->name);
+		
+		if (d->description) {
+			log_msg(LOG_SIMPLY, "\t%s", d->description);
+		} else {
+			log_msg(LOG_SIMPLY, "");
+		}
+    }
+    
+	
+}
+
 void packetcapture_open_offline(char* dumpfile)
 {
     char ebuf[PCAP_ERRBUF_SIZE];

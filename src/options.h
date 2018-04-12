@@ -36,6 +36,7 @@ typedef struct {
     char *savedimgpfx;
 #endif
     char *drop_username;
+	int list_interfaces;
 } options_t;
 
 options_t* parse_options(int argc, char *argv[]);
