@@ -92,12 +92,23 @@ void packetcapture_open_offline(char* dumpfile)
     datalink_info = get_datalink_info(pc);
 }
 
-void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
+void check_pcap_error(int error, char* msg)
+{
+    if (error != 0) {
+        log_msg(LOG_ERROR, "can't set option: %s", msg);
+        unexpected_exit (-1);      
+    }
+}
+
+void packetcapture_open_live(char* interface, char* filterexpr, int promisc, int monitor_mode)
 {
     char ebuf[PCAP_ERRBUF_SIZE];
     struct bpf_program filter;
-
-    if (!(pc = pcap_open_live(interface, SNAPLEN, promisc, 1000, ebuf))) {
+    int error;
+    
+    pc = pcap_create(interface, ebuf);
+    
+    if (pc == NULL) {
         log_msg(LOG_ERROR, "pcap_open_live: %s", ebuf);
 
         if (getuid() != 0)
@@ -105,6 +116,18 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc)
         else if (!interface)
             log_msg(LOG_ERROR, "perhaps try selecting an interface with the -i option?");
 
+        unexpected_exit (-1);   
+    }
+    
+    check_pcap_error(pcap_set_rfmon(pc, monitor_mode), "pcap_set_rfmon");
+    check_pcap_error(pcap_set_promisc(pc, promisc), "pcap_set_promisc");
+    check_pcap_error(pcap_set_snaplen(pc, SNAPLEN), "pcap_set_snaplen");
+    check_pcap_error(pcap_set_timeout(pc, 1000), "pcap_set_timeout");
+    
+    error = pcap_activate(pc);
+    
+    if (error < 0) {
+        log_msg(LOG_ERROR, "pcap_activate: %s", pcap_statustostr(error));
         unexpected_exit (-1);
     }
 

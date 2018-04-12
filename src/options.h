@@ -37,6 +37,7 @@ typedef struct {
 #endif
     char *drop_username;
 	int list_interfaces;
+    int monitor_mode;
 } options_t;
 
 options_t* parse_options(int argc, char *argv[]);

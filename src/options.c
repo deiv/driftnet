@@ -32,7 +32,7 @@ options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
 #ifndef NO_DISPLAY_WINDOW
     ,"driftnet-"
 #endif
-    , NULL, 0
+    , NULL, 0, 0
 };
 
 static void validate_options(options_t* options);
@@ -43,7 +43,7 @@ static void usage(FILE *fp);
  */
 options_t* parse_options(int argc, char *argv[])
 {
-    char optstring[] = "abd:f:hi:M:m:pSsvx:Z:l";
+    char optstring[] = "abd:f:hi:M:m:pSsvx:Z:lr";
     int c;
 
     opterr = 0;
@@ -125,7 +125,11 @@ options_t* parse_options(int argc, char *argv[])
                 break;
 				
 			case 'l':
-				options.list_interfaces = 1;
+				options.list_interfaces = TRUE;
+				break;
+                
+            case 'r':
+				options.monitor_mode = TRUE;
 				break;
 
             case '?':

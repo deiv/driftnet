@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
     if (options->dumpfile)
         packetcapture_open_offline(options->dumpfile);
     else
-        packetcapture_open_live(options->interface, options->filterexpr, options->promisc);
+        packetcapture_open_live(options->interface, options->filterexpr, options->promisc, options->monitor_mode);
 
     /* If we are root and an username was specified, drop privileges to that user */
     if (getuid() == 0 || geteuid() == 0) {
