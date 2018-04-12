@@ -20,8 +20,3 @@ TODO for driftnet
 * Safe(r) setuid operation.
 
 * Delay between reading packets from dump file?
-
-* Add option to list the capture interfaces
-
-* windows support:
-  - interfaces names ?
