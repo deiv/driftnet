@@ -4,6 +4,8 @@ unreleased
     Add basic windows support (cygwin)
     
     Add options to list capture interfaces
+    
+    Add support for putting the interface in monitor mode
 
 1.1.1
 
