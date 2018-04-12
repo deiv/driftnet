@@ -261,6 +261,8 @@ void usage(FILE *fp)
 "                   with the -s option; this should process MPEG frames\n"
 "                   supplied on standard input. Default: `mpg123 -'.\n"
 "  -Z username      Drop privileges to user 'username' after starting pcap.\n"
+"  -l               List the system capture interfaces.\n"
+"  -p               Put the interface in monitor mode (not supported on all interfaces).\n"
 "\n"
 "Filter code can be specified after any options in the manner of tcpdump(8).\n"
 "The filter code will be evaluated as `tcp and (user filter code)'\n"
