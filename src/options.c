@@ -160,7 +160,7 @@ options_t* parse_options(int argc, char *argv[])
     log_msg(LOG_INFO, "using filter expression `%s'", options.filterexpr);
 
 #ifndef NO_DISPLAY_WINDOW
-    if ((options.newpfx && !options.adjunct)
+    if (options.newpfx && !options.adjunct)
         log_msg(LOG_INFO, "using saved image prefix `%s'", options.savedimgpfx);
 #endif
 
