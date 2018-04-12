@@ -24,6 +24,4 @@ TODO for driftnet
 * Add option to list the capture interfaces
 
 * windows support:
-  - temp files, where to save ? by default takes: C:\Users\{user}\AppData\Local\Temp\driftnet-AjMdQf
-  - Pid files, where to save ?
   - interfaces names ?

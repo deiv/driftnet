@@ -79,28 +79,37 @@ const char* get_tmpdir(void)
     return tmpdir.path;
 }
 
+const char* get_sys_tmpdir(void)
+{
+	char *systmp;
+		
+	/* NOTE: don't use TMPDIR if program is SUID or SGID enabled. */
+	if (!(systmp = getenv("TMPDIR")))
+		if (!(systmp = getenv("TEMP")))
+            if (!(systmp = getenv("TMP")))
+				systmp = DEFAULT_TMPDIR;
+			
+	return systmp;
+}
+
 const char* make_tmpdir(void)
 {
-    char *systmp;
+	char* sys_tmpdir;
 	char *template;
     int len;
     int n;
 
     #define TEMPLATE_FILENAME "/driftnet-XXXXXX"
 
-	/* NOTE: don't use TMPDIR if program is SUID or SGID enabled. */
-	if (!(systmp = getenv("TMPDIR")))
-		if (!(systmp = getenv("TEMP")))
-            if (!(systmp = getenv("TMP")))
-				systmp = DEFAULT_TMPDIR;
+	sys_tmpdir = get_sys_tmpdir();
 
-    len  = strlen(systmp);
+    len  = strlen(sys_tmpdir);
     len += strlen(TEMPLATE_FILENAME);
     len += 1; /* for null */
 
 	template = xmalloc(len);
 
-    n = snprintf(template, len, "%s"TEMPLATE_FILENAME, systmp);
+    n = snprintf(template, len, "%s"TEMPLATE_FILENAME, sys_tmpdir);
 
     if (n > -1 && n < len) {
         /* we have it. */

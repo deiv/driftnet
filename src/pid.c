@@ -25,25 +25,53 @@
 #include <unistd.h>
 
 #include "log.h"
+#include "tmpdir.h"
+#include "util.h"
 
 /*
  * XXX: create the pid in tmp. To create on '/var/run' we need proper permisions.
  */
-#define PID_FILE "/tmp/driftnet.pid"
+#define PID_FILEPATH_UNIX "/tmp/driftnet.pid"
 #define PID_BUFSIZE 64
 
 static int pidfile_fd = -1;
+static char* pid_filepath;
+
+#if defined(__CYGWIN__)
+
+#define PID_FILENAME_WINDOWS "\\driftnet.pid"
+char* get_pid_filepath_windows()
+{
+	char *template;
+	size_t len;
+	const char* sys_tmpdir = get_sys_tmpdir();
+	
+    len  = strlen(sys_tmpdir);
+    len += strlen(PID_FILENAME_WINDOWS);
+    len += 1; /* for null */
+
+	template = xmalloc(len);
+
+    snprintf(template, len, "%s"PID_FILENAME_WINDOWS, sys_tmpdir);
+	
+	return template;
+}
+#endif
 
 void create_pidfile(void)
 {
     int flags;
     char buf[PID_BUFSIZE];
     struct flock fl;
-
-    pidfile_fd = open(PID_FILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+#if defined(__CYGWIN__)
+	pid_filepath = get_pid_filepath_windows();
+#else
+	pid_filepath = PID_FILEPATH_UNIX;
+#endif
+    pidfile_fd = open(pid_filepath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 
     if (pidfile_fd == -1) {
-        log_msg(LOG_ERROR, "Could not open/create PID file %s", PID_FILE);
+        log_msg(LOG_ERROR, "Could not open/create PID file %s", pid_filepath);
         exit (-1);
     }
 
@@ -57,14 +85,14 @@ void create_pidfile(void)
      */
 	flags = fcntl(pidfile_fd, F_GETFD);
 	if (flags == -1) {
-		log_msg(LOG_ERROR, "Could not get flags for PID file %s", PID_FILE);
+		log_msg(LOG_ERROR, "Could not get flags for PID file %s", pid_filepath);
 		exit (-1);
 	}
 
 	flags |= FD_CLOEXEC;
 
 	if (fcntl(pidfile_fd, F_SETFD, flags) == -1) {
-		log_msg(LOG_ERROR, "Could not set flags for PID file %s", PID_FILE);
+		log_msg(LOG_ERROR, "Could not set flags for PID file %s", pid_filepath);
 		exit (-1);
 	}
 
@@ -76,28 +104,29 @@ void create_pidfile(void)
     if ( fcntl(pidfile_fd, F_SETLK, &fl) == -1) {
 
         if (errno  == EAGAIN || errno == EACCES) {
-        	log_msg(LOG_WARNING, "PID file '%s' is locked; probably the program is already running", PID_FILE);
-        	log_msg(LOG_WARNING, "if not, try to remove the file %s", PID_FILE);
+        	log_msg(LOG_WARNING, "PID file '%s' is locked; probably the program is already running", pid_filepath);
+        	log_msg(LOG_WARNING, "if not, try to remove the file %s", pid_filepath);
             exit (0);
 
         } else {
-        	log_msg(LOG_ERROR, "Unable to lock PID file '%s'", PID_FILE);
+        	log_msg(LOG_ERROR, "Unable to lock PID file '%s'", pid_filepath);
         	exit (-1);
         }
     }
 
     if (ftruncate(pidfile_fd, 0) == -1) {
-    	log_msg(LOG_ERROR, "Could not truncate PID file '%s'", PID_FILE);
+    	log_msg(LOG_ERROR, "Could not truncate PID file '%s'", pid_filepath);
     	close (pidfile_fd);
     	exit (-1);
     }
 
     snprintf(buf, PID_BUFSIZE, "%ld\n", (long) getpid());
     if (write(pidfile_fd, buf, strlen(buf)) != strlen(buf)) {
-    	log_msg(LOG_ERROR, "writing to PID file '%s'", PID_FILE);
+    	log_msg(LOG_ERROR, "writing to PID file '%s'", pid_filepath);
     	close (pidfile_fd);
     	exit (-1);
     }
+
 }
 
 void close_pidfile(void)
@@ -106,8 +135,12 @@ void close_pidfile(void)
 		close (pidfile_fd);
 		pidfile_fd = -1;
 
-        if (unlink(PID_FILE)) {
-            log_msg(LOG_ERROR, "cannot delete pidfile %s: %s", PID_FILE, strerror(errno));
+        if (unlink(pid_filepath)) {
+            log_msg(LOG_ERROR, "cannot delete pidfile %s: %s", pid_filepath, strerror(errno));
         }
 	}
+	
+#if defined(__CYGWIN__)
+	xfree(pid_filepath);
+#endif
 }
