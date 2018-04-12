@@ -1,5 +1,10 @@
 Changelog for driftnet
 
+unreleased
+    Add basic windows support (cygwin)
+    
+    Add options to list capture interfaces
+
 1.1.1
 
     Fix compile error on freebsd
