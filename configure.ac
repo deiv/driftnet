@@ -4,10 +4,44 @@
 
 AC_PREREQ([2.69])
 AC_INIT([driftnet], [1.1.5], [david.sephirot@gmail.com])
+
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/driftnet.c])
 AC_CONFIG_HEADERS(src/[config.h])
+
+#
+# Detect then host and target system
+#
+
+build_windows=no
+build_linux=no
+build_mac=no
+
+case "${host_os}" in
+    linux*)
+        build_linux=yes
+        ;;
+    cygwin*|mingw*)
+		case "${target_cpu}" in
+			i686*)
+				build_windows=yes
+				;;
+			*)
+				AC_MSG_ERROR(["Building for $target_cpu is not supported (only 32 bits builds)"])
+				;;
+		esac
+        ;;
+    darwin*)
+        build_mac=yes
+        ;;
+    *)
+        AC_MSG_ERROR(["OS $host_os is not supported"])
+        ;;
+esac
 
 AC_ARG_ENABLE([display],
     [AC_HELP_STRING([--disable-display], [disable display (default is no)])],
@@ -52,10 +86,20 @@ AC_PROG_RANLIB
 # Checks for libraries.
 #
 
-AC_CHECK_LIB([pcap],
-    [pcap_open_live],
-    [],
-    [AC_MSG_ERROR([cannot find lib pcap])] )
+#
+# On windows we use the libwinpcap library
+#
+if test "x$build_windows" = xyes; then
+	AC_CHECK_LIB([wpcap],
+		[pcap_open_live],
+		[],
+		[AC_MSG_ERROR([cannot find lib wpcap])] )
+else
+	AC_CHECK_LIB([pcap],
+		[pcap_open_live],
+		[],
+		[AC_MSG_ERROR([cannot find lib pcap])] )
+fi
 
 AC_CHECK_LIB([pthread],
     [pthread_create],
@@ -150,9 +194,18 @@ AC_C_INLINE
 # Checks for library functions.
 #
 
+#
+# AC_FUNC_MALLOC and AC_FUNC_REALLOC seems to not work on cygwin, we check them using AC_CHECK_FUNCS
+#
+if test "x$build_windows" = xyes; then
+	AC_CHECK_FUNCS([malloc realloc])
+else
+	AC_FUNC_MALLOC
+	AC_FUNC_REALLOC
+fi
+
 AC_FUNC_FORK
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
+
 AC_CHECK_FUNCS([dup2 inet_ntoa memchr memset mkdir rmdir strcasecmp strchr strdup strerror strncasecmp strrchr])
 
 # nanosleep seems to exist in librt or libposix4 on Solaris
