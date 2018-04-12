@@ -21,6 +21,7 @@
 #include <errno.h>
 
 #include "log.h"
+#include "driftnet.h"
 
 #include "uid.h"
 
