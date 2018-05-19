@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drifnet Display</title>
+
+    <script src="jquery.js" ></script>
+
+    <style>
+        #img-container img {
+            max-width: 200px;
+        }
+        .img-wrap {
+            display: inline-block;
+            position: relative;
+            margin: 0.6em;
+        }
+        .close-image {
+            width: 12px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            cursor: pointer;
+        }
+        .close-image:hover {
+            width: 14px;
+        }
+        .dritfnet-image {
+            border: 1px solid #999;
+        }
+    </style>
+</head>
+
+<body>
+<div id="img-container"></div>
+
+<script>
+    $(document).ready(function(){
+
+    });
+
+    function get_ws_url(extra_url)
+    {
+        var pcol;
+        var u = document.URL;
+
+        if (u.substring(0, 5) == "https") {
+            pcol = "wss://";
+            u = u.substr(8);
+        } else {
+            pcol = "ws://";
+            if (u.substring(0, 4) == "http")
+                u = u.substr(7);
+        }
+        u = u.split('/');
+        /* + "/xxx" bit is for IE10 workaround */
+        return pcol + u[0] + "/" + extra_url;
+    }
+
+    window.WebSocket = window.WebSocket || window.MozWebSocket;
+
+    var ws = new WebSocket(get_ws_url(), "images-pipe-protocol");
+
+    try {
+        ws.onopen = function() {
+            console.log("websocket connection opened");
+        };
+        ws.onmessage =function got_packet(msg) {
+            $('#img-container').append(
+                '<div class="img-wrap"><img class="close-image" src="close.png" title="close image"/><img class="dritfnet-image" id="' +
+                msg.data +
+                '" src="'+
+                msg.data +
+                '" /></div>');
+
+            $(".close-image").click(function(){
+                $( this ).parent().remove();
+            });
+
+        };
+        ws.onclose = function(){
+            console.log("websocket connection closed");
+        }
+    } catch(exception) {
+        alert("Error: can't connect to websocket");
+    };
+</script>
+</body>
+</html>

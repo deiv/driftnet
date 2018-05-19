@@ -8,7 +8,7 @@ AC_INIT([driftnet], [1.1.5], [david.sephirot@gmail.com])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/driftnet.c])
 AC_CONFIG_HEADERS(src/[config.h])
@@ -52,6 +52,16 @@ if test "x$enable_display" = xno; then
     AC_DEFINE([NO_DISPLAY_WINDOW], [1], [Compile without support for a display window])
 fi
 AM_CONDITIONAL(ENABLE_DISPLAY, test "x$enable_display" = xyes)
+
+AC_ARG_ENABLE([http-display],
+    [AC_HELP_STRING([--disable-http-display], [disable http display (default is yes)])],
+    ,
+    [enable_http_display=yes])
+
+if test "x$enable_http_display" = xno; then
+    AC_DEFINE([NO_HTTP_DISPLAY], [1], [Compile without support for http display])
+fi
+AM_CONDITIONAL(ENABLE_HTTP_DISPLAY, test "x$enable_http_display" = xyes)
 
 AC_ARG_ENABLE([debug],
 	[AC_HELP_STRING([--disable-debug], [disable debugging (default is no)])],
@@ -159,6 +169,13 @@ if test "x$enable_display" = xyes; then
     [AC_MSG_ERROR([cannot find lib jpeg])] )
 fi
 
+if test "x$enable_http_display" = xyes; then
+    AC_CHECK_LIB([websockets],
+        [lws_create_context],
+        [],
+        [AC_MSG_ERROR([cannot find lib websockets])] )
+fi
+
 #
 # Checks for header files.
 #
@@ -221,7 +238,7 @@ if test x$sleep_func = xno; then
         [AC_MSG_ERROR([cannot find any usable sleep function])])
 fi
 
-AC_CONFIG_FILES([Makefile src/Makefile src/media/Makefile src/display/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/media/Makefile src/display/Makefile src/http_display/Makefile])
 AC_OUTPUT
 
 echo \

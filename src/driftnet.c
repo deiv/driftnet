@@ -28,11 +28,14 @@
 #include "pid.h"
 #include "connection.h"
 #include "packetcapture.h"
-#ifndef NO_DISPLAY_WINDOW
-#include "display.h"
-#endif
 #include "playaudio.h"
 #include "uid.h"
+#ifndef NO_DISPLAY_WINDOW
+    #include "display.h"
+#endif
+#ifndef NO_HTTP_DISPLAY
+    #include "httpd.h"
+#endif
 
 #include "driftnet.h"
 
@@ -42,7 +45,10 @@ static void *capture_thread(void *v);
 
 void unexpected_exit(int ret)
 {
-	/* clean things a litle */
+    /* clean things a litle */
+#ifndef NO_HTTP_DISPLAY
+    stop_http_display();
+#endif
     packetcapture_close();
     connection_free_slots();
     clean_tmpdir();
@@ -187,13 +193,21 @@ int main(int argc, char *argv[])
 
 #ifndef NO_DISPLAY_WINDOW
     /* Possibly fork to start the display child process */
-    if (!options->adjunct && (options->extract_type & m_image))
+    if (options->enable_gtk_display && !options->adjunct && (options->extract_type & m_image))
         do_image_display(options->savedimgpfx, options->beep);
-    else
-        log_msg(LOG_INFO, "operating in adjunct mode");
+
 #endif /* !NO_DISPLAY_WINDOW */
 
-    init_mediadrv(options->extract_type, !options->adjunct);
+#ifndef NO_HTTP_DISPLAY
+    if (options->enable_http_display && !options->adjunct) {
+        init_http_display(get_tmpdir(), options->http_server_port);
+    }
+#endif
+    if (options->adjunct) {
+        log_msg(LOG_INFO, "operating in adjunct mode");
+    }
+
+    init_mediadrv(options->extract_type, !options->adjunct, options->enable_http_display, options->enable_gtk_display);
 
     connection_alloc_slots();
 
@@ -209,6 +223,12 @@ int main(int argc, char *argv[])
 
     if (options->verbose)
         print_exit_reason();
+
+#ifndef NO_HTTP_DISPLAY
+    if (options->enable_http_display) {
+        stop_http_display();
+    }
+#endif
 
     pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */
     pthread_join(packetth, NULL);

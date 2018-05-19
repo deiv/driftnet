@@ -96,6 +96,15 @@ List the system capture interfaces.
 \fB-r\fP
 Put the interface in monitor mode (not supported on all interfaces).
 .TP
+\fB-g\fP
+Enable GTK display (this is the default).
+.TP
+\fB-w\fP
+Enable the HTTP server to display images.
+.TP
+\fB-W\fP
+Port number for the HTTP server (implies -w). Default: 9090.
+.TP
 \fIfilter code\fP
 Additional filter code to restrict the packets captured, in the libpcap
 syntax. User filter code is evaluated as `tcp and (\fIfilter code\fP)'.

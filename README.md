@@ -3,6 +3,14 @@ Driftnet
 ========
 Driftnet watches network traffic, and picks out and displays JPEG and GIF images for display. It is a horrific invasion of privacy and shouldn't be used by anyone anywhere. It can also extract MPEG audio data from the network and play it. If you live in a house with thick walls, this may be a useful way to find out about your neighbours' musical taste.
 
+News
+------------
+
+    Added new, http and websockets based, display
+    Added basic windows support (cygwin)
+    Added option to list capture interfaces
+    Added support for putting the interface in monitor mode
+
 Dependencies
 ------------
 
@@ -14,6 +22,7 @@ You will need:
 * [libjpeg](http://libjpeg.sourceforge.net/)
 * [libungif](http://directory.fsf.org/wiki/Libungif)
 * [libpng](http://www.libpng.org/pub/png/libpng.html)
+* [libwebsockets](https://libwebsockets.org/) (if you want the http server)
 
 On most Linux distributions (APT based) these can be installed by executing `sudo apt-get install libpcap-dev libjpeg-dev libpng12-dev giflib-tools`. If you don't want a version of driftnet which will display images itself, but just want  to use it to gather images for some other application, you only need `libpcap`. See comments in the Makefile for more information. To play MPEG audio, you need an MPEG player. By default, driftnet will use [mpg123](http://www.mpg123.de/).
 
