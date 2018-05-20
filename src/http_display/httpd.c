@@ -56,10 +56,10 @@ void write_static_file(char* server_root, char* filename, unsigned char *file_da
 
     len  = strlen(server_root);
     len += strlen(filename);
-    len += 1; /* for null */
+    len += 2; /* for null */
     resource_filename = xmalloc(len);
 
-    snprintf(resource_filename, len, "%s%s", server_root, filename);
+    snprintf(resource_filename, len, "%s/%s", server_root, filename);
 
     fd1 = open(resource_filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd1 == -1) {
@@ -95,10 +95,10 @@ void delete_static_file(char* server_root, char* filename)
 
     len  = strlen(server_root);
     len += strlen(filename);
-    len += 1; /* for null */
+    len += 2; /* for null */
     resource_filename = xmalloc(len);
 
-    snprintf(resource_filename, len, "%s%s", server_root, filename);
+    snprintf(resource_filename, len, "%s/%s", server_root, filename);
 
     unlink(resource_filename);
 
@@ -107,16 +107,22 @@ void delete_static_file(char* server_root, char* filename)
 
 void write_static_resources(char *server_root)
 {
-    write_static_file(server_root, "/index.html", static_web_index_html, static_web_index_html_len);
-    write_static_file(server_root, "/jquery.js", static_web_jquery_js, static_web_jquery_js_len);
-    write_static_file(server_root, "/close.png", static_web_close_png, static_web_close_png_len);
+    web_static_file_t* static_file = &static_content[0];
+
+    while (static_file->size != 0) {
+        write_static_file(server_root, static_file->name, static_file->data, static_file->size);
+        static_file++;
+    }
 }
 
 void delete_static_resources(char *server_root)
 {
-    delete_static_file(server_root, "/index.html");
-    delete_static_file(server_root, "/jquery.js");
-    delete_static_file(server_root, "/close.png");
+    web_static_file_t* static_file = &static_content[0];
+
+    while (static_file->size != 0) {
+        delete_static_file(server_root, static_file->name);
+        static_file++;
+    }
 }
 
 static void * http_server_dispatch(void *arg)
@@ -182,6 +188,12 @@ static void * http_server_dispatch(void *arg)
     return NULL;
 }
 
+/*
+ * XXX: [2018/05/19 23:30:14:7811] ERR: ****** 0x7fdf74004e40: Sending new 32 (�driftnet-5b009766), pending truncated ...
+       It's illegal to do an lws_write outside of
+       the writable callback: fix your code
+
+ */
 void ws_send_text(const char* text)
 {
     if (client != NULL) {

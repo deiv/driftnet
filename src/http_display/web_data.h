@@ -10,13 +10,12 @@
 #ifndef __WEB_DATA_H_
 #define __WEB_DATA_H_
 
-extern unsigned char static_web_index_html[];
-extern unsigned int static_web_index_html_len;
+typedef struct web_static_file_t {
+    char* name;
+    unsigned char *data;
+    unsigned int size;
+} web_static_file_t;
 
-extern unsigned char static_web_jquery_js[];
-extern unsigned int static_web_jquery_js_len;
-
-extern unsigned char static_web_close_png[];
-extern unsigned int static_web_close_png_len;
+extern web_static_file_t static_content[];
 
 #endif /* __WEB_DATA_H_ */

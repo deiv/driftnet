@@ -8,7 +8,29 @@ STATIC_WEB_FILES = $(wildcard static_web/*)
 
 web_data.c: $(STATIC_WEB_FILES)
 	rm -f '$@'
-	for f in $^; do xxd -i $$f >> $@; done
+
+	echo '#include "web_data.h"' >> $@
+	echo '#include <stddef.h>' >> $@
+
+	for f in $^ ; do \
+		echo -n 'unsigned char ' >> $@; \
+		basename $$f | sed 's@[-. ]@_@g' >> $@; \
+		echo '[] = {' >> $@; \
+		cat $$f | xxd -i >> $@; \
+		echo '};' >> $@; \
+	done
+
+	echo 'web_static_file_t static_content[] = {' >> $@
+	for f in $^ ; do \
+			echo '{' >> $@; \
+			basename $$f | sed 's@\(.*\)@"\1",@g' >> $@; \
+			basename $$f | sed 's@[-. ]@_@g' >> $@; \
+			echo ',' >> $@; \
+			cat $$f | wc -c >> $@; \
+			echo '},' >> $@ ;\
+	done
+
+	echo '{NULL, NULL, 0}};' >> $@
 
 static-web: web_data.c
 
