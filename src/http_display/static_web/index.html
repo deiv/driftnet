@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<link>
     <meta charset="UTF-8">
     <title>Drifnet Display</title>
 
+    <link rel="stylesheet" href="lightbox.min.css">
+
     <script src="jquery.js" ></script>
+    <script src="lightbox.min.js"></script>
 
     <style>
         #img-container img {
@@ -36,7 +39,10 @@
 
 <script>
     $(document).ready(function(){
-
+        lightbox.option({
+            'resizeDuration': 200,
+            'wrapAround': true
+        })
     });
 
     function get_ws_url(extra_url)
@@ -67,13 +73,18 @@
         };
         ws.onmessage =function got_packet(msg) {
             $('#img-container').append(
-                '<div class="img-wrap"><img class="close-image" src="close.png" title="close image"/><img class="dritfnet-image" id="' +
+                '<div class="img-wrap" src="' +
+                msg.data +
+                '"><img class="close-image" src="close.png" title="close image"/><a href="' +
+                msg.data +
+                '" data-lightbox="driftnet"><img class="dritfnet-image" id="' +
                 msg.data +
                 '" src="'+
                 msg.data +
-                '" /></div>');
+                '" /></a></div>');
 
-            $(".close-image").click(function(){
+            $(".close-image").click(function(event){
+                event.stopPropagation();
                 $( this ).parent().remove();
             });
 
