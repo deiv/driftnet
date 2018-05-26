@@ -18,6 +18,7 @@
 #include "web_data.h"
 #include "log.h"
 #include "util.h"
+#include "tmpdir.h"
 
 int server_port;
 int interrupted = 0;
@@ -45,82 +46,22 @@ static struct lws_protocols protocols[] = {
         { NULL, NULL, 0, 0 }                    /* terminator */
 };
 
-/*
- * TODO: use the tmpdir related functions to handle the web static files.
- */
-void write_static_file(char* server_root, char* filename, unsigned char *file_data, unsigned int data_len)
-{
-    int fd1;
-    char* resource_filename;
-    int len;
-
-    len  = strlen(server_root);
-    len += strlen(filename);
-    len += 2; /* for null */
-    resource_filename = xmalloc(len);
-
-    snprintf(resource_filename, len, "%s/%s", server_root, filename);
-
-    fd1 = open(resource_filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-    if (fd1 == -1) {
-        log_msg(LOG_ERROR, "%s: %s", resource_filename, strerror(errno));
-        close(fd1);
-        xfree(resource_filename);
-        return;
-    }
-
-    unsigned char *buf_ptr = file_data;
-    size_t buf_len = data_len;
-
-    while (buf_len > 0) {
-        int written = write(fd1, buf_ptr, buf_len);
-
-        if (written <= 0) {
-            log_msg(LOG_ERROR, "%s: %s", resource_filename, strerror(errno));
-            break;
-        }
-
-        buf_ptr += written;
-        buf_len -= written;
-    }
-
-    xfree(resource_filename);
-    close(fd1);
-}
-
-void delete_static_file(char* server_root, char* filename)
-{
-    char* resource_filename;
-    int len;
-
-    len  = strlen(server_root);
-    len += strlen(filename);
-    len += 2; /* for null */
-    resource_filename = xmalloc(len);
-
-    snprintf(resource_filename, len, "%s/%s", server_root, filename);
-
-    unlink(resource_filename);
-
-    xfree(resource_filename);
-}
-
-void write_static_resources(char *server_root)
+void write_static_resources()
 {
     web_static_file_t* static_file = &static_content[0];
 
     while (static_file->size != 0) {
-        write_static_file(server_root, static_file->name, static_file->data, static_file->size);
+        tmpfile_write_file(static_file->name, static_file->data, static_file->size);
         static_file++;
     }
 }
 
-void delete_static_resources(char *server_root)
+void delete_static_resources()
 {
     web_static_file_t* static_file = &static_content[0];
 
     while (static_file->size != 0) {
-        delete_static_file(server_root, static_file->name);
+        tmpfile_delete_file(static_file->name);
         static_file++;
     }
 }
@@ -158,7 +99,7 @@ static void * http_server_dispatch(void *arg)
     };
 
 
-    write_static_resources(server_root);
+    write_static_resources();
 
     memset(&info, 0, sizeof info);
 
@@ -183,7 +124,7 @@ static void * http_server_dispatch(void *arg)
 
     lws_context_destroy(context);
 
-    delete_static_resources(server_root);
+    delete_static_resources();
 
     return NULL;
 }

@@ -46,7 +46,7 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
 {
     const char *name;
 
-    name = tmpfile_write(mname, data, len);
+    name = tmpfile_write_mediaffile(mname, data, len);
     if (name == NULL)
         return;
 

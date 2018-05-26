@@ -30,6 +30,8 @@ int check_dir_is_rw(const char* tmpdir);
 
 int tmpfiles_limit_reached(void);
 
-const char* tmpfile_write(const char *mname, const unsigned char *data, const size_t len);
+const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len);
+void tmpfile_write_file(char* filename, const unsigned char *file_data, const size_t data_len);
+void tmpfile_delete_file(char* filename);
 
 #endif /* __TMPDIR_H__ */
