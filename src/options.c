@@ -195,18 +195,6 @@ void validate_options(options_t* options)
 	if (options->list_interfaces == 1) {
 		return;
 	}
-	
-#ifdef NO_DISPLAY_WINDOW
-    if (!options->adjunct) {
-        /*
-         * TODO: assume adjuct mode by default if we were compiled without
-         * display support.
-         */
-        log_msg(LOG_ERROR, "this version of driftnet was compiled without display support");
-        log_msg(LOG_ERROR, "use the -a option to run it in adjunct mode");
-        unexpected_exit (-1);
-    }
-#endif /* !NO_DISPLAY_WINDOW */
 
     if (!options->dumpfile) {
         if (!options->interface) {
@@ -253,6 +241,8 @@ void validate_options(options_t* options)
   #ifndef NO_DISPLAY_WINDOW
             options->enable_http_display = TRUE;
   #else
+            log_msg(LOG_WARNING, "this version of driftnet was compiled without any display support");
+            log_msg(LOG_WARNING, "switching to adjunct mode");
             options->adjunct = TRUE;
   #endif
 #endif
