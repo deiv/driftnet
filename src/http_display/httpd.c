@@ -24,13 +24,13 @@ int server_port;
 int interrupted = 0;
 pthread_t server_thread;
 
-/*
- * TODO: multi client (atm we only suppport one connection)... */
-struct lws *client = NULL;
-
 struct session_ws_images {
-    int number;
+    struct lws *client;
+    struct session_ws_images *next;
 };
+
+struct session_ws_images *client_list;
+struct session_ws_images *client_list_tail = NULL;
 
 int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
                      void *user, void *in, size_t len);
@@ -137,8 +137,11 @@ static void * http_server_dispatch(void *arg)
  */
 void ws_send_text(const char* text)
 {
-    if (client != NULL) {
-        lws_write(client, (unsigned char*)text, strlen(text), LWS_WRITE_TEXT);
+    struct session_ws_images *client_list_head = client_list;
+
+    while (client_list_head != NULL) {
+        lws_write(client_list_head->client, (unsigned char*)text, strlen(text), LWS_WRITE_TEXT);
+        client_list_head = client_list_head->next;
     }
 }
 
@@ -150,8 +153,18 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
     switch (reason) {
 
         case LWS_CALLBACK_ESTABLISHED:
-            client = wsi;
-            pss->number = 0;
+            pss->client = wsi;
+
+            /* first client ? */
+            if (client_list_tail == NULL) {
+                client_list_tail = pss;
+                client_list = client_list_tail;
+
+            } else {
+                client_list_tail->next = pss;
+                client_list_tail = pss;
+                pss->next = NULL;
+            }
             break;
 
         default:
