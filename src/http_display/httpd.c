@@ -19,7 +19,6 @@
 #include "log.h"
 #include "util.h"
 #include "tmpdir.h"
-#include "../log.h"
 
 int server_port;
 int interrupted = 0;
