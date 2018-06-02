@@ -19,6 +19,7 @@
 #include "log.h"
 #include "util.h"
 #include "tmpdir.h"
+#include "../log.h"
 
 int server_port;
 int interrupted = 0;
@@ -149,6 +150,7 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
                  void *user, void *in, size_t len)
 {
     struct session_ws_images *pss = (struct session_ws_images *)user;
+    struct session_ws_images *current = NULL;
 
     switch (reason) {
 
@@ -165,6 +167,44 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 client_list_tail = pss;
                 pss->next = NULL;
             }
+            break;
+
+        case LWS_CALLBACK_CLOSED:
+            /* sanity check  ... */
+            if (client_list == NULL) {
+                log_msg(LOG_WARNING, "LWS_CALLBACK_CLOSED: don't know nothing about any client");
+                break;
+            }
+
+            current = client_list;
+
+            /* first one ? */
+            if (current == pss) {
+                client_list = client_list->next;
+                /* last one too ? */
+                if (client_list == NULL) {
+                    client_list_tail = NULL;
+                }
+                break;
+            }
+
+            do {
+                if (current->next == pss) {
+                    /* last one ?  */
+                    if (pss->next == NULL) {
+                        current->next = NULL;
+                        client_list_tail = 0;
+
+                    } else {
+                        current->next = pss->next;
+                    }
+
+                    return 0;
+                }
+            } while ((current = current->next) != NULL);
+
+            log_msg(LOG_WARNING, "LWS_CALLBACK_CLOSED: can't find client to delete");
+
             break;
 
         default:
