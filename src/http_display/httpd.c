@@ -19,32 +19,120 @@
 #include "log.h"
 #include "util.h"
 #include "tmpdir.h"
+#include "driftnet.h"
+
+/*
+ * Tests if we have a modern libwebsockets library (>= 3.0.0). Prior versions didn't include
+ *  some helpers macros.
+ */
+#ifndef lws_ll_fwd_insert
+
+#define lws_ll_fwd_insert(\
+ 	       ___new_object,  /* pointer to new object */ \
+ 	       ___m_list,      /* member for next list object ptr */ \
+ 	       ___list_head    /* list head */ \
+ 	               ) {\
+ 	               ___new_object->___m_list = ___list_head; \
+ 	               ___list_head = ___new_object; \
+ 	       }
+
+#define lws_ll_fwd_remove(\
+ 	       ___type,        /* type of listed object */ \
+ 	       ___m_list,      /* member for next list object ptr */ \
+ 	       ___target,      /* object to remove from list */ \
+ 	       ___list_head    /* list head */ \
+ 	       ) { \
+ 	                lws_start_foreach_llp(___type **, ___ppss, ___list_head) { \
+if (*___ppss == ___target) { \
+ 	                                *___ppss = ___target->___m_list; \
+ 	                                break; \
+ 	                        } \
+ 	                } lws_end_foreach_llp(___ppss, ___m_list); \
+ 	       }
+
+/*
+ * This is a helper that combines the common pattern of needing to consume
+ * some ringbuffer elements, move the consumer tail on, and check if that
+ * has moved any ringbuffer elements out of scope, because it was the last
+ * consumer that had not already consumed them.
+ *
+ * Elements that go out of scope because the oldest tail is now after them
+ * get garbage-collected by calling the destroy_element callback on them
+ * defined when the ringbuffer was created.
+ */
+
+#define lws_ring_consume_and_update_oldest_tail(\
+ 	               ___ring,    /* the lws_ring object */ \
+ 	               ___type,    /* type of objects with tails */ \
+ 	               ___ptail,   /* ptr to tail of obj with tail doing consuming
+ 	*/ \
+ 	               ___count,   /* count of payload objects being consumed */ \
+ 	               ___list_head,   /* head of list of objects with tails */ \
+ 	               ___mtail,   /* member name of tail in ___type */ \
+ 	               ___mlist  /* member name of next list member ptr in ___type
+ 	*/ \
+ 	       ) { \
+ 	               int ___n, ___m; \
+ 	       \
+ 	       ___n = lws_ring_get_oldest_tail(___ring) == *(___ptail); \
+ 	       lws_ring_consume(___ring, ___ptail, NULL, ___count); \
+ 	       if (___n) { \
+ 	               uint32_t ___oldest; \
+ 	               ___n = 0; \
+ 	               ___oldest = *(___ptail); \
+ 	               lws_start_foreach_llp(___type **, ___ppss, ___list_head) { \
+ 	                       ___m = lws_ring_get_count_waiting_elements( \
+ 	                                       ___ring, &(*___ppss)->tail); \
+ 	                       if (___m >= ___n) { \
+ 	                               ___n = ___m; \
+ 	                               ___oldest = (*___ppss)->tail; \
+ 	                       } \
+ 	               } lws_end_foreach_llp(___ppss, ___mlist); \
+ 	       \
+ 	               lws_ring_update_oldest_tail(___ring, ___oldest); \
+ 	       } \
+ 	}
+#endif /* lws_ll_fwd_insert */
 
 int server_port;
 int interrupted = 0;
 pthread_t server_thread;
 
-struct session_ws_images {
-    struct lws *client;
-    struct session_ws_images *next;
+struct msg {
+    void *payload;
+    size_t len;
 };
 
-struct session_ws_images *client_list;
-struct session_ws_images *client_list_tail = NULL;
+struct per_session_data {
+    struct per_session_data *pss_list;
+    struct lws *wsi;
+    uint32_t tail;
+};
+
+struct per_vhost_data {
+    struct lws_context *context;
+    struct lws_vhost *vhost;
+    const struct lws_protocols *protocol;
+    struct per_session_data *pss_list;      /* linked-list of live pss */
+    struct lws_ring *ring;                  /* ringbuffer holding unsent messages */
+};
 
 int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
                      void *user, void *in, size_t len);
+static void destroy_message(void *_msg);
 
 static struct lws_protocols protocols[] = {
         { "http", lws_callback_http_dummy, 0, 0 },
         {
           "images-pipe-protocol",
           ws_callback,
-           sizeof(struct session_ws_images),
-              128,                              /* rx buf size */
+           sizeof(struct per_session_data),
+              128,
         },
-        { NULL, NULL, 0, 0 }                    /* terminator */
+        { NULL, NULL, 0, 0 }
 };
+
+struct per_vhost_data *vhost_data;          /* our vhost */
 
 void write_static_resources()
 {
@@ -73,9 +161,9 @@ static void * http_server_dispatch(void *arg)
     struct lws_context_creation_info info;
     struct lws_context *context;
 
-   static const struct lws_protocol_vhost_options mime_types[] = {
+    static const struct lws_protocol_vhost_options mime_types[] = {
        { NULL, NULL, ".jpeg", "image/jpeg" }
-   };
+    };
 
    const struct lws_http_mount mount = {
         (struct lws_http_mount *)NULL,	/* linked-list pointer to next*/
@@ -113,6 +201,7 @@ static void * http_server_dispatch(void *arg)
 
     if (!context) {
         log_msg(LOG_ERROR, "http server init failed");
+        unexpected_exit (-1);
         return NULL;
     }
 
@@ -129,81 +218,114 @@ static void * http_server_dispatch(void *arg)
     return NULL;
 }
 
-/*
- * XXX: [2018/05/19 23:30:14:7811] ERR: ****** 0x7fdf74004e40: Sending new 32 (�driftnet-5b009766), pending truncated ...
-       It's illegal to do an lws_write outside of
-       the writable callback: fix your code
-
- */
 void ws_send_text(const char* text)
 {
-    struct session_ws_images *client_list_head = client_list;
+    struct msg amsg;
+    size_t text_len = strlen(text);
 
-    while (client_list_head != NULL) {
-        lws_write(client_list_head->client, (unsigned char*)text, strlen(text), LWS_WRITE_TEXT);
-        client_list_head = client_list_head->next;
+    amsg.len = text_len;
+    amsg.payload = malloc(LWS_PRE + text_len);
+
+    if (!amsg.payload) {
+        log_msg(LOG_WARNING, "httpd: dropping msg");
+        return;
     }
+
+    memcpy((char *)amsg.payload + LWS_PRE, text, text_len);
+
+    if (!lws_ring_insert(vhost_data->ring, &amsg, 1)) {
+        destroy_message(&amsg);
+        log_msg(LOG_WARNING, "httpd: can't insert msg into ring buffer");
+        return;
+    }
+
+    lws_start_foreach_llp(struct per_session_data **, ppss, vhost_data->pss_list) {
+        lws_callback_on_writable((*ppss)->wsi);
+    } lws_end_foreach_llp(ppss, pss_list);
+}
+
+static void destroy_message(void *_msg)
+{
+    struct msg *msg = _msg;
+
+    free(msg->payload);
+    msg->payload = NULL;
+    msg->len = 0;
 }
 
 int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
                  void *user, void *in, size_t len)
 {
-    struct session_ws_images *pss = (struct session_ws_images *)user;
-    struct session_ws_images *current = NULL;
+    struct per_session_data *pss =
+            (struct per_session_data *) user;
+    struct per_vhost_data *vhd =
+            (struct per_vhost_data *)
+                    lws_protocol_vh_priv_get(lws_get_vhost(wsi),
+                                             lws_get_protocol(wsi));
+    const struct msg *pmsg;
+    int m;
 
     switch (reason) {
+        case LWS_CALLBACK_PROTOCOL_INIT:
+            vhd = lws_protocol_vh_priv_zalloc(lws_get_vhost(wsi),
+                                              lws_get_protocol(wsi),
+                                              sizeof(struct per_vhost_data));
+            vhd->context = lws_get_context(wsi);
+            vhd->protocol = lws_get_protocol(wsi);
+            vhd->vhost = lws_get_vhost(wsi);
+
+            vhd->ring = lws_ring_create(sizeof(struct msg), 8,
+                                        destroy_message);
+            if (!vhd->ring) {
+                log_msg(LOG_ERROR, "httpd: cna't create message buffer");
+                unexpected_exit (-1);
+                return 1;
+            }
+            vhost_data = vhd;
+            break;
+
+        case LWS_CALLBACK_PROTOCOL_DESTROY:
+            lws_ring_destroy(vhd->ring);
+            break;
 
         case LWS_CALLBACK_ESTABLISHED:
-            pss->client = wsi;
-
-            /* first client ? */
-            if (client_list_tail == NULL) {
-                client_list_tail = pss;
-                client_list = client_list_tail;
-
-            } else {
-                client_list_tail->next = pss;
-                client_list_tail = pss;
-                pss->next = NULL;
-            }
+            lws_ll_fwd_insert(pss, pss_list, vhd->pss_list);
+            pss->tail = lws_ring_get_oldest_tail(vhd->ring);
+            pss->wsi = wsi;
             break;
 
         case LWS_CALLBACK_CLOSED:
-            /* sanity check  ... */
-            if (client_list == NULL) {
-                log_msg(LOG_WARNING, "LWS_CALLBACK_CLOSED: don't know nothing about any client");
+            lws_ll_fwd_remove(struct per_session_data, pss_list,
+                pss, vhd->pss_list);
+            break;
+
+        case LWS_CALLBACK_SERVER_WRITEABLE:
+            pmsg = lws_ring_get_element(vhd->ring, &pss->tail);
+            if (!pmsg) {
                 break;
             }
 
-            current = client_list;
+            /* notice we allowed for LWS_PRE in the payload already */
+            m = lws_write(wsi, pmsg->payload + LWS_PRE, pmsg->len, LWS_WRITE_TEXT);
 
-            /* first one ? */
-            if (current == pss) {
-                client_list = client_list->next;
-                /* last one too ? */
-                if (client_list == NULL) {
-                    client_list_tail = NULL;
-                }
-                break;
+            if (m < (int)pmsg->len) {
+                log_msg(LOG_WARNING, "httpd: can't write to ws socket\n", m);
+                return -1;
             }
 
-            do {
-                if (current->next == pss) {
-                    /* last one ?  */
-                    if (pss->next == NULL) {
-                        current->next = NULL;
-                        client_list_tail = 0;
+            lws_ring_consume_and_update_oldest_tail(
+                vhd->ring,	             /* lws_ring object */
+                struct per_session_data, /* type of objects with tails */
+                &pss->tail,	             /* tail of guy doing the consuming */
+                1,		                 /* number of payload objects being consumed */
+                vhd->pss_list,	         /* head of list of objects with tails */
+                tail,		             /* member name of tail in objects with tails */
+                pss_list	             /* member name of next object in objects with tails */
+            );
 
-                    } else {
-                        current->next = pss->next;
-                    }
-
-                    return 0;
-                }
-            } while ((current = current->next) != NULL);
-
-            log_msg(LOG_WARNING, "LWS_CALLBACK_CLOSED: can't find client to delete");
-
+            if (lws_ring_get_element(vhd->ring, &pss->tail)) {
+                lws_callback_on_writable(pss->wsi);
+            }
             break;
 
         default:
