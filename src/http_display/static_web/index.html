@@ -10,6 +10,23 @@
     <script src="lightbox.min.js"></script>
 
     <style>
+        body {
+            margin: 0;
+        }
+        header {
+            margin-top: 0;
+            background-color: #333;
+            color: white;
+            border-bottom: 1px solid lightgray;
+        }
+        header h2 {
+            margin: 0 1em 0 0;
+            padding-top: 0.2em;
+            text-align: right;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+        }
         #img-container img {
             max-width: 200px;
         }
@@ -35,6 +52,11 @@
 </head>
 
 <body>
+
+<header>
+    <h2 >Driftnet</h2>
+</header>
+
 <div id="img-container"></div>
 
 <script>
@@ -96,5 +118,6 @@
         alert("Error: can't connect to websocket");
     };
 </script>
+
 </body>
 </html>
