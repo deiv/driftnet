@@ -27,6 +27,7 @@
             font-size: 18px;
             font-weight: bold;
         }
+        #img-container { min-height: 90vh; }
         #img-container img {
             max-width: 200px;
         }
@@ -48,6 +49,20 @@
         .dritfnet-image {
             border: 1px solid #999;
         }
+        footer {
+            font-size: 8px;
+            text-align: right;
+            border-top: 1px solid gainsboro;
+            padding-top: 0.8em;
+            margin-bottom: 0.2em;
+        }
+        footer a {
+            margin: 0 1.2em 0 0;
+            color: gray;
+            font-style: italic;
+            text-decoration: none;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -58,6 +73,8 @@
 </header>
 
 <div id="img-container"></div>
+
+<footer>fork me on <a href="https://www.github.com/deiv/driftnet">GitHub</a></footer>
 
 <script>
     $(document).ready(function(){
