@@ -13,8 +13,7 @@ web_data.c: $(STATIC_WEB_FILES)
 	echo '#include <stddef.h>' >> $@
 
 	for f in $^ ; do \
-		echo -n 'unsigned char ' >> $@; \
-		basename $$f | sed 's@[-. ]@_@g' >> $@; \
+		printf 'unsigned char %s' `basename $$f | sed 's@[-. ]@_@g'` >> $@; \
 		echo '[] = {' >> $@; \
 		cat $$f | xxd -i >> $@; \
 		echo '};' >> $@; \
