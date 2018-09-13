@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 9), libgtk2.0-dev, libpcap-dev, libjpeg-dev, libgif
 Standards-Version: 3.9.5
 Homepage: https://github.com/deiv/driftnet
 Vcs-Browser: https://github.com/deiv/driftnet
-Vcs-Git: git://github.com/deiv/driftnet.git -b debian
+Vcs-Git: https://github.com/deiv/driftnet.git -b debian
 
 Package: driftnet
 Architecture: any
