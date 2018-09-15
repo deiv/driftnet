@@ -1,5 +1,15 @@
 Changelog for driftnet
 
+1.2.0
+
+    Add new, http and websockets based, display
+
+    Add basic windows support (cygwin)
+    
+    Add options to list capture interfaces
+    
+    Add support for putting the interface in monitor mode
+
 1.1.1
 
     Fix compile error on freebsd

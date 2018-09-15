@@ -23,6 +23,9 @@
 #ifndef NO_DISPLAY_WINDOW
 #include "display.h"
 #endif
+#ifndef NO_HTTP_DISPLAY
+#include "httpd.h"
+#endif
 #include "image.h"
 #include "audio.h"
 #include "http.h"
@@ -32,6 +35,8 @@
 
 static mediatype_t extract_type;
 static int play_media;
+static int send_to_ws;
+static int send_to_gtk;
 
 /*
  * dispatch_image:
@@ -41,17 +46,25 @@ void dispatch_image(const char *mname, const unsigned char *data, const size_t l
 {
     const char *name;
 
-    name = tmpfile_write(mname, data, len);
+    name = tmpfile_write_mediaffile(mname, data, len);
     if (name == NULL)
         return;
 
     if (!play_media)
         printf("%s/%s\n", get_tmpdir(), name);
-#ifndef NO_DISPLAY_WINDOW
-    else
-        display_send_img(name, TMPNAMELEN);
-#endif /* !NO_DISPLAY_WINDOW */
 
+    else {
+#ifndef NO_DISPLAY_WINDOW
+        if (send_to_gtk) {
+            display_send_img(name, TMPNAMELEN);
+        }
+#endif /* !NO_DISPLAY_WINDOW */
+#ifndef NO_HTTP_DISPLAY
+        if (send_to_ws) {
+            ws_send_text(name);
+        }
+#endif /* !NO_HTTP_DISPLAY */
+    }
 }
 
 /*
@@ -78,10 +91,12 @@ static struct mediadrv {
     };
 
 
-void init_mediadrv(mediatype_t media_type, int play)
+void init_mediadrv(mediatype_t media_type, int play, int enable_ws, int enable_gtk)
 {
     extract_type = media_type;
     play_media = play;
+    send_to_ws = enable_ws;
+    send_to_gtk = enable_gtk;
 }
 
 /* connection_extract_media CONNECTION TYPE

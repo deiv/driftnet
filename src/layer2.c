@@ -9,9 +9,34 @@
 
 #include <string.h>
 
-#include <netinet/ether.h>
+#ifdef __FreeBSD__
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#else
+  #ifndef __CYGWIN__
+    #include <netinet/ether.h>
+	#include <netinet/ip6.h>
+  #endif
+#endif
+
 #include <netinet/ip.h>
-#include <netinet/ip6.h>
+
+/*
+ * Freebsd and Cygwin doesn't define 'ethhdr'
+ */
+#if defined(__FreeBSD__) || defined(__CYGWIN__)
+
+#define ETH_ALEN	6			/* Octets in one ethernet addr	 */
+#define ETH_P_IP	0x0800		/* Internet Protocol packet	*/
+#define ETH_P_ARP	0x0806		/* Address Resolution packet	*/
+#define ETH_P_IPV6	0x86DD		/* IPv6 over bluebook		*/
+
+struct ethhdr {
+	unsigned char   h_dest[ETH_ALEN];
+	unsigned char   h_source[ETH_ALEN];
+	u_int16_t       h_proto;
+} __attribute__((packed));
+#endif
 
 #include <pcap.h>                 /* for DLT_IEEE802_11_RADIO, DLT_IEEE802_11 */
 

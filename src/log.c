@@ -72,11 +72,22 @@ void log_msg(loglevel_t level, const char *fmt, ...)
         msg = xrealloc (msg, size);
     }
 
-    levelstring = get_levelstring(level);
-    timestring  = get_timestring();
-
-    fprintf(stderr, "%s [%s] %s: %s\n", timestring, PROGNAME, levelstring, msg);
-
+	if (level == LOG_SIMPLY) {
+		fprintf(stdout, "%s\n", msg);
+	
+	} else {
+		FILE *out_descriptor = stderr;
+		
+		if (level == LOG_INFO) {
+			out_descriptor = stdout;
+		}
+		
+		levelstring = get_levelstring(level);
+		timestring  = get_timestring();
+		
+		fprintf(out_descriptor, "%s [%s] %s: %s\n", timestring, PROGNAME, levelstring, msg);
+	}
+	
     xfree(msg);
 }
 

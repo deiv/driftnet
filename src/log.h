@@ -14,7 +14,7 @@
     #include <config.h>
 #endif
 
-typedef enum {LOG_ERROR = 0, LOG_WARNING, LOG_INFO} loglevel_t;
+typedef enum {LOG_SIMPLY = 0, LOG_ERROR, LOG_WARNING, LOG_INFO} loglevel_t;
 
 loglevel_t get_loglevel(void);
 void set_loglevel(loglevel_t level);

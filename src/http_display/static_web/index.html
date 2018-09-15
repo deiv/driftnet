@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drifnet Display</title>
+
+    <link rel="stylesheet" href="lightbox.min.css">
+
+    <script src="jquery.js" ></script>
+    <script src="lightbox.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+        }
+        header {
+            margin-top: 0;
+            background-color: #333;
+            color: white;
+            border-bottom: 1px solid lightgray;
+        }
+        header h2 {
+            margin: 0 1em 0 0;
+            padding-top: 0.2em;
+            text-align: right;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #img-container { min-height: 90vh; }
+        #img-container img {
+            max-width: 200px;
+        }
+        .img-wrap {
+            display: inline-block;
+            position: relative;
+            margin: 0.6em;
+        }
+        .close-image {
+            width: 12px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            cursor: pointer;
+        }
+        .close-image:hover {
+            width: 14px;
+        }
+        .dritfnet-image {
+            border: 1px solid #999;
+        }
+        footer {
+            font-size: 8px;
+            text-align: right;
+            border-top: 1px solid gainsboro;
+            padding-top: 0.8em;
+            margin-bottom: 0.2em;
+        }
+        footer a {
+            margin: 0 1.2em 0 0;
+            color: gray;
+            font-style: italic;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2 >Driftnet</h2>
+</header>
+
+<div id="img-container"></div>
+
+<footer>fork me on <a href="https://www.github.com/deiv/driftnet">GitHub</a></footer>
+
+<script>
+    $(document).ready(function(){
+        lightbox.option({
+            'resizeDuration': 200,
+            'wrapAround': true
+        })
+    });
+
+    function get_ws_url(extra_url)
+    {
+        var pcol;
+        var u = document.URL;
+
+        if (u.substring(0, 5) == "https") {
+            pcol = "wss://";
+            u = u.substr(8);
+        } else {
+            pcol = "ws://";
+            if (u.substring(0, 4) == "http")
+                u = u.substr(7);
+        }
+        u = u.split('/');
+        /* + "/xxx" bit is for IE10 workaround */
+        return pcol + u[0] + "/" + extra_url;
+    }
+
+    window.WebSocket = window.WebSocket || window.MozWebSocket;
+
+    var ws = new WebSocket(get_ws_url(), "images-pipe-protocol");
+
+    try {
+        ws.onopen = function() {
+            console.log("websocket connection opened");
+        };
+        ws.onmessage =function got_packet(msg) {
+            $('#img-container').append(
+                '<div class="img-wrap" src="' +
+                msg.data +
+                '"><img class="close-image" src="close.png" title="close image"/><a href="' +
+                msg.data +
+                '" data-lightbox="driftnet"><img class="dritfnet-image" id="' +
+                msg.data +
+                '" src="'+
+                msg.data +
+                '" /></a></div>');
+
+            $(".close-image").click(function(event){
+                event.stopPropagation();
+                $( this ).parent().remove();
+            });
+
+        };
+        ws.onclose = function(){
+            console.log("websocket connection closed");
+        }
+    } catch(exception) {
+        alert("Error: can't connect to websocket");
+    };
+</script>
+
+</body>
+</html>

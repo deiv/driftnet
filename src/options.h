@@ -34,7 +34,13 @@ typedef struct {
     int newpfx;
 #ifndef NO_DISPLAY_WINDOW
     char *savedimgpfx;
+    int enable_gtk_display;
 #endif
+    char *drop_username;
+	int list_interfaces;
+    int monitor_mode;
+    int enable_http_display;
+    int http_server_port;
 } options_t;
 
 options_t* parse_options(int argc, char *argv[]);

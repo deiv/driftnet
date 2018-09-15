@@ -58,6 +58,8 @@ static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0, 1};
 
 static int is_tempfile(const char* p);
 static int count_tmpfiles(void);
+char* get_filename_fullpath(char* filename);
+
 
 void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files, int preserve_files)
 {
@@ -79,28 +81,37 @@ const char* get_tmpdir(void)
     return tmpdir.path;
 }
 
-const char* make_tmpdir(void)
+const char* get_sys_tmpdir(void)
 {
-    char *systmp;
-	char *template;
-    int len;
-    int n;
-
-    #define TEMPLATE_FILENAME "/drifnet-XXXXXX"
-
+	char *systmp;
+		
 	/* NOTE: don't use TMPDIR if program is SUID or SGID enabled. */
 	if (!(systmp = getenv("TMPDIR")))
 		if (!(systmp = getenv("TEMP")))
             if (!(systmp = getenv("TMP")))
 				systmp = DEFAULT_TMPDIR;
+			
+	return systmp;
+}
 
-    len  = strlen(systmp);
+const char* make_tmpdir(void)
+{
+	const char* sys_tmpdir;
+	char *template;
+    int len;
+    int n;
+
+    #define TEMPLATE_FILENAME "/driftnet-XXXXXX"
+
+	sys_tmpdir = get_sys_tmpdir();
+
+    len  = strlen(sys_tmpdir);
     len += strlen(TEMPLATE_FILENAME);
     len += 1; /* for null */
 
 	template = xmalloc(len);
 
-    n = snprintf(template, len, "%s"TEMPLATE_FILENAME, systmp);
+    n = snprintf(template, len, "%s"TEMPLATE_FILENAME, sys_tmpdir);
 
     if (n > -1 && n < len) {
         /* we have it. */
@@ -205,27 +216,74 @@ int check_dir_is_rw(const char* dir)
     return 0;
 }
 
-const char* tmpfile_write(const char* mname, const unsigned char *data, const size_t len)
+const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len)
 {
     static char name[TMPNAMELEN] = {0};
-    char *buf;
-    int fd;
 
-    buf = xmalloc(strlen(tmpdir.path) + TMPNAMELEN);
     sprintf(name, TEMPFILE_PREFIX"%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
-    sprintf(buf, "%s/%s", tmpdir.path, name);
 
-    fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, 0644);
-    if (fd == -1) {
-        log_msg(LOG_WARNING, "can't open %s for writing", buf);
-        return NULL;
-    }
-    write(fd, data, len);
-    close(fd);
-
-    xfree(buf);
+    tmpfile_write_file(name, data, len);
 
     return name;
+}
+
+char* get_filename_fullpath(char* filename)
+{
+    char* filepath;
+    int len;
+
+    len  = strlen(tmpdir.path);
+    len += strlen(filename);
+    len += 2; /* for / and null */
+    filepath = xmalloc(len);
+
+    snprintf(filepath, len, "%s/%s", tmpdir.path, filename);
+
+    return filepath;
+}
+
+void tmpfile_write_file(char* filename, const unsigned char *file_data, const size_t data_len)
+{
+    int fd1;
+    char* filepath;
+
+    filepath = get_filename_fullpath(filename);
+
+    fd1 = open(filepath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd1 == -1) {
+        log_msg(LOG_ERROR, "%s: %s", filepath, strerror(errno));
+        close(fd1);
+        xfree(filepath);
+        return;
+    }
+
+    const unsigned char *buf_ptr = file_data;
+    size_t buf_len = data_len;
+
+    while (buf_len > 0) {
+        int written = write(fd1, buf_ptr, buf_len);
+
+        if (written <= 0) {
+            log_msg(LOG_ERROR, "%s: %s", filepath, strerror(errno));
+            break;
+        }
+
+        buf_ptr += written;
+        buf_len -= written;
+    }
+
+    xfree(filepath);
+    close(fd1);
+}
+
+void tmpfile_delete_file(char* filename)
+{
+    char* filepath;
+
+    filepath = get_filename_fullpath(filename);
+
+    unlink(filepath);
+    xfree(filepath);
 }
 
 /* count_temporary_files:

@@ -28,10 +28,12 @@
 #include "options.h"
 
 options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
-        NULL, NULL, NULL, m_image, NULL, FALSE, FALSE
+        NULL, NULL, NULL, m_image, NULL, FALSE, FALSE,
 #ifndef NO_DISPLAY_WINDOW
-    ,"driftnet-"
+        "driftnet-",
+        FALSE,
 #endif
+        NULL, 0, 0, FALSE, 9090
 };
 
 static void validate_options(options_t* options);
@@ -42,7 +44,7 @@ static void usage(FILE *fp);
  */
 options_t* parse_options(int argc, char *argv[])
 {
-    char optstring[] = "abd:f:hi:M:m:pSsvx:";
+    char optstring[] = "abd:f:hi:M:m:pSsvx:Z:lr:wW:g";
     int c;
 
     opterr = 0;
@@ -118,6 +120,33 @@ options_t* parse_options(int argc, char *argv[])
                 options.savedimgpfx = optarg;
                 options.newpfx = TRUE;
                 break;
+
+            case 'g':
+
+                options.enable_gtk_display = TRUE;
+                break;
+#endif
+            case 'Z':
+                options.drop_username = strdup(optarg);
+                break;
+				
+			case 'l':
+				options.list_interfaces = TRUE;
+				break;
+                
+            case 'r':
+				options.monitor_mode = TRUE;
+				break;
+
+#ifndef NO_HTTP_DISPLAY
+            case 'w':
+                options.enable_http_display = TRUE;
+                break;
+
+            case 'W':
+                options.http_server_port = atoi(optarg);
+                options.enable_http_display = TRUE;
+                break;
 #endif
 
             case '?':
@@ -163,17 +192,9 @@ options_t* parse_options(int argc, char *argv[])
 
 void validate_options(options_t* options)
 {
-#ifdef NO_DISPLAY_WINDOW
-    if (!options->adjunct) {
-        /*
-         * TODO: assume adjuct mode by default if we were compiled without
-         * display support.
-         */
-        log_msg(LOG_ERROR, "this version of driftnet was compiled without display support");
-        log_msg(LOG_ERROR, "use the -a option to run it in adjunct mode");
-        unexpected_exit (-1);
-    }
-#endif /* !NO_DISPLAY_WINDOW */
+	if (options->list_interfaces == 1) {
+		return;
+	}
 
     if (!options->dumpfile) {
         if (!options->interface) {
@@ -202,6 +223,32 @@ void validate_options(options_t* options)
 
     if (options->beep && options->adjunct)
         log_msg(LOG_WARNING, "can't beep in adjunct mode");
+
+    /*
+     * Check for (at least) one display option (GTK by default), if not in adjunct mode.
+     */
+    if (!options->adjunct) {
+        if (options->enable_gtk_display && options->enable_http_display) {
+            log_msg(LOG_ERROR, "can't specify -w and -g");
+            unexpected_exit (-1);
+        }
+
+        if (!(options->enable_gtk_display || options->enable_http_display)) {
+#ifndef NO_DISPLAY_WINDOW
+            options->enable_gtk_display = TRUE;
+
+#else
+  #ifndef NO_DISPLAY_WINDOW
+            options->enable_http_display = TRUE;
+  #else
+            log_msg(LOG_WARNING, "this version of driftnet was compiled without any display support");
+            log_msg(LOG_WARNING, "switching to adjunct mode");
+            options->adjunct = TRUE;
+  #endif
+#endif
+        }
+    }
+
 }
 
 /* usage:
@@ -210,12 +257,7 @@ void usage(FILE *fp)
 {
     fprintf(fp,
 "driftnet, version %s\n"
-"Capture images from network traffic and display them in an X window.\n"
-#ifdef NO_DISPLAY_WINDOW
-"\n"
-"Actually, this version of driftnet was compiled with the NO_DISPLAY_WINDOW\n"
-"option, so that it can only be used in adjunct mode. See below.\n"
-#endif /* NO_DISPLAY_WINDOW */
+"Capture images from network traffic and display them.\n"
 "\n"
 "Synopsis: driftnet [options] [filter code]\n"
 "\n"
@@ -244,6 +286,16 @@ void usage(FILE *fp)
 "  -M command       Use the given command to play MPEG audio data extracted\n"
 "                   with the -s option; this should process MPEG frames\n"
 "                   supplied on standard input. Default: `mpg123 -'.\n"
+"  -Z username      Drop privileges to user 'username' after starting pcap.\n"
+"  -l               List the system capture interfaces.\n"
+"  -p               Put the interface in monitor mode (not supported on all interfaces).\n"
+#ifndef NO_DISPLAY_WINDOW
+"  -g               Enable GTK display (this is the default).\n"
+#endif
+#ifndef NO_HTTP_DISPLAY
+"  -w               Enable the HTTP server to display images.\n"
+"  -W               Port number for the HTTP server (implies -w). Default: 9090.\n"
+#endif
 "\n"
 "Filter code can be specified after any options in the manner of tcpdump(8).\n"
 "The filter code will be evaluated as `tcp and (user filter code)'\n"
@@ -257,7 +309,9 @@ void usage(FILE *fp)
 "collecting and deleting the image files.\n"
 "\n"
 "driftnet, copyright (c) 2001-2 Chris Lightfoot <chris@ex-parrot.com>\n"
-"home page: http://www.ex-parrot.com/~chris/driftnet/\n"
+"          copyright (c) 2012-18 David Suárez <david.sephirot@gmail.com>\n"
+"home page: https://github.com/deiv/driftnet\n"
+"old home page: http://www.ex-parrot.com/~chris/driftnet/\n"
 "\n"
 "This program is free software; you can redistribute it and/or modify\n"
 "it under the terms of the GNU General Public License as published by\n"

@@ -1,5 +1,5 @@
 /*
- * png.h:
+ * pngformat.h:
  * Png file handling.
  *
  * Copyright (c) 2012 David Suárez.

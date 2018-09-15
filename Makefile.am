@@ -1,7 +1,7 @@
 
 SUBDIRS = src
 
-dist_doc_DATA = README TODO
+dist_doc_DATA = README.md TODO
 EXTRA_DIST = driftnet.1.in CREDITS Changelog
 
 MANPAGE = driftnet.1.gz
