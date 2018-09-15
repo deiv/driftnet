@@ -47,7 +47,11 @@ int gif_load_hdr(img I) {
  * Abort loading a GIF file after the header is done.
  */
 int gif_abort_load(img I) {
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+    DGifCloseFile((GifFileType*)I->us, NULL);
+#else
     DGifCloseFile((GifFileType*)I->us);
+#endif
     return 1;
 }
 
@@ -125,7 +129,11 @@ int gif_load_img(img I) {
     ret = 1;
 fail:
 
+#if defined GIFLIB_MAJOR && GIFLIB_MAJOR >= 5
+    DGifCloseFile(g, NULL);
+#else
     DGifCloseFile(g);
+#endif
 
     return ret;
 }

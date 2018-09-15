@@ -19,7 +19,4 @@ TODO for driftnet
 
 * Safe(r) setuid operation.
 
-* Drop privileges after starting up pcap.
-
 * Delay between reading packets from dump file?
-

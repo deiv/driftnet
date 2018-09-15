@@ -3,11 +3,45 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([driftnet], [1.1.5], [david.sephirot@gmail.com])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AC_INIT([driftnet], [1.2.0], [david.sephirot@gmail.com])
+
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
+AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/driftnet.c])
 AC_CONFIG_HEADERS(src/[config.h])
+
+#
+# Detect then host and target system
+#
+
+build_windows=no
+build_linux=no
+build_mac=no
+
+case "${host_os}" in
+    linux*)
+        build_linux=yes
+        ;;
+    cygwin*|mingw*)
+		case "${target_cpu}" in
+			i686*)
+				build_windows=yes
+				;;
+			*)
+				AC_MSG_ERROR(["Building for $target_cpu is not supported (only 32 bits builds)"])
+				;;
+		esac
+        ;;
+    darwin*)
+        build_mac=yes
+        ;;
+    *)
+        AC_MSG_ERROR(["OS $host_os is not supported"])
+        ;;
+esac
 
 AC_ARG_ENABLE([display],
     [AC_HELP_STRING([--disable-display], [disable display (default is no)])],
@@ -18,6 +52,16 @@ if test "x$enable_display" = xno; then
     AC_DEFINE([NO_DISPLAY_WINDOW], [1], [Compile without support for a display window])
 fi
 AM_CONDITIONAL(ENABLE_DISPLAY, test "x$enable_display" = xyes)
+
+AC_ARG_ENABLE([http-display],
+    [AC_HELP_STRING([--disable-http-display], [disable http display (default is yes)])],
+    ,
+    [enable_http_display=yes])
+
+if test "x$enable_http_display" = xno; then
+    AC_DEFINE([NO_HTTP_DISPLAY], [1], [Compile without support for http display])
+fi
+AM_CONDITIONAL(ENABLE_HTTP_DISPLAY, test "x$enable_http_display" = xyes)
 
 AC_ARG_ENABLE([debug],
 	[AC_HELP_STRING([--disable-debug], [disable debugging (default is no)])],
@@ -35,6 +79,11 @@ fi
 # Checks for programs.
 #
 
+# Check for pkg-config
+AC_CHECK_PROG([have_pkg_config],[pkg-config],[yes],[no])
+AM_CONDITIONAL([FOUND_PKGCONFIG], [test "x$have_pkg_config" = xyes])
+AM_COND_IF([FOUND_PKGCONFIG],,[AC_MSG_ERROR([required program 'pkg-config' not found])])
+
 AC_PROG_CC
 AC_PROG_INSTALL
 #AM_PROG_CC_C_O
@@ -47,30 +96,25 @@ AC_PROG_RANLIB
 # Checks for libraries.
 #
 
-AC_CHECK_LIB([jpeg],
-    [jpeg_read_header],
-    [],
-    [AC_MSG_ERROR([cannot find lib jpeg])] )
-
-AC_CHECK_LIB([pcap],
-    [pcap_open_live],
-    [],
-    [AC_MSG_ERROR([cannot find lib pcap])] )
-
-AC_CHECK_LIB([png],
-    [png_read_info],
-    [],
-    [AC_MSG_ERROR([cannot find lib png])] )
+#
+# On windows we use the libwinpcap library
+#
+if test "x$build_windows" = xyes; then
+	AC_CHECK_LIB([wpcap],
+		[pcap_open_live],
+		[],
+		[AC_MSG_ERROR([cannot find lib wpcap])] )
+else
+	AC_CHECK_LIB([pcap],
+		[pcap_open_live],
+		[],
+		[AC_MSG_ERROR([cannot find lib pcap])] )
+fi
 
 AC_CHECK_LIB([pthread],
     [pthread_create],
     [],
     [AC_MSG_ERROR([cannot find lib pthread])] )
-
-AC_CHECK_LIB([gif],
-    [DGifOpenFileHandle],
-    [],
-    [AC_MSG_ERROR([cannot find lib gif])] )
 
 if test "x$enable_display" = xyes; then
 
@@ -108,6 +152,28 @@ if test "x$enable_display" = xyes; then
     #gthread-2.0)"
 
     AC_SUBST(GTK_CFLAGS)
+
+    AC_CHECK_LIB([gif],
+    [DGifOpenFileHandle],
+    [],
+    [AC_MSG_ERROR([cannot find lib gif])] )
+
+    AC_CHECK_LIB([png],
+    [png_read_info],
+    [],
+    [AC_MSG_ERROR([cannot find lib png])] )
+
+    AC_CHECK_LIB([jpeg],
+    [jpeg_read_header],
+    [],
+    [AC_MSG_ERROR([cannot find lib jpeg])] )
+fi
+
+if test "x$enable_http_display" = xyes; then
+    AC_CHECK_LIB([websockets],
+        [lws_create_context],
+        [],
+        [AC_MSG_ERROR([cannot find lib websockets])] )
 fi
 
 #
@@ -145,9 +211,18 @@ AC_C_INLINE
 # Checks for library functions.
 #
 
+#
+# AC_FUNC_MALLOC and AC_FUNC_REALLOC seems to not work on cygwin, we check them using AC_CHECK_FUNCS
+#
+if test "x$build_windows" = xyes; then
+	AC_CHECK_FUNCS([malloc realloc])
+else
+	AC_FUNC_MALLOC
+	AC_FUNC_REALLOC
+fi
+
 AC_FUNC_FORK
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
+
 AC_CHECK_FUNCS([dup2 inet_ntoa memchr memset mkdir rmdir strcasecmp strchr strdup strerror strncasecmp strrchr])
 
 # nanosleep seems to exist in librt or libposix4 on Solaris
@@ -163,7 +238,7 @@ if test x$sleep_func = xno; then
         [AC_MSG_ERROR([cannot find any usable sleep function])])
 fi
 
-AC_CONFIG_FILES([Makefile src/Makefile src/media/Makefile src/display/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/media/Makefile src/display/Makefile src/http_display/Makefile])
 AC_OUTPUT
 
 echo \

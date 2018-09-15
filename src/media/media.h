@@ -29,7 +29,7 @@
  */
 typedef enum mediatype { m_image = 1, m_audio = 2, m_text = 4 } mediatype_t;
 
-void init_mediadrv(mediatype_t media_type, int play);
+void init_mediadrv(mediatype_t media_type, int play, int enable_ws, int enable_gtk);
 void extract_media(connection c);
 
 #endif /* __MEDIA_H__ */
