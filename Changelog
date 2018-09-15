@@ -1,6 +1,9 @@
 Changelog for driftnet
 
-unreleased
+1.2.0
+
+    Add new, http and websockets based, display
+
     Add basic windows support (cygwin)
     
     Add options to list capture interfaces
