@@ -22,7 +22,7 @@ build_linux=no
 build_mac=no
 
 case "${host_os}" in
-    linux*)
+    linux*|freebsd*)
         build_linux=yes
         ;;
     cygwin*|mingw*)
