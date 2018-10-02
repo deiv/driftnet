@@ -1,6 +1,6 @@
 Source: driftnet
 Section: admin
-Priority: extra
+Priority: optional
 Maintainer: David Suarez <david.sephirot@gmail.com>
 Build-Depends: debhelper (>= 9), libgtk2.0-dev, libpcap-dev, libjpeg-dev, libgif-dev, libpng-dev
 Standards-Version: 4.2.0
