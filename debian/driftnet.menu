@@ -1,2 +1,0 @@
-?package(driftnet):needs="X11" section="Applications/Network/Monitoring"\
-  title="Driftnet" command="/usr/bin/driftnet"
