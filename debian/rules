@@ -10,7 +10,7 @@
 #export DH_VERBOSE=1
 
 %:
-	dh $@ 
+	dh $@ --with autoreconf
 
 override_dh_install:
 	dh_install debian/driftnet.desktop /usr/share/applications
