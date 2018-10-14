@@ -4,6 +4,8 @@ driftnet (1.2.0-1) experimental; urgency=medium
   * Use secure URI in Vcs control header.
 
   [ David Suárez ]
+  * Imported Upstream version 1.2.0
+  * Remove menu file (a desktop one is provided)
   * Build with dh-autoreconf
   * Add libwebsockets as build depend
   * d/copyright: update copyright years
