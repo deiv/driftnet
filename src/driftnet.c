@@ -22,9 +22,9 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-#include "log.h"
+#include "common/log.h"
 #include "options.h"
-#include "tmpdir.h"
+#include "common/tmpdir.h"
 #include "pid.h"
 #include "connection.h"
 #include "packetcapture.h"
@@ -177,12 +177,21 @@ int main(int argc, char *argv[])
      * Otherwise, check that it's a directory into which we may write files.
      */
     if (options->tmpdir) {
-        check_dir_is_rw(options->tmpdir);
+        if (check_dir_is_rw(options->tmpdir) == FALSE) {
+            log_msg(LOG_ERROR, "we can't write to the temporary directory");
+            exit(1);
+        }
         set_tmpdir(options->tmpdir, TMPDIR_USER_OWNED, options->max_tmpfiles, options->adjunct);
 
     } else {
         /* need to make a temporary directory. */
-        set_tmpdir(make_tmpdir(), TMPDIR_APP_OWNED, options->max_tmpfiles, options->adjunct);
+        const char* tmp_dir = make_tmpdir();
+
+        if (tmp_dir == NULL) {
+            log_msg(LOG_ERROR, "can't make a new temporary directory");
+            exit(1);
+        }
+        set_tmpdir(tmp_dir, TMPDIR_APP_OWNED, options->max_tmpfiles, options->adjunct);
     }
 
     setup_signals();

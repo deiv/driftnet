@@ -3,7 +3,7 @@
 #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include "driftnet.h"
 
@@ -40,7 +40,7 @@ struct ethhdr {
 
 #include <pcap.h>                 /* for DLT_IEEE802_11_RADIO, DLT_IEEE802_11 */
 
-#include "log.h"
+#include "common/log.h"
 #include "packetcapture.h"          /* for datalink_info_t */
 #include "layer2.h"
 

@@ -15,7 +15,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include "packetcapture.h" /* for datalink_info_t */
 

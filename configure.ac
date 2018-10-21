@@ -8,10 +8,10 @@ AC_INIT([driftnet], [1.2.0], [david.sephirot@gmail.com])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/driftnet.c])
-AC_CONFIG_HEADERS(src/[config.h])
+AC_CONFIG_HEADERS(src/[compat/config.h])
 
 #
 # Detect then host and target system
@@ -238,7 +238,13 @@ if test x$sleep_func = xno; then
         [AC_MSG_ERROR([cannot find any usable sleep function])])
 fi
 
-AC_CONFIG_FILES([Makefile src/Makefile src/media/Makefile src/display/Makefile src/http_display/Makefile])
+AC_CONFIG_FILES([Makefile
+                 src/Makefile
+                 src/common/Makefile
+                 src/media/Makefile
+                 src/display/Makefile
+                 src/http_display/Makefile
+                 tests/Makefile])
 AC_OUTPUT
 
 echo \

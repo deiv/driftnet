@@ -11,7 +11,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -21,7 +21,7 @@
 #endif
 #include <getopt.h>                     // for optarg, optind, optopt, etc
 
-#include "log.h"
+#include "common/log.h"
 #include "driftnet.h"
 #include "packetcapture.h"
 

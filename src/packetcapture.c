@@ -14,7 +14,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -33,7 +33,7 @@
 
 #include <pcap.h>
 
-#include "log.h"
+#include "common/log.h"
 #include "driftnet.h"
 #include "media.h"
 #include "connection.h"

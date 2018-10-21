@@ -11,7 +11,7 @@
 #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "util.h"
+#include "common/util.h"
 #include "media.h"
 #include "driftnet.h"
 #include "connection.h"

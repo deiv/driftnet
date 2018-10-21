@@ -1,8 +1,12 @@
-/*
- * util.c:
- * Various utility functions.
+/**
+ * @file util.c
  *
- * Copyright (c) 2012 David Suárez.
+ * @brief Various wrappers around some utility functions.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 21 Oct 2018 18:41:11 +0200
+ *
+ * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  * Copyright (c) 2003 Chris Lightfoot.
@@ -10,9 +14,6 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
 #include "compat.h"
 
 #include <ctype.h>
@@ -25,24 +26,29 @@
 
 #if HAVE_NANOSLEEP
     #include <time.h>
-//#include <sys/time.h>
+    //#include <sys/time.h>
 #elif HAVE_USLEEP
     #include <unistd.h>
 #endif
 
 #include "util.h"
 
-/* xmalloc COUNT
- * Malloc, and abort if malloc fails. */
-void *xmalloc(size_t n) {
+/*
+ * Malloc, and abort if malloc fails.
+ */
+void *xmalloc(size_t n)
+{
     void *v;
+
     v = malloc(n);
     if (!v) abort();
+
     return v;
 }
 
-/* xcalloc NITEMS COUNT
- * As above. */
+/*
+ * xcalloc NITEMS COUNT
+ */
 void *xcalloc(size_t n, size_t m) {
     void *v;
     v = calloc(n, m);
@@ -50,8 +56,9 @@ void *xcalloc(size_t n, size_t m) {
     return v;
 }
 
-/* xrealloc PTR COUNT
- * As above. */
+/*
+ * xrealloc PTR COUNT
+ */
 void *xrealloc(void *w, size_t n) {
     void *v;
     v = realloc(w, n);
@@ -59,14 +66,16 @@ void *xrealloc(void *w, size_t n) {
     return v;
 }
 
-/* xfree PTR
- * Free, ignoring a passed NULL value. */
+/*
+ * Free, ignoring a passed NULL value.
+ */
 void xfree(void *v) {
     if (v) free(v);
 }
 
-/* xstrdup:
- * Strdup, aborting on failure. */
+/*
+ * Strdup, aborting on failure.
+ */
 char *xstrdup(const char *s) {
     char *t;
     t = xmalloc(strlen(s) + 1);
@@ -74,7 +83,7 @@ char *xstrdup(const char *s) {
     return t;
 }
 
-/* memstr:
+/*
  * Locate needle, of length n_len, in haystack, of length h_len, returning NULL.
  */
 unsigned char *memstr(const unsigned char *haystack, const size_t hlen,

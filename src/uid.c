@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "log.h"
+#include "common/log.h"
 #include "driftnet.h"
 
 #include "uid.h"

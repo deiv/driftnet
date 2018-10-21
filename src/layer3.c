@@ -3,7 +3,7 @@
 #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include "driftnet.h"
 
@@ -19,7 +19,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 
-#include "log.h"
+#include "common/log.h"
 #include "layer3.h"
 
 int layer3_find_tcp(const u_char *pkt, uint8_t nextproto, int * offset,
