@@ -241,6 +241,7 @@ fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/common/Makefile
+                 src/network/Makefile
                  src/media/Makefile
                  src/display/Makefile
                  src/http_display/Makefile

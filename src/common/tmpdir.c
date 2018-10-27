@@ -52,7 +52,7 @@ static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0, 1};
 
 static int is_tempfile(const char* p);
 static int count_tmpfiles(void);
-char* get_filename_fullpath(char* filename);
+char* get_filename_fullpath(const char* filename);
 
 
 void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files, int preserve_files)
@@ -86,6 +86,15 @@ const char* get_sys_tmpdir(void)
 				systmp = DEFAULT_TMPDIR;
 			
 	return systmp;
+}
+
+const char* generate_new_tmp_filename(const char* extension)
+{
+    static char name[TMPNAMELEN] = {0};
+
+    sprintf(name, TEMPFILE_PREFIX"%08x%08x.%s", (unsigned int)time(NULL), rand(), extension);
+
+    return name;
 }
 
 const char* make_tmpdir(void)
@@ -207,18 +216,8 @@ int check_dir_is_rw(const char* dir)
     return TRUE;
 }
 
-const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len)
-{
-    static char name[TMPNAMELEN] = {0};
 
-    sprintf(name, TEMPFILE_PREFIX"%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
-
-    tmpfile_write_file(name, data, len);
-
-    return name;
-}
-
-char* get_filename_fullpath(char* filename)
+char* get_filename_fullpath(const char* filename)
 {
     char* filepath;
     int len;
@@ -233,7 +232,7 @@ char* get_filename_fullpath(char* filename)
     return filepath;
 }
 
-void tmpfile_write_file(char* filename, const unsigned char *file_data, const size_t data_len)
+void tmpfile_write_file(const char* filename, const unsigned char *file_data, const size_t data_len)
 {
     int fd1;
     char* filepath;

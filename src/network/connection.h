@@ -78,7 +78,7 @@ char *connection_string(const struct sockaddr *s, const struct sockaddr *d);
 void sweep_connections(void);
 
 
-#include "media.h" /* NMEDIATYPES */
+#include "media/media.h" /* NMEDIATYPES */
 
 /*
  * Represents an extent in a captured stream.

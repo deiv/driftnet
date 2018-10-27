@@ -21,13 +21,16 @@
 #define NMEDIATYPES 5
 //struct connection;
 
-#include "connection.h"
+#include "network/connection.h"
 
-/*
- * enum mediatype:
- * Bit field to characterise types of media which we can extract.
+/**
+ * @brief Bit field to characterise types of media which we can extract.
  */
-typedef enum mediatype { m_image = 1, m_audio = 2, m_text = 4 } mediatype_t;
+typedef enum mediatype {
+    MEDIATYPE_IMAGE = 1,
+    MEDIATYPE_AUDIO = 1 << 1,
+    MEDIATYPE_TEXT  = 1 << 2
+} mediatype_t;
 
 void init_mediadrv(mediatype_t media_type, int play, int enable_ws, int enable_gtk);
 void extract_media(connection c);

@@ -26,8 +26,8 @@
 #include "options.h"
 #include "common/tmpdir.h"
 #include "pid.h"
-#include "connection.h"
-#include "packetcapture.h"
+#include "network/connection.h"
+#include "network/packetcapture.h"
 #include "playaudio.h"
 #include "uid.h"
 #ifndef NO_DISPLAY_WINDOW
@@ -43,9 +43,10 @@ static void terminate_on_signal(int s);
 static void setup_signals(void);
 static void *capture_thread(void *v);
 
+/*
 void unexpected_exit(int ret)
 {
-    /* clean things a litle */
+    /* clean things a litle
 #ifndef NO_HTTP_DISPLAY
     stop_http_display();
 #endif
@@ -55,7 +56,7 @@ void unexpected_exit(int ret)
     close_pidfile();
 
 	exit(ret);
-}
+}*/
 
 /* terminate_on_signal:
  * Terminate on receipt of an appropriate signal. */
@@ -137,22 +138,33 @@ int main(int argc, char *argv[])
 {
     pthread_t packetth;
     options_t *options;
+    int ok;
 
     options = parse_options(argc, argv);
+
+    if (options == NULL) {
+        return 1;
+    }
 	
-	if (options->verbose)
+	if (options->verbose) {
         set_loglevel(LOG_INFO);
+    }
 	
 	if (options->list_interfaces == 1) {
-		packetcapture_list_interfaces();
-		return 0;
+		return ! packetcapture_list_interfaces();
 	}
 
     /* Start up pcap as soon as posible to later drop root privileges. */
-    if (options->dumpfile)
-        packetcapture_open_offline(options->dumpfile);
-    else
-        packetcapture_open_live(options->interface, options->filterexpr, options->promisc, options->monitor_mode);
+    if (options->dumpfile) {
+        ok = packetcapture_open_offline(options->dumpfile);
+
+    } else {
+        ok = packetcapture_open_live(options->interface, options->filterexpr, options->promisc, options->monitor_mode);
+    }
+
+    if (!ok) {
+        return 1;
+    }
 
     /* If we are root and an username was specified, drop privileges to that user */
     if (getuid() == 0 || geteuid() == 0) {
@@ -197,12 +209,12 @@ int main(int argc, char *argv[])
     setup_signals();
 
     /* Start up the audio player, if required. */
-    if (!options->adjunct && (options->extract_type & m_audio))
+    if (!options->adjunct && (options->extract_type & MEDIATYPE_AUDIO))
         do_mpeg_player();
 
 #ifndef NO_DISPLAY_WINDOW
     /* Possibly fork to start the display child process */
-    if (options->enable_gtk_display && !options->adjunct && (options->extract_type & m_image))
+    if (options->enable_gtk_display && !options->adjunct && (options->extract_type & MEDIATYPE_IMAGE))
         do_image_display(options->savedimgpfx, options->beep);
 
 #endif /* !NO_DISPLAY_WINDOW */

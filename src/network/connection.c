@@ -11,7 +11,7 @@
 #include <config.h>
 #endif
 
-#include "compat/compat.h"
+#include <compat/compat.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -20,8 +20,7 @@
 #include <time.h>
 
 #include "common/util.h"
-#include "media.h"
-#include "driftnet.h"
+#include "media/media.h"
 #include "connection.h"
 
 /* slots for storing information about connections */

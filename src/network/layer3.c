@@ -5,8 +5,6 @@
 
 #include "compat/compat.h"
 
-#include "driftnet.h"
-
 #include <string.h>
 #include <assert.h>
 

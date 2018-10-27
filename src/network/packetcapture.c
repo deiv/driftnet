@@ -34,10 +34,8 @@
 #include <pcap.h>
 
 #include "common/log.h"
-#include "driftnet.h"
-#include "media.h"
+#include "media/media.h"
 #include "connection.h"
-#include "options.h"
 #include "layer3.h"
 #include "layer2.h"
 
@@ -53,7 +51,7 @@ static datalink_info_t get_datalink_info(pcap_t *pcap);
 static pcap_t *pc = NULL;
 static datalink_info_t datalink_info;
 
-void packetcapture_list_interfaces(void)
+int packetcapture_list_interfaces(void)
 { 
 	pcap_if_t *alldevs;
     pcap_if_t *d;
@@ -62,7 +60,7 @@ void packetcapture_list_interfaces(void)
     
     if (pcap_findalldevs(&alldevs, errbuf) == -1) {
         log_msg(LOG_ERROR, "Error listing interfaces: %s", errbuf);
-        unexpected_exit(1);
+        return FALSE;
     }
     
     for(d = alldevs; d != NULL; d= d->next) {
@@ -75,32 +73,25 @@ void packetcapture_list_interfaces(void)
 		}
     }
     
-	
+	return TRUE;
 }
 
-void packetcapture_open_offline(char* dumpfile)
-{
+int packetcapture_open_offline(char* dumpfile) {
     char ebuf[PCAP_ERRBUF_SIZE];
 
     if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
         log_msg(LOG_ERROR, "pcap_open_offline: %s", ebuf);
-        unexpected_exit (-1);
+        return FALSE;
     }
+
+    datalink_info = get_datalink_info(pc);
 
     log_msg(LOG_INFO, "reading packets from %s", dumpfile);
 
-    datalink_info = get_datalink_info(pc);
+    return TRUE;
 }
 
-void check_pcap_error(int error, char* msg)
-{
-    if (error != 0) {
-        log_msg(LOG_ERROR, "can't set option: %s", msg);
-        unexpected_exit (-1);      
-    }
-}
-
-void packetcapture_open_live(char* interface, char* filterexpr, int promisc, int monitor_mode)
+int packetcapture_open_live(char* interface, char* filterexpr, int promisc, int monitor_mode)
 {
     char ebuf[PCAP_ERRBUF_SIZE];
     struct bpf_program filter;
@@ -116,30 +107,53 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc, int
         else if (!interface)
             log_msg(LOG_ERROR, "perhaps try selecting an interface with the -i option?");
 
-        unexpected_exit (-1);   
+        return FALSE;
     }
-    
-    check_pcap_error(pcap_set_rfmon(pc, monitor_mode), "pcap_set_rfmon");
-    check_pcap_error(pcap_set_promisc(pc, promisc), "pcap_set_promisc");
-    check_pcap_error(pcap_set_snaplen(pc, SNAPLEN), "pcap_set_snaplen");
-    check_pcap_error(pcap_set_timeout(pc, 1000), "pcap_set_timeout");
+
+    pcap_set_rfmon(pc, monitor_mode);
+
+    if (error != 0) {
+        log_msg(LOG_ERROR, "can't set option: pcap_set_rfmon");
+        return FALSE;
+    }
+
+    pcap_set_promisc(pc, promisc);
+
+    if (error != 0) {
+        log_msg(LOG_ERROR, "can't set option: pcap_set_promisc");
+        return FALSE;
+    }
+
+    pcap_set_snaplen(pc, SNAPLEN);
+
+    if (error != 0) {
+        log_msg(LOG_ERROR, "can't set option: pcap_set_snaplen");
+        return FALSE;
+    }
+
+    pcap_set_timeout(pc, 1000);
+
+    if (error != 0) {
+        log_msg(LOG_ERROR, "can't set option: pcap_set_timeout");
+        return FALSE;
+    }
     
     error = pcap_activate(pc);
     
     if (error < 0) {
         log_msg(LOG_ERROR, "pcap_activate: %s", pcap_statustostr(error));
-        unexpected_exit (-1);
+        return FALSE;
     }
 
     /* Only apply a filter to live packets. Is this right? */
     if (pcap_compile(pc, &filter, filterexpr, 1, 0) == -1) {
         log_msg(LOG_ERROR, "pcap_compile: %s", pcap_geterr(pc));
-        unexpected_exit (-1);
+        return FALSE;
     }
 
     if (pcap_setfilter(pc, &filter) == -1) {
         log_msg(LOG_ERROR, "pcap_setfilter: %s", pcap_geterr(pc));
-        unexpected_exit (-1);
+        return FALSE;
     }
 
     log_msg(LOG_INFO, "listening on %s%s",
@@ -147,6 +161,8 @@ void packetcapture_open_live(char* interface, char* filterexpr, int promisc, int
         promisc ? " in promiscuous mode" : "");
 
     datalink_info = get_datalink_info(pc);
+
+    return TRUE;
 }
 
 void packetcapture_close(void)
@@ -166,7 +182,7 @@ char* get_default_interface(void)
         log_msg(LOG_ERROR, "pcap_lookupdev: %s", ebuf);
         log_msg(LOG_ERROR, "try specifying an interface with -i");
         log_msg(LOG_ERROR, "or a pcap capture file with -f");
-        unexpected_exit (-1);
+        return NULL;
     }
 
     return interface;

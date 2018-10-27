@@ -1,14 +1,17 @@
 
 bin_PROGRAMS = driftnet
 
-driftnet_SOURCES = compat.h connection.c connection.h driftnet.c driftnet.h \
-				   options.c options.h packetcapture.c packetcapture.h \
-				   layer2.c layer2.h layer3.c layer3.h \
+driftnet_SOURCES = compat.h driftnet.c driftnet.h \
+				   options.c options.h \
 				   pid.c pid.h uid.c uid.h
 
 SUBDIRS = common
 AM_CFLAGS = -I$(srcdir)/common
 driftnet_LDADD = common/libcommon.a
+
+SUBDIRS += network
+AM_CFLAGS += -I$(srcdir)/network
+driftnet_LDADD += network/libnetwork.a
 
 SUBDIRS += media
 AM_CFLAGS += -I$(srcdir)/media

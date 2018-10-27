@@ -31,7 +31,7 @@ typedef enum {
     /** The directory is owned by us, we can delete all without any risk */
     TMPDIR_APP_OWNED = 0,
 
-    /** The directory belongs to the user, we can simply removed all the content and go */
+    /** The directory belongs to the user, we can't simply remove all the content and go */
     TMPDIR_USER_OWNED = 1
 } tmpdir_type_t;
 
@@ -41,6 +41,14 @@ typedef enum {
  * @return tmp dir path
  */
 const char* get_sys_tmpdir(void);
+
+/**
+ * @brief Generates a random temporal filename.
+ *
+ * @param extension the new filename extension
+ * @return filename
+ */
+const char* generate_new_tmp_filename(const char* extension);
 
 /**
  * @brief Configure the tmp dir options
@@ -86,9 +94,6 @@ int check_dir_is_rw(const char* tmpdir);
  */
 int tmpfiles_limit_reached(void);
 
-/* TODO: refactor tmpfile_write_mediaffile to use tmpfile_delete_file at some point */
-const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len);
-
 /**
  * @brief Writes a file to the temporary directory.
  *
@@ -96,7 +101,7 @@ const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *dat
  * @param file_data data to write
  * @param data_len size of data
  */
-void tmpfile_write_file(char* filename, const unsigned char *file_data, const size_t data_len);
+void tmpfile_write_file(const char* filename, const unsigned char *file_data, const size_t data_len);
 
 /**
  * @brief Deletes a file from the temp dir.

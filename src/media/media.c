@@ -14,12 +14,12 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <string.h>
 
-#include "util.h"
-#include "tmpdir.h"
+#include "common/util.h"
+#include "common/tmpdir.h"
 #ifndef NO_DISPLAY_WINDOW
 #include "display.h"
 #endif
@@ -37,6 +37,16 @@ static mediatype_t extract_type;
 static int play_media;
 static int send_to_ws;
 static int send_to_gtk;
+
+
+const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len)
+{
+    const char* name = generate_new_tmp_filename(mname);
+
+    tmpfile_write_file(name, data, len);
+
+    return name;
+}
 
 /*
  * dispatch_image:
@@ -83,11 +93,11 @@ static struct mediadrv {
     unsigned char *(*find_data)(const unsigned char *data, const size_t len, unsigned char **found, size_t *foundlen);
     void (*dispatch_data)(const char *mname, const unsigned char *data, const size_t len);
 } driver[NMEDIATYPES] = {
-        { "gif",  m_image, find_gif_image,   dispatch_image },
-        { "jpeg", m_image, find_jpeg_image,  dispatch_image },
-        { "png",  m_image, find_png_image,   dispatch_image },
-        { "mpeg", m_audio, find_mpeg_stream, dispatch_mpeg_audio },
-        { "HTTP", m_text,  find_http_req,    dispatch_http_req }
+        { "gif",  MEDIATYPE_IMAGE, find_gif_image,   dispatch_image },
+        { "jpeg", MEDIATYPE_IMAGE, find_jpeg_image,  dispatch_image },
+        { "png",  MEDIATYPE_IMAGE, find_png_image,   dispatch_image },
+        { "mpeg", MEDIATYPE_AUDIO, find_mpeg_stream, dispatch_mpeg_audio },
+        { "HTTP", MEDIATYPE_TEXT,  find_http_req,    dispatch_http_req }
     };
 
 

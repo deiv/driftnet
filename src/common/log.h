@@ -40,6 +40,7 @@ typedef enum {
  * @return current log level
  */
 loglevel_t get_loglevel(void);
+
 /**
  * @brief Set/Changes the current log level.
  *

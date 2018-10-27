@@ -11,7 +11,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -19,7 +19,7 @@
 
 #include <netinet/in.h> /* ntohl */
 
-#include "util.h"
+#include "common/util.h"
 
 #include "pngformat.h"
 

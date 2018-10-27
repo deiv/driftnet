@@ -11,7 +11,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,8 +20,7 @@
 
 #include <jpeglib.h>
 
-#include "util.h"
-#include "driftnet.h"
+#include "common/util.h"
 #include "img.h"
 
 /* struct my_error_mgr:

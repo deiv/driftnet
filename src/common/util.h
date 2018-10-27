@@ -83,4 +83,10 @@ unsigned char *memstr(const unsigned char *haystack, const size_t hlen, const un
  */
 void xnanosleep(long nanosecs);
 
+/**
+ * @brief Make P point to a new struct S, initialised as if in static storage (like = {0}).
+ */
+#define alloc_struct(S, p)  p = xmalloc(sizeof *p); memset(p, 0, sizeof *p);
+//#define alloc_struct(S, p)  do { struct S as__z = {0}; p = xmalloc(sizeof *p); *p = as__z; } while (0)
+
 #endif /* __UTIL_H__ */

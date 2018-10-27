@@ -17,7 +17,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -29,9 +29,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include "util.h"
-#include "log.h"
-#include "driftnet.h"
+#include "common/util.h"
+#include "common/log.h"
 
 #include "playaudio.h"
 
@@ -183,12 +182,12 @@ static void mpeg_player_manager(void) {
             case 0:
                 execl("/bin/sh", "/bin/sh", "-c", audio_mpeg_player, NULL);
                 log_msg(LOG_ERROR, "exec: %s", strerror(errno));
-                unexpected_exit(-1);
+                abort(); /* TODO: exit ¿? */
                 break;
 
             case -1:
                 log_msg(LOG_ERROR, "fork: %s", strerror(errno));
-                unexpected_exit(-1);  /* gah, not much we can do now. */
+                abort(); /* gah, not much we can do now. */ /* TODO: exit ¿? */
                 break;
 
             default:
@@ -236,12 +235,13 @@ void do_mpeg_player(void) {
         close(pp[1]);
         dup2(pp[0], 0); /* make pipe our standard input */
         mpeg_player_manager();
-        unexpected_exit(-1);
+        abort(); /* TODO: exit ¿? */
     } else {
         close(pp[0]);
         mpeg_fd = pp[1];
         pthread_create(&thr, NULL, mpeg_play, rd);
     }
+    /* TODO: handle error */
 
     /* away we go... */
 }

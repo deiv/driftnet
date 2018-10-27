@@ -15,7 +15,7 @@
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 
