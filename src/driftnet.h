@@ -18,5 +18,4 @@
 
 #define PROGNAME DRIFTNET_PROGNAME
 
-
 #endif /* __DRIFTNET_H_ */

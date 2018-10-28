@@ -1,23 +1,22 @@
-/*
- * layer2.h:
+/**
+ * @file layer2.h
  *
- * Layer2 handling.
+ * @brief Layer 2 handling.
+ * @author David Suárez
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
- * Copyright (c) 2012 David Suárez.
+ * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
 
+
 #ifndef __LAYER2_H__
 #define __LAYER2_H__
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
 #include "compat/compat.h"
 
-#include "packetcapture.h" /* for datalink_info_t */
+#include "pcap_engine.h" /* for datalink_info_t */
 
 /**
  * handle_link_layer:

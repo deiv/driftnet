@@ -1,7 +1,14 @@
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+/**
+ * @file layer3.c
+ *
+ * @brief Layer 3 handling.
+ * @author David Suárez
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
+ *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
+ */
 
 #include "compat/compat.h"
 

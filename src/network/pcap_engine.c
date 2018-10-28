@@ -1,21 +1,22 @@
-/*
- * pcap.h:
- * Network packet capture handling.
+/**
+ * @file pcap.c
+ *
+ * @brief Network packet capture handling.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
  * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * Copyright (c) 2012 David Suárez.
+ * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
 #include "compat/compat.h"
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
@@ -33,13 +34,14 @@
 
 #include <pcap.h>
 
+#include "common/tmpdir.h"
 #include "common/log.h"
 #include "media/media.h"
 #include "connection.h"
 #include "layer3.h"
 #include "layer2.h"
 
-#include "packetcapture.h"
+#include "pcap_engine.h"
 
 static void process_packet(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt);
 static datalink_info_t get_datalink_info(pcap_t *pcap);
@@ -51,7 +53,16 @@ static datalink_info_t get_datalink_info(pcap_t *pcap);
 static pcap_t *pc = NULL;
 static datalink_info_t datalink_info;
 
-int packetcapture_list_interfaces(void)
+static int running = FALSE;
+static pthread_t packetth;
+
+static mediadrv_t** media_drivers;
+
+void extract_media(connection c);
+void packetcapture_dispatch(void);
+static void *capture_thread(void *v);
+
+int network_list_interfaces(void)
 { 
 	pcap_if_t *alldevs;
     pcap_if_t *d;
@@ -76,7 +87,7 @@ int packetcapture_list_interfaces(void)
 	return TRUE;
 }
 
-int packetcapture_open_offline(char* dumpfile) {
+int network_open_offline(char *dumpfile) {
     char ebuf[PCAP_ERRBUF_SIZE];
 
     if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
@@ -91,7 +102,7 @@ int packetcapture_open_offline(char* dumpfile) {
     return TRUE;
 }
 
-int packetcapture_open_live(char* interface, char* filterexpr, int promisc, int monitor_mode)
+int network_open_live(char *interface, char *filterexpr, int promisc, int monitor_mode)
 {
     char ebuf[PCAP_ERRBUF_SIZE];
     struct bpf_program filter;
@@ -110,28 +121,28 @@ int packetcapture_open_live(char* interface, char* filterexpr, int promisc, int 
         return FALSE;
     }
 
-    pcap_set_rfmon(pc, monitor_mode);
+    error = pcap_set_rfmon(pc, monitor_mode);
 
     if (error != 0) {
         log_msg(LOG_ERROR, "can't set option: pcap_set_rfmon");
         return FALSE;
     }
 
-    pcap_set_promisc(pc, promisc);
+    error = pcap_set_promisc(pc, promisc);
 
     if (error != 0) {
         log_msg(LOG_ERROR, "can't set option: pcap_set_promisc");
         return FALSE;
     }
 
-    pcap_set_snaplen(pc, SNAPLEN);
+    error = pcap_set_snaplen(pc, SNAPLEN);
 
     if (error != 0) {
         log_msg(LOG_ERROR, "can't set option: pcap_set_snaplen");
         return FALSE;
     }
 
-    pcap_set_timeout(pc, 1000);
+    error = pcap_set_timeout(pc, 1000);
 
     if (error != 0) {
         log_msg(LOG_ERROR, "can't set option: pcap_set_timeout");
@@ -165,13 +176,21 @@ int packetcapture_open_live(char* interface, char* filterexpr, int promisc, int 
     return TRUE;
 }
 
-void packetcapture_close(void)
+void network_close(void)
 {
+    running = FALSE;
+
+    pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */
+    pthread_join(packetth, NULL);
+
 	if (pc != NULL)
 		pcap_close(pc);
+
+    /* Easier for memory-leak debugging if we deallocate all this here.... */
+    connection_free_slots();
 }
 
-char* get_default_interface(void)
+char* network_get_default_interface(void)
 {
     char ebuf[PCAP_ERRBUF_SIZE];
     char *interface;
@@ -186,6 +205,33 @@ char* get_default_interface(void)
     }
 
     return interface;
+}
+
+void network_start(mediadrv_t** drivers)
+{
+    media_drivers = drivers;
+
+    connection_alloc_slots();
+
+    running = TRUE;
+
+    /*
+     * Actually start the capture stuff up. Unfortunately, on many platforms,
+     * libpcap doesn't have read timeouts, so we start the thing up in a
+     * separate thread. Yay!
+     */
+    pthread_create(&packetth, NULL, capture_thread, NULL);
+}
+
+/*
+ * Thread in which packet capture runs.
+ */
+void *capture_thread(void *v)
+{
+    while (running)
+        packetcapture_dispatch();
+
+    return NULL;
 }
 
 void packetcapture_dispatch(void)
@@ -305,6 +351,42 @@ datalink_info_t get_datalink_info(pcap_t *pcap)
     //log_msg(LOG_INFO, "link-level header length is %d bytes", pkt_offset);
 
     return info;
+}
+
+/* connection_extract_media CONNECTION TYPE
+ * Attempt to extract media data of the given TYPE from CONNECTION. */
+void extract_media(connection c)
+{
+    struct datablock *b;
+
+    /* Walk through the list of blocks and try to extract media data from
+     * those which have changed. */
+    for (b = c->blocks; b; b = b->next) {
+        if (b->len > 0 && b->dirty) {
+            int i;
+            for (i = 0; i < NMEDIATYPES; ++i) {
+                if (media_drivers[i] == NULL) {
+                    continue;
+                }
+
+                unsigned char *ptr, *oldptr, *media;
+                size_t mlen;
+
+                ptr = c->data + b->off + b->moff[i];
+                oldptr = NULL;
+
+                while (ptr != oldptr && ptr < c->data + b->off + b->len) {
+                    oldptr = ptr;
+                    ptr = media_drivers[i]->find_data(ptr, (b->off + b->len) - (ptr - c->data), &media, &mlen);
+                    if (media && !tmpfiles_limit_reached())
+                        media_drivers[i]->dispatch_data(media_drivers[i]->name, media, mlen);
+                }
+
+                b->moff[i] = ptr - c->data - b->off;
+            }
+            b->dirty = 0;
+        }
+    }
 }
 
 #if 0

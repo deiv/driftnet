@@ -10,11 +10,8 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
+#include <compat/compat.h>
 
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
@@ -22,12 +19,12 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+#include "common/util.h"
 #include "common/log.h"
 #include "options.h"
 #include "common/tmpdir.h"
 #include "pid.h"
-#include "network/connection.h"
-#include "network/packetcapture.h"
+#include "network/network.h"
 #include "playaudio.h"
 #include "uid.h"
 #ifndef NO_DISPLAY_WINDOW
@@ -41,16 +38,15 @@
 
 static void terminate_on_signal(int s);
 static void setup_signals(void);
-static void *capture_thread(void *v);
 
 /*
 void unexpected_exit(int ret)
 {
-    /* clean things a litle
+    // clean things a litle
 #ifndef NO_HTTP_DISPLAY
     stop_http_display();
 #endif
-    packetcapture_close();
+    network_close();
     connection_free_slots();
     clean_tmpdir();
     close_pidfile();
@@ -100,16 +96,7 @@ void setup_signals(void) {
     }
 }
 
-/*
- * Thread in which packet capture runs.
- */
-void *capture_thread(void *v)
-{
-    while (!foad)
-        packetcapture_dispatch();
 
-    return NULL;
-}
 
 static void print_exit_reason(void)
 {
@@ -131,12 +118,102 @@ static void print_exit_reason(void)
         log_msg(LOG_INFO, "caught signal %d", foad);
 }
 
+const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len)
+{
+    const char* name = generate_new_tmp_filename(mname);
+
+    tmpfile_write_file(name, data, len);
+
+    return name;
+}
+
+void dispatch_image_to_stdout(const char *mname, const unsigned char *data, const size_t len)
+{
+    const char *name;
+
+    name = tmpfile_write_mediaffile(mname, data, len);
+    if (name == NULL)
+        return;
+
+    printf("%s/%s\n", get_tmpdir(), name);
+}
+
+/*
+ * dispatch_image:
+ * Throw some image data at the display process.
+ */
+void dispatch_image_to_front(const char *mname, const unsigned char *data, const size_t len)
+{
+    const char *name;
+
+    name = tmpfile_write_mediaffile(mname, data, len);
+    if (name == NULL)
+        return;
+
+#ifndef NO_DISPLAY_WINDOW
+    //if (send_to_gtk) {
+        display_send_img(name, TMPNAMELEN);
+    //}
+#endif /* !NO_DISPLAY_WINDOW */
+#ifndef NO_HTTP_DISPLAY
+    //if (send_to_ws) {
+        ws_send_text(name);
+    //}
+#endif /* !NO_HTTP_DISPLAY */
+}
+
+/*
+ * dispatch_mpeg_audio:
+ * Throw some MPEG audio into the player process or temporary directory as
+ * appropriate.
+ */
+void dispatch_mpeg_audio(const char *mname, const unsigned char *data, const size_t len) {
+    mpeg_submit_chunk(data, len);
+}
+
+void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len) {
+    char *url;
+    const char *path, *host;
+    int pathlen, hostlen;
+    const unsigned char *p;
+
+    if (!(p = memstr(data, len, (unsigned char*)"\r\n", 2)))
+        return;
+
+    path = (const char*)(data + 4);
+    pathlen = (p - 9) - (unsigned char*)path;
+
+    if (memcmp(path, "http://", 7) == 0) {
+        url = malloc(pathlen + 1);
+        sprintf(url, "%.*s", pathlen, path);
+    } else {
+
+        if (!(p = memstr(p, len - (p - data), (unsigned char*)"\r\nHost: ", 8)))
+            return;
+
+        host = (const char*)(p + 8);
+
+        if (!(p = memstr(p + 8, len - (p + 8 - data), (unsigned char*)"\r\n", 2)))
+            return;
+
+        hostlen = p - (const unsigned char*)host;
+
+        if (hostlen == 0)
+            return;
+
+        url = malloc(hostlen + pathlen + 9);
+        sprintf(url, "http://%.*s%.*s", hostlen, host, pathlen, path);
+    }
+
+    fprintf(stderr, "\n\n  %s\n\n", url);
+    free(url);
+}
+
 /*
  * Entry point. Process command line options, start up pcap and enter capture loop.
  */
 int main(int argc, char *argv[])
 {
-    pthread_t packetth;
     options_t *options;
     int ok;
 
@@ -151,15 +228,15 @@ int main(int argc, char *argv[])
     }
 	
 	if (options->list_interfaces == 1) {
-		return ! packetcapture_list_interfaces();
+		return !network_list_interfaces();
 	}
 
     /* Start up pcap as soon as posible to later drop root privileges. */
     if (options->dumpfile) {
-        ok = packetcapture_open_offline(options->dumpfile);
+        ok = network_open_offline(options->dumpfile);
 
     } else {
-        ok = packetcapture_open_live(options->interface, options->filterexpr, options->promisc, options->monitor_mode);
+        ok = network_open_live(options->interface, options->filterexpr, options->promisc, options->monitor_mode);
     }
 
     if (!ok) {
@@ -228,16 +305,37 @@ int main(int argc, char *argv[])
         log_msg(LOG_INFO, "operating in adjunct mode");
     }
 
-    init_mediadrv(options->extract_type, !options->adjunct, options->enable_http_display, options->enable_gtk_display);
+    mediadrv_t** drivers = get_drivers_for_mediatype(options->extract_type);
 
-    connection_alloc_slots();
+    for (int i = 0; i < NMEDIATYPES; ++i) {
 
-    /*
-     * Actually start the capture stuff up. Unfortunately, on many platforms,
-     * libpcap doesn't have read timeouts, so we start the thing up in a
-     * separate thread. Yay!
-     */
-    pthread_create(&packetth, NULL, capture_thread, NULL);
+        if (drivers[i] == NULL) {
+            continue;
+        }
+
+        switch (drivers[i]->type) {
+            case MEDIATYPE_IMAGE:
+                /*
+                 * XXX: options->enable_http_display, options->enable_gtk_display
+                 */
+                if (options->adjunct) {
+                    drivers[i]->dispatch_data = dispatch_image_to_stdout;
+                } else {
+                    drivers[i]->dispatch_data = dispatch_image_to_front;
+                }
+                break;
+
+            case MEDIATYPE_AUDIO:
+                drivers[i]->dispatch_data = dispatch_mpeg_audio;
+                break;
+
+            case MEDIATYPE_TEXT:
+                drivers[i]->dispatch_data = dispatch_http_req;
+                break;
+        }
+    }
+
+    network_start(drivers);
 
     while (!foad)
         sleep(1);
@@ -251,15 +349,9 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */
-    pthread_join(packetth, NULL);
-
     /* Clean up. */
     /*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
-    packetcapture_close();
-
-    /* Easier for memory-leak debugging if we deallocate all this here.... */
-    connection_free_slots();
+    network_close();
 
     clean_tmpdir();
 

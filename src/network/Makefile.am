@@ -6,8 +6,9 @@ libnetwork_a_SOURCES = connection.c \
                       layer2.h \
                       layer3.c \
                       layer3.h \
-                      packetcapture.c \
-                      packetcapture.h
+                      pcap_engine.c \
+                      pcap_engine.h \
+                      network.h
 
 AM_CFLAGS  = -Wall
 AM_CFLAGS += -I$(srcdir)/../

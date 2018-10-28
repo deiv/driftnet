@@ -22,7 +22,7 @@
 #include <getopt.h>                     // for optarg, optind, optopt, etc
 
 #include "common/log.h"
-#include "network/packetcapture.h"
+#include "network/network.h"
 
 #include "options.h"
 
@@ -200,7 +200,7 @@ int validate_options(options_t* options)
     if (!options->dumpfile) {
         if (!options->interface) {
             /* TODO: on linux works "any" for all interfaces */
-            options->interface = get_default_interface();
+            options->interface = network_get_default_interface();
 
             if (!options->interface) {
                 return FALSE;

@@ -6,9 +6,3 @@ libmedia_a_SOURCES = media.c media.h image.c image.h audio.c audio.h \
 
 AM_CFLAGS  = -Wall
 AM_CFLAGS += -I$(top_srcdir)/src
-if ENABLE_DISPLAY
-AM_CFLAGS += -I$(top_srcdir)/src/display
-endif
-if ENABLE_HTTP_DISPLAY
-AM_CFLAGS += -I$(top_srcdir)/src/http_display
-endif

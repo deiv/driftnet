@@ -1,18 +1,21 @@
-/*
- * http.c:
- * Look for HTTP requests in buffers.
+/**
+ * @file http.c
+ *
+ * @brief Look for HTTP requests in buffers.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
  * We look for GET requests only, and only if the response is of type
  * text/html.
  *
- * Copyright (c) 2003 Chris Lightfoot.
+ * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
  */
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
 
 #include "compat/compat.h"
 
@@ -94,40 +97,3 @@ found:
     return blankline + 4;
 }
 
-void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len) {
-    char *url;
-    const char *path, *host;
-    int pathlen, hostlen;
-    const unsigned char *p;
-
-    if (!(p = memstr(data, len, (unsigned char*)"\r\n", 2)))
-        return;
-
-    path = (const char*)(data + 4);
-    pathlen = (p - 9) - (unsigned char*)path;
-
-    if (memcmp(path, "http://", 7) == 0) {
-        url = malloc(pathlen + 1);
-        sprintf(url, "%.*s", pathlen, path);
-    } else {
-
-        if (!(p = memstr(p, len - (p - data), (unsigned char*)"\r\nHost: ", 8)))
-            return;
-
-        host = (const char*)(p + 8);
-
-        if (!(p = memstr(p + 8, len - (p + 8 - data), (unsigned char*)"\r\n", 2)))
-            return;
-
-        hostlen = p - (const unsigned char*)host;
-
-        if (hostlen == 0)
-            return;
-
-        url = malloc(hostlen + pathlen + 9);
-        sprintf(url, "http://%.*s%.*s", hostlen, host, pathlen, path);
-    }
-
-    fprintf(stderr, "\n\n  %s\n\n", url);
-    free(url);
-}
