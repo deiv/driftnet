@@ -176,6 +176,13 @@ if test "x$enable_http_display" = xyes; then
         [AC_MSG_ERROR([cannot find lib websockets])] )
 fi
 
+
+AC_CHECK_LIB([cmocka],
+    _cmocka_run_group_tests,
+    [enable_tests=yes],
+    [AC_MSG_WARN([cannot find lib cmocka, the testsuite will not run])])
+AM_CONDITIONAL(ENABLE_TESTS, test "x$enable_tests" = xyes)
+
 #
 # Checks for header files.
 #
@@ -245,7 +252,7 @@ AC_CONFIG_FILES([Makefile
                  src/media/Makefile
                  src/display/Makefile
                  src/http_display/Makefile
-                 tests/Makefile])
+                 src/media/tests/Makefile])
 AC_OUTPUT
 
 echo \

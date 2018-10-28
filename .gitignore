@@ -29,3 +29,7 @@ driftnet
 
 *~
 *.swp
+
+#coverage files
+*.gcda
+*.gcno
