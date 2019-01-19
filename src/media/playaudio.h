@@ -14,6 +14,7 @@
 #define __PLAYAUDIO_H__
 
 void do_mpeg_player(void);
+void stop_mpeg_player(void);
 
 void mpeg_submit_chunk(const unsigned char *data, const size_t len);
 

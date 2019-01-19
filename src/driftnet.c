@@ -62,10 +62,10 @@ void terminate_on_signal(int s)
 {
     extern pid_t mpeg_mgr_pid; /* in playaudio.c */
 
-    /* Pass on the signal to the MPEG player manager so that it can abort,
-     * since it won't die when the pipe into it dies. */
-    if (mpeg_mgr_pid)
-        kill(mpeg_mgr_pid, s);
+    if (mpeg_mgr_pid) {
+        stop_mpeg_player();
+    }
+
     foad = s;
 }
 
@@ -348,6 +348,8 @@ int main(int argc, char *argv[])
         stop_http_display();
     }
 #endif
+
+    stop_mpeg_player();
 
     /* Clean up. */
     /*    pcap_freecode(pc, &filter);*/ /* not on some systems... */

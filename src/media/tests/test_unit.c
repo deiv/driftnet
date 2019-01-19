@@ -1,6 +1,6 @@
 /*
  * test_unit.c:
- * HTTP server.
+ * Test unit for media library.
  *
  * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
@@ -21,14 +21,6 @@
 
 #include "media/image.h"
 
-/*
- * TODO: refactor foad from playaudio.c
- */
-sig_atomic_t foad;
-
-/*void display_send_img(const char *name, size_t len) {}
-void ws_send_text(const char* text) {}*/
-
 char* jpeg_image_list[] = {
         "tests/resources/jpg_test_file_1.jpg",
         "tests/resources/jpg_test_file_2.jpg",
@@ -38,19 +30,6 @@ char* jpeg_image_list[] = {
 char* ico_image_list[] = {
         "tests/resources/ico_test_file_1.ico"
 };
-
-int open_file(char* filepath)
-{
-    int fd1;
-
-    fd1 = open(filepath, O_RDONLY, 0666);
-
-    if (fd1 == -1) {
-        return -1;
-    }
-
-    return fd1;
-}
 
 void test_no_error_on_null_data()
 {
