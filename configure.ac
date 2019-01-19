@@ -251,8 +251,8 @@ AC_CONFIG_FILES([Makefile
                  src/network/Makefile
                  src/media/Makefile
                  src/display/Makefile
-                 src/http_display/Makefile
-                 src/media/tests/Makefile])
+                 src/http_display/Makefile])
+
 AC_OUTPUT
 
 echo \
