@@ -1,20 +1,20 @@
 version: 2
 
 jobs:
-  build:
-    branches:
-      only:
-        - unit-refactor
+    build:
+        branches:
+            only:
+                - unit-refactor
 
-    docker:
-      - image: circleci/buildpack-deps:testing
+        docker:
+            - image: circleci/buildpack-deps:testing
 
-    steps:
-      - checkout
-      - run: sudo apt-get update -y && sudo apt-get install -y -q --no-install-recommends libgtk2.0-dev libpcap-dev libjpeg-dev libgif-dev libpng-dev libwebsockets-dev libcmocka-dev
-      - run: autoreconf -fi && ./configure --disable-silent-rules
-      - run: make check
-      - run: make coverage
-      - run: bash <(curl -s https://codecov.io/bash)
-      - store_artifacts:
-        path: src/media/test-suite.log
+        steps:
+            - checkout
+            - run: sudo apt-get update -y && sudo apt-get install -y -q --no-install-recommends libgtk2.0-dev libpcap-dev libjpeg-dev libgif-dev libpng-dev libwebsockets-dev libcmocka-dev
+            - run: autoreconf -fi && ./configure --disable-silent-rules
+            - run: make check
+            - run: make coverage
+            - run: bash <(curl -s https://codecov.io/bash)
+            - store_artifacts:
+                path: src/media/test-suite.log
