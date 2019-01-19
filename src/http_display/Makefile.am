@@ -23,12 +23,12 @@ web_data.c: $(STATIC_WEB_FILES)
 
 	echo 'web_static_file_t static_content[] = {' >> $@
 	for f in $^ ; do \
-			echo '{' >> $@; \
-			basename $$f | sed 's@\(.*\)@"\1",@g' >> $@; \
-			basename $$f | sed 's@[-. ]@_@g' >> $@; \
-			echo ',' >> $@; \
-			cat $$f | wc -c >> $@; \
-			echo '},' >> $@ ;\
+		echo '{' >> $@; \
+		basename $$f | sed 's@\(.*\)@"\1",@g' >> $@; \
+		basename $$f | sed 's@[-. ]@_@g' >> $@; \
+		echo ',' >> $@; \
+		cat $$f | wc -c >> $@; \
+		echo '},' >> $@ ;\
 	done
 
 	echo '{NULL, NULL, 0}};' >> $@
