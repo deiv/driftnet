@@ -168,6 +168,11 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsi
     unsigned char *jpeghdr, *block;
 
     *jpegdata = NULL;
+    *jpeglen = 0;
+
+    if (data == NULL) {
+        return NULL;
+    }
 
     jpeghdr = memstr(data, len, (unsigned char*)"\xff\xd8", 2); /* JPEG SOI marker */
     if (!jpeghdr) return (unsigned char*)(data + len - 1);
