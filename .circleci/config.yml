@@ -13,8 +13,11 @@ jobs:
             - checkout
             - run: sudo apt-get update -y && sudo apt-get install -y -q --no-install-recommends libgtk2.0-dev libpcap-dev libjpeg-dev libgif-dev libpng-dev libwebsockets-dev libcmocka-dev
             - run: autoreconf -fi && ./configure --disable-silent-rules
-            - run: make check
-            - run: make coverage
-            - run: bash <(curl -s https://codecov.io/bash)
+            - run:
+                command: |
+                    set +e
+                    make coverage
+                    eval "bash <(curl -s https://codecov.io/bash); exit $?"
+
             - store_artifacts:
                 path: src/media/test-suite.log
