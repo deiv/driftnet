@@ -32,3 +32,6 @@ jobs:
 
             - store_artifacts:
                 path: src/media/test-suite.log
+
+            - store_artifacts:
+                path: src/compat/config.h
