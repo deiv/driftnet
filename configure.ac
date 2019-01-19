@@ -174,6 +174,14 @@ if test "x$enable_http_display" = xyes; then
         [lws_create_context],
         [],
         [AC_MSG_ERROR([cannot find lib websockets])] )
+
+    AC_CHECK_HEADER([uv/version.h],
+        [AC_DEFINE([LWS_HAVE_NEW_UV_VERSION_H], [1], [New libuv version header file])],
+        [],
+        [])
+
+     WS_CFLAGS="$(${PKG_CONFIG} --cflags libwebsockets)"
+     AC_SUBST(WS_CFLAGS)
 fi
 
 
