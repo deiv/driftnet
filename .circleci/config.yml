@@ -26,6 +26,7 @@ jobs:
             - run:
                 command: |
                     set +e
+                    sudo sed -i 's@#define LWS_HAVE_UV_VERSION_H@//#define LWS_HAVE_UV_VERSION_H@g' /usr/include/lws_config.h
                     make coverage
                     eval "bash <(curl -s https://codecov.io/bash); exit $?"
 
