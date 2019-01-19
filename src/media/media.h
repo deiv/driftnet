@@ -56,8 +56,15 @@ typedef struct mediadrv {
     void (*dispatch_data)(const char *mname, const unsigned char *data, const size_t len);
 } mediadrv_t;
 
+/* TODO: ... */
+typedef struct drivers {
+    mediatype_t type;
+    mediadrv_t** list;
+    int count;
+} drivers_t;
+
 /**
- * @brief Obtains a static list of media drivers.
+ * @brief Obtains a list of media drivers.
  *
  * @param filter to this media type
  * @return drivers list (don't free it)
