@@ -11,8 +11,18 @@ jobs:
 
         steps:
             - checkout
-            - run: sudo apt-get update -y && sudo apt-get install -y -q --no-install-recommends libgtk2.0-dev libpcap-dev libjpeg-dev libgif-dev libpng-dev libwebsockets-dev libcmocka-dev
-            - run: autoreconf -fi && ./configure --disable-silent-rules
+            - run:
+                command: |
+                    sudo sh -c 'echo "deb http://ftp.es.debian.org/debian/ experimental main" >> /etc/apt/sources.list'
+                    sudo apt-get update -y
+                    sudo apt-get install -y -q --no-install-recommends libgtk2.0-dev libpcap-dev libjpeg-dev libgif-dev libpng-dev libcmocka-dev
+                    sudo apt-get install -y -q --no-install-recommends -t experimental libwebsockets-dev
+
+            - run:
+                command: |
+                    autoreconf -fi
+                    ./configure --disable-silent-rules
+
             - run:
                 command: |
                     set +e
