@@ -6,7 +6,8 @@ Driftnet
 [![version](https://img.shields.io/github/release-date/deiv/driftnet.svg)](https://github.com/deiv/driftnet/releases)
 [![license](https://img.shields.io/github/license/deiv/driftnet.svg)](https://github.com/deiv/driftnet/blob/master/COPYING)
 [![IDE](https://img.shields.io/badge/IDE-CLion-00AA00.svg)](https://www.jetbrains.com/clion/)
-[![codecov](https://codecov.io/gh/deiv/driftnet/branch/master/graph/badge.svg)](https://codecov.io/gh/deiv/driftnet)
+[![CircleCI](https://img.shields.io/circleci/project/github/deiv/driftnet/unit-refactor.svg?colorB=CEC109)](https://circleci.com/gh/deiv/driftnet/tree/unit-refactor)
+[![codecov](https://codecov.io/gh/deiv/driftnet/branch/unit-refactor/graph/badge.svg)](https://codecov.io/gh/deiv/driftnet)
 
 Driftnet watches network traffic, and picks out and displays JPEG and GIF images for display. It is a horrific invasion of privacy and shouldn't be used by anyone anywhere. It can also extract MPEG audio data from the network and play it. If you live in a house with thick walls, this may be a useful way to find out about your neighbours' musical taste.
 
