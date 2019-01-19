@@ -30,6 +30,12 @@ driftnet
 *~
 *.swp
 
+.idea
+cmake-build-*
+docs/
+
 #coverage files
 *.gcda
 *.gcno
+coverage.info
+coverage-docs/
