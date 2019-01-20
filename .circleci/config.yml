@@ -27,6 +27,9 @@ jobs:
                 command: |
                     set +e
                     sudo sed -i 's@#define LWS_HAVE_UV_VERSION_H@//#define LWS_HAVE_UV_VERSION_H@g' /usr/include/lws_config.h
+                    export CMOCKA_XML_FILE=testresults/cmocka/results.xml
+                    export CMOCKA_MESSAGE_OUTPUT=xml
+                    mkdir -p src/media/testresults/cmocka
                     make check
                     eval "bash <(curl -s https://codecov.io/bash); exit $?"
 
@@ -35,3 +38,6 @@ jobs:
 
             - store_artifacts:
                 path: src/compat/config.h
+
+            - store_test_results:
+                path: src/media/testresults
