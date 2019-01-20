@@ -142,7 +142,8 @@ void dispatch_image_to_stdout(const char *mname, const unsigned char *data, cons
  * dispatch_image:
  * Throw some image data at the display process.
  */
-void dispatch_image_to_front(const char *mname, const unsigned char *data, const size_t len)
+#ifndef NO_DISPLAY_WINDOW
+void dispatch_image_to_display(const char *mname, const unsigned char *data, const size_t len)
 {
     const char *name;
 
@@ -150,17 +151,29 @@ void dispatch_image_to_front(const char *mname, const unsigned char *data, const
     if (name == NULL)
         return;
 
-#ifndef NO_DISPLAY_WINDOW
-    //if (send_to_gtk) {
-        display_send_img(name, TMPNAMELEN);
-    //}
-#endif /* !NO_DISPLAY_WINDOW */
-#ifndef NO_HTTP_DISPLAY
-    //if (send_to_ws) {
-        ws_send_text(name);
-    //}
-#endif /* !NO_HTTP_DISPLAY */
+
+    display_send_img(name, TMPNAMELEN);
+
 }
+#endif /* !NO_DISPLAY_WINDOW */
+
+/*
+ * dispatch_image:
+ * Throw some image data at the http display process.
+ */
+#ifndef NO_HTTP_DISPLAY
+void dispatch_image_to_httpdisplay(const char *mname, const unsigned char *data, const size_t len)
+{
+    const char *name;
+
+    name = tmpfile_write_mediaffile(mname, data, len);
+    if (name == NULL)
+        return;
+
+
+    ws_send_text(name);
+}
+#endif /* !NO_HTTP_DISPLAY */
 
 /*
  * dispatch_mpeg_audio:
@@ -320,8 +333,17 @@ int main(int argc, char *argv[])
                  */
                 if (options->adjunct) {
                     drivers[i]->dispatch_data = dispatch_image_to_stdout;
+
                 } else {
-                    drivers[i]->dispatch_data = dispatch_image_to_front;
+                    if (options->enable_gtk_display) {
+#ifndef NO_DISPLAY_WINDOW
+                        drivers[i]->dispatch_data = dispatch_image_to_display;
+#endif
+                    } else {
+#ifndef NO_HTTP_DISPLAY
+                        drivers[i]->dispatch_data = dispatch_image_to_httpdisplay;
+#endif
+                    }
                 }
                 break;
 
