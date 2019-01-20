@@ -4,7 +4,7 @@ jobs:
     build:
         branches:
             only:
-                - unit-refactor
+                - master
 
         docker:
             - image: circleci/buildpack-deps:testing
