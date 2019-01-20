@@ -81,7 +81,7 @@ void test_parse_images()
     size_t jpeglen = 0;
     unsigned char *ret;
 
-    for (int idx = 0; idx <2; idx++) {
+    for (int idx = 0; idx < 3; idx++) {
 
         ret = find_jpeg(jpeg_image_list[idx], &jpegdata, &jpeglen);
 
