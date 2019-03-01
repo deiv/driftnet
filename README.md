@@ -1,4 +1,3 @@
-
 Driftnet
 ========
 
@@ -8,6 +7,7 @@ Driftnet
 [![IDE](https://img.shields.io/badge/IDE-CLion-00AA00.svg)](https://www.jetbrains.com/clion/)
 [![CircleCI](https://img.shields.io/circleci/project/github/deiv/driftnet/master.svg?colorB=CEC109)](https://circleci.com/gh/deiv/driftnet/tree/master)
 [![codecov](https://codecov.io/gh/deiv/driftnet/branch/master/graph/badge.svg)](https://codecov.io/gh/deiv/driftnet)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fdeiv%2Fdriftnet.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fdeiv%2Fdriftnet?ref=badge_shield)
 
 Driftnet watches network traffic, and picks out and displays JPEG and GIF images for display. It is a horrific invasion of privacy and shouldn't be used by anyone anywhere. It can also extract MPEG audio data from the network and play it. If you live in a house with thick walls, this may be a useful way to find out about your neighbours' musical taste.
 
@@ -67,3 +67,7 @@ If you find this program entertaining, you might want to help me develop it.
 The TODO file contains a list of yet-to-be-done ideas.
 
 Driftnet is licensed under the GNU GPL. See the file COPYING in the distribution.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fdeiv%2Fdriftnet.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fdeiv%2Fdriftnet?ref=badge_large)
