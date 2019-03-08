@@ -6,10 +6,11 @@ Driftnet
 [![version](https://img.shields.io/github/release-date/deiv/driftnet.svg)](https://github.com/deiv/driftnet/releases)
 [![license](https://img.shields.io/github/license/deiv/driftnet.svg)](https://github.com/deiv/driftnet/blob/master/COPYING)
 [![IDE](https://img.shields.io/badge/IDE-CLion-00AA00.svg)](https://www.jetbrains.com/clion/)
+[![Refactored](https://img.shields.io/badge/Refactored%20with-Structure101-8A2BE2.svg)](https://structure101.com/)
 [![CircleCI](https://img.shields.io/circleci/project/github/deiv/driftnet/master.svg?colorB=CEC109)](https://circleci.com/gh/deiv/driftnet/tree/master)
 [![codecov](https://codecov.io/gh/deiv/driftnet/branch/master/graph/badge.svg)](https://codecov.io/gh/deiv/driftnet)
 
-Driftnet watches network traffic, and picks out and displays JPEG and GIF images for display. It is a horrific invasion of privacy and shouldn't be used by anyone anywhere. It can also extract MPEG audio data from the network and play it. If you live in a house with thick walls, this may be a useful way to find out about your neighbours' musical taste.
+Driftnet watches network traffic, and picks out and displays JPEG, GIF and other image formats for display. It is a horrific invasion of privacy and shouldn't be used by anyone anywhere. It can also extract MPEG audio data from the network and play it. If you live in a house with thick walls, this may be a useful way to find out about your neighbours' musical taste.
 
 News
 ------------
@@ -18,13 +19,6 @@ News
     Added basic windows support (cygwin)
     Added option to list capture interfaces
     Added support for putting the interface in monitor mode
-
-
-Support development
-------------
-
-If you interested in this software (or other FOSS activities I do), 
-<a href="https://www.patreon.com/bePatron?u=13707009" data-patreon-widget-type="become-patron-button">get on board and become a Patron!</a>
 
 Dependencies
 ------------
@@ -38,6 +32,7 @@ You will need:
 * [libungif](http://directory.fsf.org/wiki/Libungif)
 * [libpng](http://www.libpng.org/pub/png/libpng.html)
 * [libwebsockets](https://libwebsockets.org/) (if you want the http server)
+* [libgtk](https://www.gtk.org/) (if you want the GTK display)
 
 On most Linux distributions (APT based) these can be installed by executing `sudo apt-get install libpcap-dev libjpeg-dev libpng12-dev giflib-tools`. If you don't want a version of driftnet which will display images itself, but just want  to use it to gather images for some other application, you only need `libpcap`. See comments in the Makefile for more information. To play MPEG audio, you need an MPEG player. By default, driftnet will use [mpg123](http://www.mpg123.de/).
 
@@ -67,3 +62,15 @@ If you find this program entertaining, you might want to help me develop it.
 The TODO file contains a list of yet-to-be-done ideas.
 
 Driftnet is licensed under the GNU GPL. See the file COPYING in the distribution.
+
+Thanks
+------------
++ [Jetbrains](https://www.jetbrains.com) for his marvelous IDE [CLion](https://www.jetbrains.com/clion/)
++ **Headway Software Technologies Ltd** and their fantastic refactor tool [Structure101](https://structure101.com/)
++ All the [contributors](https://github.com/deiv/driftnet/graphs/contributors) 
+
+Support development
+------------
+
+If you interested in this software (or other FOSS activities I do), 
+<a href="https://www.patreon.com/bePatron?u=13707009" data-patreon-widget-type="become-patron-button">get on board and become a Patron!</a>
