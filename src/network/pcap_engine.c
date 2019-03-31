@@ -56,7 +56,7 @@ static datalink_info_t datalink_info;
 static int running = FALSE;
 static pthread_t packetth;
 
-static mediadrv_t** media_drivers;
+static drivers_t* media_drivers;
 
 void extract_media(connection c);
 void packetcapture_dispatch(void);
@@ -207,7 +207,7 @@ char* network_get_default_interface(void)
     return interface;
 }
 
-void network_start(mediadrv_t** drivers)
+void network_start(drivers_t*drivers)
 {
     media_drivers = drivers;
 
@@ -364,26 +364,26 @@ void extract_media(connection c)
     for (b = c->blocks; b; b = b->next) {
         if (b->len > 0 && b->dirty) {
             int i;
-            for (i = 0; i < NMEDIATYPES; ++i) {
-                if (media_drivers[i] == NULL) {
-                    continue;
-                }
 
+            for (i = 0; i < media_drivers->count; ++i) {
                 unsigned char *ptr, *oldptr, *media;
                 size_t mlen;
+                mediadrv_t* driver;
 
+                driver = media_drivers->list[i];
                 ptr = c->data + b->off + b->moff[i];
                 oldptr = NULL;
 
                 while (ptr != oldptr && ptr < c->data + b->off + b->len) {
                     oldptr = ptr;
-                    ptr = media_drivers[i]->find_data(ptr, (b->off + b->len) - (ptr - c->data), &media, &mlen);
+                    ptr = driver->find_data(ptr, (b->off + b->len) - (ptr - c->data), &media, &mlen);
                     if (media && !tmpfiles_limit_reached())
-                        media_drivers[i]->dispatch_data(media_drivers[i]->name, media, mlen);
+                        driver->dispatch_data(driver->name, media, mlen);
                 }
 
                 b->moff[i] = ptr - c->data - b->off;
             }
+
             b->dirty = 0;
         }
     }

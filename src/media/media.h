@@ -56,7 +56,9 @@ typedef struct mediadrv {
     void (*dispatch_data)(const char *mname, const unsigned char *data, const size_t len);
 } mediadrv_t;
 
-/* TODO: ... */
+/**
+ * @brief Contains the runtime drivers for the configured capture media type
+ */
 typedef struct drivers {
     mediatype_t type;
     mediadrv_t** list;
@@ -67,8 +69,16 @@ typedef struct drivers {
  * @brief Obtains a list of media drivers.
  *
  * @param filter to this media type
- * @return drivers list (don't free it)
+ * @return drivers list (should be freed with close_media_drivers method)
  */
-mediadrv_t** get_drivers_for_mediatype(mediatype_t type);
+drivers_t* get_drivers_for_mediatype(mediatype_t type);
+
+/**
+ * @brief Frees from memory the drivers list.
+ *
+ * @param drivers the list
+ * @return none
+ */
+void close_media_drivers(drivers_t* drivers);
 
 #endif /* __MEDIA_H__ */

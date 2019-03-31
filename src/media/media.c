@@ -27,7 +27,7 @@
 
 #include "media.h"
 
-static mediadrv_t drivers[NMEDIATYPES] = {
+static mediadrv_t media_drivers[NMEDIATYPES] = {
     { "gif",  MEDIATYPE_IMAGE, find_gif_image },
     { "jpeg", MEDIATYPE_IMAGE, find_jpeg_image },
     { "png",  MEDIATYPE_IMAGE, find_png_image },
@@ -35,28 +35,41 @@ static mediadrv_t drivers[NMEDIATYPES] = {
     { "HTTP", MEDIATYPE_TEXT,  find_http_req }
 };
 
-/*
- * TODO: improve the return type
- */
-mediadrv_t** get_drivers_for_mediatype(mediatype_t type)
+
+drivers_t* get_drivers_for_mediatype(mediatype_t type)
 {
-    static mediadrv_t* drivers_o[NMEDIATYPES];
+    drivers_t* drivers = NULL;
+    int driver_count = 0;
     int current_drv = 0;
 
     for (int i = 0; i < NMEDIATYPES; ++i) {
-        if (drivers[i].type & type) {
-            drivers_o[current_drv] = &drivers[i];
+        if (media_drivers[i].type & type) {
+            driver_count++;
+        }
+    }
+
+    drivers = xmalloc(sizeof(drivers_t));
+
+    drivers->type = type;
+    drivers->count = driver_count;
+    drivers->list = xmalloc(sizeof(mediadrv_t*) * driver_count);
+
+    for (int i = 0; i < NMEDIATYPES; ++i) {
+        if (media_drivers[i].type & type) {
+            drivers->list[current_drv] = &media_drivers[i];
             current_drv++;
         }
     }
 
-    if (current_drv == 0) {
-        return NULL;
+    return drivers;
+}
+
+void close_media_drivers(drivers_t* drivers)
+{
+    if (drivers == NULL) {
+        return;
     }
 
-    for (int i = current_drv; i < NMEDIATYPES; i++) {
-        drivers_o[i] = NULL;
-    }
-
-    return drivers_o;
+    xfree(drivers->list);
+    xfree(drivers);
 }

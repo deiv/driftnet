@@ -318,41 +318,42 @@ int main(int argc, char *argv[])
         log_msg(LOG_INFO, "operating in adjunct mode");
     }
 
-    mediadrv_t** drivers = get_drivers_for_mediatype(options->extract_type);
+    drivers_t* drivers = get_drivers_for_mediatype(options->extract_type);
 
-    for (int i = 0; i < NMEDIATYPES; ++i) {
+    /*
+     * Setup the dispatch method for each driver
+     */
+    for (int i = 0; i < drivers->count; ++i) {
 
-        if (drivers[i] == NULL) {
-            continue;
-        }
+        mediadrv_t* driver = drivers->list[i];
 
-        switch (drivers[i]->type) {
+        switch (driver->type) {
             case MEDIATYPE_IMAGE:
                 /*
                  * XXX: options->enable_http_display, options->enable_gtk_display
                  */
                 if (options->adjunct) {
-                    drivers[i]->dispatch_data = dispatch_image_to_stdout;
+                    driver->dispatch_data = dispatch_image_to_stdout;
 
                 } else {
                     if (options->enable_gtk_display) {
 #ifndef NO_DISPLAY_WINDOW
-                        drivers[i]->dispatch_data = dispatch_image_to_display;
+                        driver->dispatch_data = dispatch_image_to_display;
 #endif
                     } else {
 #ifndef NO_HTTP_DISPLAY
-                        drivers[i]->dispatch_data = dispatch_image_to_httpdisplay;
+                        driver->dispatch_data = dispatch_image_to_httpdisplay;
 #endif
                     }
                 }
                 break;
 
             case MEDIATYPE_AUDIO:
-                drivers[i]->dispatch_data = dispatch_mpeg_audio;
+                driver->dispatch_data = dispatch_mpeg_audio;
                 break;
 
             case MEDIATYPE_TEXT:
-                drivers[i]->dispatch_data = dispatch_http_req;
+                driver->dispatch_data = dispatch_http_req;
                 break;
         }
     }
@@ -376,6 +377,8 @@ int main(int argc, char *argv[])
     /* Clean up. */
     /*    pcap_freecode(pc, &filter);*/ /* not on some systems... */
     network_close();
+
+    close_media_drivers(drivers);
 
     clean_tmpdir();
 

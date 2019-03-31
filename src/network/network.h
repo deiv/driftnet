@@ -54,7 +54,7 @@ int network_open_offline(char *dumpfile);
 /**
  * @brief Start capturing packets and handling inbound connections
  */
-void network_start(mediadrv_t** drivers);
+void network_start(drivers_t* drivers);
 
 /**
  * @brief Stops the packet capturing
