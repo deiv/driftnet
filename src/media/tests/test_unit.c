@@ -20,6 +20,7 @@
 #include <sys/wait.h>
 
 #include "media/image.h"
+#include "media/media.h"
 
 char* gif_image_list[] = {
         "tests/resources/gif_test_file_1.gif",
@@ -201,9 +202,21 @@ void test_dont_parse_other_formats(void** state)
     }
 }
 
+void test_correct_media_drivers_for_mediatype_count()
+{
+    drivers_t* image_drivers = NULL;
+
+    image_drivers = get_drivers_for_mediatype(MEDIATYPE_IMAGE);
+
+    assert_non_null(image_drivers);
+    assert_int_equal(3, image_drivers->count);
+
+    close_media_drivers(image_drivers);
+}
+
 int main(void)
 {
-    const struct CMUnitTest tests[] = {
+    const struct CMUnitTest image_tests[] = {
             cmocka_unit_test(test_no_error_on_null_data),
             cmocka_unit_test(test_parse_images),
             cmocka_unit_test(test_dont_parse_corrupt_data),
@@ -212,9 +225,15 @@ int main(void)
 
     int ret = 0;
 
-    ret += _cmocka_run_group_tests("gif media tests", tests, sizeof(tests) / sizeof((tests)[0]), gif_media_test_group_setup, NULL);
-    ret += _cmocka_run_group_tests("jpeg media tests", tests, sizeof(tests) / sizeof((tests)[0]), jpeg_media_test_group_setup, NULL);
-    ret += _cmocka_run_group_tests("png media tests", tests, sizeof(tests) / sizeof((tests)[0]), png_media_test_group_setup, NULL);
+    ret += cmocka_run_group_tests_name("gif media tests", image_tests, gif_media_test_group_setup, NULL);
+    ret += cmocka_run_group_tests_name("jpeg media tests", image_tests, jpeg_media_test_group_setup, NULL);
+    ret += cmocka_run_group_tests_name("png media tests", image_tests, png_media_test_group_setup, NULL);
+
+    const struct CMUnitTest media_tests[] = {
+            cmocka_unit_test(test_correct_media_drivers_for_mediatype_count)
+    };
+
+    ret += cmocka_run_group_tests(media_tests, NULL, NULL);
 
     return ret;
 }
