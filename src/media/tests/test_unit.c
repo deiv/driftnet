@@ -205,13 +205,32 @@ void test_dont_parse_other_formats(void** state)
 void test_correct_media_drivers_for_mediatype_count()
 {
     drivers_t* image_drivers = NULL;
+    drivers_t* audio_drivers = NULL;
+    drivers_t* text_drivers = NULL;
 
+    /* test image drivers count */
     image_drivers = get_drivers_for_mediatype(MEDIATYPE_IMAGE);
 
     assert_non_null(image_drivers);
     assert_int_equal(3, image_drivers->count);
 
     close_media_drivers(image_drivers);
+
+    /* test audio drivers count */
+    audio_drivers = get_drivers_for_mediatype(MEDIATYPE_AUDIO);
+
+    assert_non_null(audio_drivers);
+    assert_int_equal(1, audio_drivers->count);
+
+    close_media_drivers(audio_drivers);
+
+    /* test text drivers count */
+    text_drivers = get_drivers_for_mediatype(MEDIATYPE_TEXT);
+
+    assert_non_null(text_drivers);
+    assert_int_equal(1, text_drivers->count);
+
+    close_media_drivers(text_drivers);
 }
 
 int main(void)
