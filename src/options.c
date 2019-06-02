@@ -198,9 +198,20 @@ int validate_options(options_t* options)
 	}
 
     if (!options->dumpfile) {
+
+#ifdef PCAP_LIB_ON_WINDOWS
+        if (!strcmp(options->interface, ANY_INTERFACE_NAME)) {
+            log_msg(LOG_ERROR, "'-i any' on windows, is not supported");
+            return FALSE;
+        }
+#endif
         if (!options->interface) {
-            /* TODO: on linux works "any" for all interfaces */
+
+#ifdef PCAP_LIB_ON_WINDOWS
             options->interface = network_get_default_interface();
+#else
+            options->interface = ANY_INTERFACE_NAME;
+#endif
 
             if (!options->interface) {
                 return FALSE;

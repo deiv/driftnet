@@ -17,6 +17,10 @@
 
 #include "media/media.h"
 
+/**
+ * @brief libpcap pseudo-interface name for capturing on all ones
+ */
+#define ANY_INTERFACE_NAME "any"
 
 /**
  * @brief list the network interfaces

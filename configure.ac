@@ -104,6 +104,7 @@ if test "x$build_windows" = xyes; then
 		[pcap_open_live],
 		[],
 		[AC_MSG_ERROR([cannot find lib wpcap])] )
+    AC_DEFINE([PCAP_LIB_ON_WINDOWS], [1], [Compile using linwinpcap library])
 else
 	AC_CHECK_LIB([pcap],
 		[pcap_open_live],
