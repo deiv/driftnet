@@ -88,6 +88,4 @@ void xnanosleep(long nanosecs);
  */
 #define alloc_struct(S, p)  p = xmalloc(sizeof *p); memset(p, 0, sizeof *p);
 
-//#define alloc_struct(S, p)  do { struct S as__z = {0}; p = xmalloc(sizeof *p); *p = as__z; } while (0)
-
 #endif /* __UTIL_H__ */

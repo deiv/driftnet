@@ -108,9 +108,7 @@ void make_backing_image() {
     img I;
     I = img_new_blank(width, height);
     img_alloc(I);
-/*    wry += height - backing_image->height;
-    if (wry < BORDER || wry > height - BORDER)
-        wry = height - BORDER;*/
+
     if (backing_image) {
         int w2, h2;
         struct imgrect *ir;

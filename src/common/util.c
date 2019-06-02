@@ -26,7 +26,6 @@
 
 #if HAVE_NANOSLEEP
     #include <time.h>
-    //#include <sys/time.h>
 #elif HAVE_USLEEP
     #include <unistd.h>
 #endif
@@ -116,20 +115,3 @@ void xnanosleep(long nanosecs)
     #error cannot find an usable sleep function
 #endif
 }
-
-/*
- * dump_data
- *
- * Print some binary data on a file descriptor.
- *
- * XXX: Unused
- */
-#if 0
-void dump_data(FILE *fp, const unsigned char *data, const unsigned int len) {
-    const unsigned char *p;
-    for (p = data; p < data + len; ++p) {
-        if (isprint((int)*p)) fputc(*p, fp);
-        else fprintf(fp, "\\x%02x", (unsigned int)*p);
-    }
-}
-#endif

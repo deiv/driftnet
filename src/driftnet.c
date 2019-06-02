@@ -39,21 +39,6 @@
 static void terminate_on_signal(int s);
 static void setup_signals(void);
 
-/*
-void unexpected_exit(int ret)
-{
-    // clean things a litle
-#ifndef NO_HTTP_DISPLAY
-    stop_http_display();
-#endif
-    network_close();
-    connection_free_slots();
-    clean_tmpdir();
-    close_pidfile();
-
-	exit(ret);
-}*/
-
 /* terminate_on_signal:
  * Terminate on receipt of an appropriate signal. */
 sig_atomic_t foad;

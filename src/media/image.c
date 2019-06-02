@@ -20,12 +20,11 @@
 #include "pngformat.h"
 
 /* If we run out of space, put us back to the last candidate GIF header. */
-/*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/
 #define spaceleft       if (block >= data + len) return gifhdr /* > ?? */
 
-unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen) {
+unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen)
+{
     unsigned char *gifhdr, *block;
-    /*int gotimgblock = 0;*/
     int ncolours;
 
     *gifdata = NULL;
