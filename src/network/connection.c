@@ -1,17 +1,20 @@
-/*
- * connection.c:
- * Connection objects.
+/**
+ * @file connection.c
+ *
+ * @brief Connection handling.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
  * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include "compat.h"
+#include <compat/compat.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -19,9 +22,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "util.h"
-#include "media.h"
-#include "driftnet.h"
+#include "common/util.h"
+#include "media/media.h"
+
+#include "pcap_engine.h"
 #include "connection.h"
 
 /* slots for storing information about connections */

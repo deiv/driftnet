@@ -7,11 +7,7 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -19,17 +15,16 @@
 
 #include <netinet/in.h> /* ntohl */
 
-#include "util.h"
+#include "common/util.h"
 
 #include "pngformat.h"
 
 /* If we run out of space, put us back to the last candidate GIF header. */
-/*#define spaceleft       do { if (block > data + len) { printf("ran out of space\n"); return gifhdr; } } while (0)*/
 #define spaceleft       if (block >= data + len) return gifhdr /* > ?? */
 
-unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen) {
+unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsigned char **gifdata, size_t *giflen)
+{
     unsigned char *gifhdr, *block;
-    /*int gotimgblock = 0;*/
     int ncolours;
 
     *gifdata = NULL;
@@ -145,65 +140,145 @@ unsigned char *find_gif_image(const unsigned char *data, const size_t len, unsig
     } while (1);
 }
 
-/* If we run out of space, put us back to the last candidate JPEG header. */
+enum jpeg_marker {
+    SOI = 0xD8,
+    DHT = 0xC4,
+    DAC = 0xCC,
+    DQT = 0xDB,
+    DRI = 0xDD,
+    DHP = 0xDE,
+    EXP = 0xDF,
+    SOS = 0xDA,
+    COM = 0xFE,
+    EOI = 0xD9,
 
+    RST0 = 0xD0,
+    RST1 = 0xD1,
+    RST2 = 0xD2,
+    RST3 = 0xD3,
+    RST4 = 0xD4,
+    RST5 = 0xD5,
+    RST6 = 0xD6,
+    RST7 = 0xD7,
+
+    SOF0 = 0xC0, SOF1 = 0xC1, SOF2 = 0xC2, SOF3 = 0xC3, SOF5 = 0xC5, SOF6 = 0xC6, SOF7 = 0xC7,
+    SOF8 = 0xC8, SOF9 = 0xC9, SOFA = 0xCA, SOFB = 0xCB, SOFD = 0xCD, SOFE = 0xCE, SOFF = 0xCF,
+
+    APP0 = 0xE0, APP1 = 0xE1, APP2 = 0xE2, APP3 = 0xE3, APP4 = 0xE4, APP5 = 0xE5, APP6 = 0xE6, APP7 = 0xE7,
+    APP8 = 0xE8, APP9 = 0xE9, APPA = 0xEA, APPB = 0xEB, APPC = 0xEC, APPD = 0xED, APPE = 0xEE, APPF = 0xEF,
+
+    JPG0 = 0xF0, JPG1 = 0xF1, JPG2 = 0xF2, JPG3 = 0xF3, JPG4 = 0xF4, JPG5 = 0xF5, JPG6 = 0xF6,
+    JPG7 = 0xF7, JPG8 = 0xF8, JPG9 = 0xF9, JPGA = 0xFA, JPGB = 0xFB, JPGC = 0xFC, JPGD = 0xFD
+};
+
+typedef struct {
+    unsigned char start_of_marker;     /* always 0xFF */
+    unsigned char marker_type;
+    unsigned char length[2];
+} jpg_segment_t;
+
+/* If we run out of space, put us back to the last candidate JPEG header. */
 #define jpegcount(c)    ((*(c) << 8) | *((c) + 1))
 
-unsigned char *jpeg_next_marker(unsigned char *d, size_t len) {
-    unsigned char *end = d + len;
-    while (d < end && *d != 0xff) ++d;
-    if (d == end) return NULL;
-    while (d < end && *d == 0xff) ++d; /* skip 0xff padding */
-    if (d == end) return NULL;
+unsigned int is_jpeg_segment(jpg_segment_t* segment)
+{
+    if (segment->start_of_marker != 0xFF) {
+        return 0;
+    }
 
-    return d;
+    /*
+     * Check for markers
+     */
+    switch (segment->marker_type) {
+
+        /* without payload */
+        case SOI:
+        case EOI:
+        case RST0:
+        case RST1:
+        case RST2:
+        case RST3:
+        case RST4:
+        case RST5:
+        case RST6:
+        case RST7:
+        case DHP:
+        case EXP:
+        case DAC:
+            return 4;
+
+        /* constant payload */
+        case DRI:
+            return 4 + 4;
+
+        /* variable payload */
+        case DHT:
+        case DQT:
+        case SOS:
+        case COM:
+
+        case SOF0:case SOF1:case SOF2:case SOF3:case SOF5:case SOF6:case SOF7:
+        case SOF8:case SOF9:case SOFA:case SOFB:case SOFD:case SOFE:case SOFF:
+
+        case APP0:case APP1:case APP2:case APP3:case APP4:case APP5:case APP6:case APP7:
+        case APP8:case APP9:case APPA:case APPB:case APPC:case APPD:case APPE:case APPF:
+
+        case JPG0:case JPG1:case JPG2:case JPG3:case JPG4:case JPG5:case JPG6:
+        case JPG7:case JPG8:case JPG9:case JPGA:case JPGB:case JPGC:case JPGD:
+
+            return (((segment->length[0] << 8) & 0xFF00) | segment->length[1]) + 2;
+    }
+
+    return 0;
 }
 
-unsigned char *jpeg_skip_block(unsigned char *d, size_t len) {
-    int l;
-    if (len < 2) return NULL;
-    l = jpegcount(d);
-    if (l > len) return NULL;
-
-    return d + l;
-}
-
-unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsigned char **jpegdata, size_t *jpeglen) {
-    unsigned char *jpeghdr, *block;
+unsigned char *find_jpeg_image(const unsigned char *data, const size_t len, unsigned char **jpegdata, size_t *jpeglen)
+{
+    unsigned char *jpeghdr;
 
     *jpegdata = NULL;
+    *jpeglen = 0;
 
-    jpeghdr = memstr(data, len, (unsigned char*)"\xff\xd8", 2); /* JPEG SOI marker */
+    if (data == NULL) {
+        return NULL;
+    }
+
+    /* find SOI marker */
+    jpeghdr = memstr(data, len, (unsigned char*)"\xff\xd8", 2);
     if (!jpeghdr) return (unsigned char*)(data + len - 1);
 
-    /* printf("SOI marker at %p\n", jpeghdr); */
+    jpg_segment_t* segment;
+    unsigned int segment_lenght = 2;
+    unsigned char *block = jpeghdr;
 
-    if (jpeghdr + 2 > data + len) return jpeghdr;
-    block = jpeg_next_marker(jpeghdr + 2, len - 2 - (jpeghdr - data));
-    /* printf("next block at %p\n", block); */
-    if (!block || (block - data) >= len) return jpeghdr;
+    do {
+        /* more data to advance ? */
+        if (data + len < block + segment_lenght) {
+            break;
+        }
 
-    /* now we need to find the onward count from this place */
-    while ((block = jpeg_skip_block(block + 1, len - (block + 1 - data)))) {
-        /* printf("data = %p block = %p\n", data, block); */
+        /* advance to next block */
+        block = block + segment_lenght;
+        segment = (jpg_segment_t*) block;
+        segment_lenght = is_jpeg_segment(segment);
 
-        block = jpeg_next_marker(block, len - (block - data));
-        if (!block || (block - data) >= len) return jpeghdr;
-
-        /* printf("got block of type %02x\n", *block); */
-
-        if (*block == 0xda) {
-            /* start of scan; dunno how to parse this but just look for end of
-             * image marker. XXX this is broken, fix it! */
+        /*
+         * start of scan
+         *
+         * XXX: dunno how to parse...
+         */
+        if (segment->marker_type == SOS) {
             block = memstr(block, len - (block - data), (unsigned char*)"\xff\xd9", 2);
+
             if (block) {
                 *jpegdata = jpeghdr;
                 *jpeglen = block + 2 - jpeghdr;
                 return block + 2;
             } else break;
         }
-    }
-    /* printf("nope, no complete JPEG here\n"); */
+
+    } while (segment_lenght != 0);
+
     return jpeghdr;
 }
 

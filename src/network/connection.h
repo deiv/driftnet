@@ -1,23 +1,23 @@
-/*
- * Connection.h:
- * Connection handling.
+/**
+ * @file connection.h
  *
- * Copyright (c) 2012 David Suárez.
- * Email: david.sephirot@gmail.com
+ * @brief Connection handling.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
  * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
+ *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
  *
  */
 
 #ifndef __CONNECTION_H__
 #define __CONNECTION_H__
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -33,7 +33,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-//struct datablock;
+#include "media/media.h" /* NMEDIATYPES */
 
 /*
  * Object representing one half of a TCP stream connection. Each connection
@@ -76,9 +76,6 @@ connection *find_connection(const struct sockaddr *src, const struct sockaddr *d
 
 char *connection_string(const struct sockaddr *s, const struct sockaddr *d);
 void sweep_connections(void);
-
-
-#include "media.h" /* NMEDIATYPES */
 
 /*
  * Represents an extent in a captured stream.

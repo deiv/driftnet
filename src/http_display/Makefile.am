@@ -3,6 +3,8 @@ noinst_LIBRARIES = libhttpdisplay.a
 libhttpdisplay_a_SOURCES = httpd.c httpd.h web_data.c web_data.h
 
 AM_CFLAGS  = -Wall
+AM_CFLAGS += @WS_CFLAGS@
+AM_CFLAGS += -I$(srcdir)/../
 
 STATIC_WEB_FILES = $(wildcard static_web/*)
 
@@ -21,12 +23,12 @@ web_data.c: $(STATIC_WEB_FILES)
 
 	echo 'web_static_file_t static_content[] = {' >> $@
 	for f in $^ ; do \
-			echo '{' >> $@; \
-			basename $$f | sed 's@\(.*\)@"\1",@g' >> $@; \
-			basename $$f | sed 's@[-. ]@_@g' >> $@; \
-			echo ',' >> $@; \
-			cat $$f | wc -c >> $@; \
-			echo '},' >> $@ ;\
+		echo '{' >> $@; \
+		basename $$f | sed 's@\(.*\)@"\1",@g' >> $@; \
+		basename $$f | sed 's@[-. ]@_@g' >> $@; \
+		echo ',' >> $@; \
+		cat $$f | wc -c >> $@; \
+		echo '},' >> $@ ;\
 	done
 
 	echo '{NULL, NULL, 0}};' >> $@

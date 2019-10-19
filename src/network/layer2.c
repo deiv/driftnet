@@ -1,11 +1,16 @@
+/**
+ * @file layer2.c
+ *
+ * @brief Layer 2 handling.
+ * @author David Suárez
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
+ *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
+ */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include "compat.h"
-
-#include "driftnet.h"
+#include "compat/compat.h"
 
 #include <string.h>
 
@@ -40,8 +45,8 @@ struct ethhdr {
 
 #include <pcap.h>                 /* for DLT_IEEE802_11_RADIO, DLT_IEEE802_11 */
 
-#include "log.h"
-#include "packetcapture.h"          /* for datalink_info_t */
+#include "common/log.h"
+#include "pcap_engine.h"          /* for datalink_info_t */
 #include "layer2.h"
 
 /* ETH_P_PAE is named ETHERTYPE_PAE in freebsd, define it  */

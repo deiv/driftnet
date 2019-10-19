@@ -18,15 +18,24 @@ stamp-h1
 ar-lib
 driftnet
 
-# eclipse & idea files
+# eclipse files
 .autotools
 .cproject
 .project
 .settings
-.idea
 
 *.o
 *.a
 
 *~
 *.swp
+
+.idea
+cmake-build-*
+docs/
+
+#coverage files
+*.gcda
+*.gcno
+coverage.info
+coverage-docs/

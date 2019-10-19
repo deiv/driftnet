@@ -15,8 +15,7 @@
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
 
-#include "util.h"
-#include "driftnet.h"
+#include "common/util.h"
 
 #include "img.h"
 

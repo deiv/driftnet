@@ -11,7 +11,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>                      /* for fileno */
 

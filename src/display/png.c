@@ -14,15 +14,14 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdlib.h>
 #include <stdio.h>                      /* for rewind, FILE */
 
 #include <png.h>
 
-#include "log.h"
-#include "driftnet.h"
+#include "common/log.h"
 #include "img.h"
 #include "pngformat.h"
 
@@ -32,7 +31,7 @@ void png_catch_error(png_structp png_ptr, png_const_charp error_msg)
 
    if (setjmp(png_jmpbuf(png_ptr))) {
 	  log_msg(LOG_ERROR, "libpng, unrecoverable error, terminating.");
-      unexpected_exit(-1);
+      abort();
    }
 }
 

@@ -20,8 +20,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "log.h"
-#include "driftnet.h"
+#include "common/log.h"
 
 #include "uid.h"
 
@@ -36,7 +35,7 @@ void drop_root(const char *username)
 
     if (!pw) {
         log_msg(LOG_ERROR, "the specified user %s, not exists", username);
-        unexpected_exit(1);
+        abort(); /* TODO: exit ¿? */
     }
 
     if (initgroups(pw->pw_name, pw->pw_gid) != 0
@@ -48,7 +47,7 @@ void drop_root(const char *username)
             (unsigned long)pw->pw_uid,
             (unsigned long)pw->pw_gid,
             strerror(errno));
-        unexpected_exit(1);
+        abort(); /* TODO: exit ¿? */
 
     } else {
         log_msg(LOG_INFO, "dropped privileges to user %s", username);

@@ -18,12 +18,4 @@
 
 #define PROGNAME DRIFTNET_PROGNAME
 
-void unexpected_exit(int ret);
-
-/* alloc_struct S P
- * Make P point to a new struct S, initialised as if in static storage (like = {0}).
- */
-//#define alloc_struct(S, p)  do { struct S as__z = {0}; p = xmalloc(sizeof *p); *p = as__z; } while (0)
-#define alloc_struct(S, p)  p = xmalloc(sizeof *p); memset(p, 0, sizeof *p);
-
 #endif /* __DRIFTNET_H_ */

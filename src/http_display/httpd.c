@@ -11,15 +11,19 @@
     #include <config.h>
 #endif
 
+#ifdef LWS_HAVE_NEW_UV_VERSION_H
+    #include <uv/version.h>
+    #undef LWS_WITH_LIBUV
+    #undef LWS_HAVE_UV_VERSION_H
+#endif
 #include <libwebsockets.h>
 #include <string.h>
 #include <signal.h>
 
 #include "web_data.h"
-#include "log.h"
-#include "util.h"
-#include "tmpdir.h"
-#include "driftnet.h"
+#include "common/log.h"
+#include "common/util.h"
+#include "common/tmpdir.h"
 
 /*
  * Tests if we have a modern libwebsockets library (>= 3.0.0). Prior versions didn't include
@@ -201,7 +205,7 @@ static void * http_server_dispatch(void *arg)
 
     if (!context) {
         log_msg(LOG_ERROR, "http server init failed");
-        unexpected_exit (-1);
+        abort(); /* TODO: exit ¿? */
         return NULL;
     }
 
@@ -274,11 +278,11 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
             vhd->protocol = lws_get_protocol(wsi);
             vhd->vhost = lws_get_vhost(wsi);
 
-            vhd->ring = lws_ring_create(sizeof(struct msg), 8,
+            vhd->ring = lws_ring_create(sizeof(struct msg), 50,
                                         destroy_message);
             if (!vhd->ring) {
-                log_msg(LOG_ERROR, "httpd: cna't create message buffer");
-                unexpected_exit (-1);
+                log_msg(LOG_ERROR, "httpd: can't create message buffer");
+                abort();
                 return 1;
             }
             vhost_data = vhd;
