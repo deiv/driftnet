@@ -173,7 +173,7 @@ driftnet (0.1.6-1) unstable; urgency=low
 
 driftnet (0.1.4-5.2) unstable; urgency=low
 
-  * NMU 
+  * NMU
   * Build against libungif4. (closes: #166475)
 
  -- Michael Fedrowitz <michaelf@debian.org>  Sun, 24 Nov 2002 22:52:32 +0100
@@ -201,7 +201,7 @@ driftnet (0.1.4-4) unstable; urgency=low
 
 driftnet (0.1.4-3) unstable; urgency=low
 
-  * apply patch to fix int != char problem on ppc. (closes: #112925) 
+  * apply patch to fix int != char problem on ppc. (closes: #112925)
 
  -- Ian Eure <ieure@debian.org>  Fri, 12 Oct 2001 18:50:10 -0700
 
@@ -229,5 +229,3 @@ driftnet (0.1.3-1) unstable; urgency=low
   * Initial Release. (closes: #110904)
 
  -- Ian Eure <ieure@debian.org>  Mon,  3 Sep 2001 17:12:09 -0700
-
-
