@@ -1,12 +1,16 @@
- /*
- * http.h:
- * Look for HTTP requests in buffers.
+/**
+ * @file http.h
  *
- * Copyright (c) 2012 David Suárez.
- * Email: david.sephirot@gmail.com
+ * @brief Look for HTTP requests in buffers.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
  * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
+ *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
  *
  */
 
@@ -17,9 +21,9 @@
     #include <config.h>
 #endif
 
-unsigned char *find_http_req(const unsigned char *data, const size_t len,
-        unsigned char **http, size_t *httplen);
+#include <stddef.h>
 
-void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len);
+unsigned char *find_http_req(const unsigned char *data, const size_t len,
+                             unsigned char **http, size_t *httplen);
 
 #endif /* __HTTP_H__ */

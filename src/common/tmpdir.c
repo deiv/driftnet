@@ -1,18 +1,14 @@
-/*
- * tmpdir.c:
- * Temporary directory helpers.
+/**
+ * @file tmpdir.c
  *
- * Copyright (c) 2012 David Suárez.
+ * @brief Temporary directory helpers.
+ * @author David Suárez
+ * @date Sun, 21 Oct 2018 18:41:11 +0200
+ *
+ * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
  *
- * Copyright (c) 2001 Chris Lightfoot.
- * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
- *
  */
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
 
 #include "compat.h"
 
@@ -31,8 +27,6 @@
 
 #include "util.h"
 #include "log.h"
-#include "driftnet.h"
-
 #include "tmpdir.h"
 
 /*
@@ -58,7 +52,7 @@ static tmpdir_t tmpdir = {NULL, TMPDIR_USER_OWNED, 0, 1};
 
 static int is_tempfile(const char* p);
 static int count_tmpfiles(void);
-char* get_filename_fullpath(char* filename);
+char* get_filename_fullpath(const char* filename);
 
 
 void set_tmpdir(const char *dir, tmpdir_type_t type, int max_files, int preserve_files)
@@ -94,6 +88,15 @@ const char* get_sys_tmpdir(void)
 	return systmp;
 }
 
+const char* generate_new_tmp_filename(const char* extension)
+{
+    static char name[TMPNAMELEN] = {0};
+
+    sprintf(name, TEMPFILE_PREFIX"%08x%08x.%s", (unsigned int)time(NULL), rand(), extension);
+
+    return name;
+}
+
 const char* make_tmpdir(void)
 {
 	const char* sys_tmpdir;
@@ -122,7 +125,7 @@ const char* make_tmpdir(void)
 		if (tmp == NULL) {
 			xfree(template); /* useless... */
 			log_msg(LOG_ERROR, "make_tmpdir(), mkdtemp: %s", strerror(errno));
-            unexpected_exit (-1);
+            return NULL;
 		}
 
 		return tmp;
@@ -137,14 +140,11 @@ const char* make_tmpdir(void)
         log_msg(LOG_ERROR, "make_tmpdir(), internal error");
     }
 
-    unexpected_exit (-1);
-
     return NULL; /* make GCC happy */
 }
 
 /*
- * clean_tmpdir:
- *   Ensure that our temporary directory is clear of any files.
+ * Ensure that our temporary directory is clear of any files.
  */
 void clean_tmpdir(void)
 {
@@ -201,33 +201,23 @@ int check_dir_is_rw(const char* dir)
 
     if (stat(dir, &st) == -1) {
         log_msg(LOG_ERROR, "stat(%s): %s", dir, strerror(errno));
-        unexpected_exit (-1);
+        return FALSE;
 
     } else if (!S_ISDIR(st.st_mode)) {
         log_msg(LOG_ERROR, "%s: not a directory", dir);
-        unexpected_exit (-1);
+        return FALSE;
 
     /* access is unsafe but we don't really care. */
     } else if (access(dir, R_OK | W_OK) != 0) {
         log_msg(LOG_ERROR, "%s: %s", dir, strerror(errno));
-        unexpected_exit (-1);
+        return FALSE;
     }
 
-    return 0;
+    return TRUE;
 }
 
-const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len)
-{
-    static char name[TMPNAMELEN] = {0};
 
-    sprintf(name, TEMPFILE_PREFIX"%08x%08x.%s", (unsigned int)time(NULL), rand(), mname);
-
-    tmpfile_write_file(name, data, len);
-
-    return name;
-}
-
-char* get_filename_fullpath(char* filename)
+char* get_filename_fullpath(const char* filename)
 {
     char* filepath;
     int len;
@@ -242,7 +232,7 @@ char* get_filename_fullpath(char* filename)
     return filepath;
 }
 
-void tmpfile_write_file(char* filename, const unsigned char *file_data, const size_t data_len)
+void tmpfile_write_file(const char* filename, const unsigned char *file_data, const size_t data_len)
 {
     int fd1;
     char* filepath;
@@ -286,9 +276,6 @@ void tmpfile_delete_file(char* filename)
     xfree(filepath);
 }
 
-/* count_temporary_files:
- * How many of our files remain in the temporary directory? We do this a
- * maximum of once every five seconds. */
 int count_tmpfiles(void)
 {
     static int num;

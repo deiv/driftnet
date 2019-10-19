@@ -11,7 +11,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
@@ -21,14 +21,13 @@
 #endif
 #include <getopt.h>                     // for optarg, optind, optopt, etc
 
-#include "log.h"
-#include "driftnet.h"
-#include "packetcapture.h"
+#include "common/log.h"
+#include "network/network.h"
 
 #include "options.h"
 
 options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
-        NULL, NULL, NULL, m_image, NULL, FALSE, FALSE,
+        NULL, NULL, NULL, MEDIATYPE_IMAGE, NULL, FALSE, FALSE,
 #ifndef NO_DISPLAY_WINDOW
         "driftnet-",
         FALSE,
@@ -36,7 +35,7 @@ options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
         NULL, 0, 0, FALSE, 9090
 };
 
-static void validate_options(options_t* options);
+static int validate_options(options_t* options);
 static void usage(FILE *fp);
 
 /*
@@ -57,7 +56,7 @@ options_t* parse_options(int argc, char *argv[])
             case 'i':
                 if (options.dumpfile) {
                     log_msg(LOG_ERROR, "can't specify -i and -f");
-                    unexpected_exit (-1);
+                    return NULL;
                 }
                 options.interface = optarg;
                 break;
@@ -78,11 +77,11 @@ options_t* parse_options(int argc, char *argv[])
                 break;
 
             case 's':
-                options.extract_type |= m_audio;
+                options.extract_type |= MEDIATYPE_AUDIO;
                 break;
 
             case 'S':
-                options.extract_type = m_audio;
+                options.extract_type = MEDIATYPE_AUDIO;
                 break;
 
             case 'M':
@@ -98,7 +97,7 @@ options_t* parse_options(int argc, char *argv[])
                 options.max_tmpfiles = atoi(optarg);
                 if (options.max_tmpfiles <= 0) {
                     log_msg(LOG_ERROR, "`%s' does not make sense for -m", optarg);
-                    unexpected_exit (-1);
+                    return NULL;
                 }
                 break;
 
@@ -110,7 +109,7 @@ options_t* parse_options(int argc, char *argv[])
             case 'f':
                 if (options.interface) {
                     log_msg(LOG_ERROR, "can't specify -i and -f");
-                    unexpected_exit (-1);
+                    return NULL;
                 }
                 options.dumpfile = optarg;
                 break;
@@ -156,7 +155,7 @@ options_t* parse_options(int argc, char *argv[])
                 else
                     log_msg(LOG_ERROR, "unrecognised option -%c", optopt);
                 usage(stderr);
-                unexpected_exit (1);
+                return NULL;
         }
     }
 
@@ -185,21 +184,38 @@ options_t* parse_options(int argc, char *argv[])
         log_msg(LOG_INFO, "using saved image prefix `%s'", options.savedimgpfx);
 #endif
 
-    validate_options(&options);
+    if (validate_options(&options) != TRUE) {
+        return NULL;
+    }
 
     return &options;
 }
 
-void validate_options(options_t* options)
+int validate_options(options_t* options)
 {
 	if (options->list_interfaces == 1) {
-		return;
+		return TRUE;
 	}
 
     if (!options->dumpfile) {
+
+#ifdef PCAP_LIB_ON_WINDOWS
+        if (!strcmp(options->interface, ANY_INTERFACE_NAME)) {
+            log_msg(LOG_ERROR, "'-i any' on windows, is not supported");
+            return FALSE;
+        }
+#endif
         if (!options->interface) {
-            /* TODO: on linux works "any" for all interfaces */
-            options->interface = get_default_interface();
+
+#ifdef PCAP_LIB_ON_WINDOWS
+            options->interface = network_get_default_interface();
+#else
+            options->interface = ANY_INTERFACE_NAME;
+#endif
+
+            if (!options->interface) {
+                return FALSE;
+            }
         }
     }
 
@@ -212,7 +228,7 @@ void validate_options(options_t* options)
     if (options->adjunct && options->newpfx)
         log_msg(LOG_WARNING, "-x ignored -a");
 
-    if (options->mpeg_player_specified && !(options->extract_type & m_audio))
+    if (options->mpeg_player_specified && !(options->extract_type & MEDIATYPE_AUDIO))
         log_msg(LOG_WARNING, "-M only makes sense with -s");
 
     if (options->mpeg_player_specified && options->adjunct)
@@ -230,7 +246,7 @@ void validate_options(options_t* options)
     if (!options->adjunct) {
         if (options->enable_gtk_display && options->enable_http_display) {
             log_msg(LOG_ERROR, "can't specify -w and -g");
-            unexpected_exit (-1);
+            return FALSE;
         }
 
         if (!(options->enable_gtk_display || options->enable_http_display)) {
@@ -249,6 +265,7 @@ void validate_options(options_t* options)
         }
     }
 
+    return TRUE;
 }
 
 /* usage:

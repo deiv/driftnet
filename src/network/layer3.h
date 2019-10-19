@@ -1,9 +1,11 @@
-/*
- * layer3.h:
+/**
+ * @file layer3.h
  *
- * Layer3 handling.
+ * @brief Layer 3 handling.
+ * @author David Suárez
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
- * Copyright (c) 2012 David Suárez.
+ * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -11,11 +13,7 @@
 #ifndef __LAYER3_H__
 #define __LAYER3_H__
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <netinet/tcp.h>
 

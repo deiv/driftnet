@@ -1,12 +1,16 @@
-/*
- * media.h:
- * Media data handling.
+/**
+ * @file media.h
  *
- * Copyright (c) 2012 David Suárez.
- * Email: david.sephirot@gmail.com
+ * @brief Media data handling.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
  * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
+ *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
  *
  */
 
@@ -17,19 +21,64 @@
     #include <config.h>
 #endif
 
-/* define before connection.h include: circular dependency */
-#define NMEDIATYPES 5
-//struct connection;
+#include <stddef.h>
 
-#include "connection.h"
-
-/*
- * enum mediatype:
- * Bit field to characterise types of media which we can extract.
+/**
+ * @brief Number of media types we recognize.
  */
-typedef enum mediatype { m_image = 1, m_audio = 2, m_text = 4 } mediatype_t;
+#define NMEDIATYPES 5
 
-void init_mediadrv(mediatype_t media_type, int play, int enable_ws, int enable_gtk);
-void extract_media(connection c);
+/* TODO: NMEDIATYPES -> NMEDIA_DRIVERS */
+
+/**
+ * @brief Bit field to characterise types of media which we can extract.
+ */
+typedef enum mediatype {
+    MEDIATYPE_IMAGE = 1,
+    MEDIATYPE_AUDIO = 1 << 1,
+    MEDIATYPE_TEXT  = 1 << 2
+} mediatype_t;
+
+/**
+ * @brief Info for each media driver.
+ */
+typedef struct mediadrv {
+    /** Media name: gif, jpeg ... */
+    char *name;
+
+    /** Type of media @see mediatype_t */
+    enum mediatype type;
+
+    /** Function to find data for the media the driver knows about */
+    unsigned char *(*find_data)(const unsigned char *data, const size_t len, unsigned char **found, size_t *foundlen);
+
+    /** Pointer to function to dispatch this type of media; this should be initialized by the user */
+    void (*dispatch_data)(const char *mname, const unsigned char *data, const size_t len);
+} mediadrv_t;
+
+/**
+ * @brief Contains the runtime drivers for the configured capture media type
+ */
+typedef struct drivers {
+    mediatype_t type;
+    mediadrv_t** list;
+    int count;
+} drivers_t;
+
+/**
+ * @brief Obtains a list of media drivers.
+ *
+ * @param filter to this media type
+ * @return drivers list (should be freed with close_media_drivers method)
+ */
+drivers_t* get_drivers_for_mediatype(mediatype_t type);
+
+/**
+ * @brief Frees from memory the drivers list.
+ *
+ * @param drivers the list
+ * @return none
+ */
+void close_media_drivers(drivers_t* drivers);
 
 #endif /* __MEDIA_H__ */

@@ -1,31 +1,25 @@
-/*
- * media.c:
- * Extract various media types from files.
+/**
+ * @file media.c
  *
- * Copyright (c) 2012 David Suárez.
- * Email: david.sephirot@gmail.com
+ * @brief Media data handling.
+ * @author David Suárez
+ * @author Chris Lightfoot
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
  * Copyright (c) 2002 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <string.h>
 
-#include "util.h"
-#include "tmpdir.h"
-#ifndef NO_DISPLAY_WINDOW
-#include "display.h"
-#endif
-#ifndef NO_HTTP_DISPLAY
-#include "httpd.h"
-#endif
+#include "common/util.h"
+#include "common/tmpdir.h"
 #include "image.h"
 #include "audio.h"
 #include "http.h"
@@ -33,101 +27,49 @@
 
 #include "media.h"
 
-static mediatype_t extract_type;
-static int play_media;
-static int send_to_ws;
-static int send_to_gtk;
+static mediadrv_t media_drivers[NMEDIATYPES] = {
+    { "gif",  MEDIATYPE_IMAGE, find_gif_image },
+    { "jpeg", MEDIATYPE_IMAGE, find_jpeg_image },
+    { "png",  MEDIATYPE_IMAGE, find_png_image },
+    { "mpeg", MEDIATYPE_AUDIO, find_mpeg_stream },
+    { "HTTP", MEDIATYPE_TEXT,  find_http_req }
+};
 
-/*
- * dispatch_image:
- * Throw some image data at the display process.
- */
-void dispatch_image(const char *mname, const unsigned char *data, const size_t len)
+
+drivers_t* get_drivers_for_mediatype(mediatype_t type)
 {
-    const char *name;
+    drivers_t* drivers = NULL;
+    int driver_count = 0;
+    int current_drv = 0;
 
-    name = tmpfile_write_mediaffile(mname, data, len);
-    if (name == NULL)
+    for (int i = 0; i < NMEDIATYPES; ++i) {
+        if (media_drivers[i].type & type) {
+            driver_count++;
+        }
+    }
+
+    drivers = xmalloc(sizeof(drivers_t));
+
+    drivers->type = type;
+    drivers->count = driver_count;
+    drivers->list = xmalloc(sizeof(mediadrv_t*) * driver_count);
+
+    for (int i = 0; i < NMEDIATYPES; ++i) {
+        if (media_drivers[i].type & type) {
+            drivers->list[current_drv] = &media_drivers[i];
+            current_drv++;
+        }
+    }
+
+    return drivers;
+}
+
+void close_media_drivers(drivers_t* drivers)
+{
+    if (drivers == NULL) {
         return;
-
-    if (!play_media)
-        printf("%s/%s\n", get_tmpdir(), name);
-
-    else {
-#ifndef NO_DISPLAY_WINDOW
-        if (send_to_gtk) {
-            display_send_img(name, TMPNAMELEN);
-        }
-#endif /* !NO_DISPLAY_WINDOW */
-#ifndef NO_HTTP_DISPLAY
-        if (send_to_ws) {
-            ws_send_text(name);
-        }
-#endif /* !NO_HTTP_DISPLAY */
     }
-}
 
-/*
- * dispatch_mpeg_audio:
- * Throw some MPEG audio into the player process or temporary directory as
- * appropriate.
- */
-void dispatch_mpeg_audio(const char *mname, const unsigned char *data, const size_t len) {
-    mpeg_submit_chunk(data, len);
-}
-
-/* Media types we handle. */
-static struct mediadrv {
-    char *name;
-    enum mediatype type;
-    unsigned char *(*find_data)(const unsigned char *data, const size_t len, unsigned char **found, size_t *foundlen);
-    void (*dispatch_data)(const char *mname, const unsigned char *data, const size_t len);
-} driver[NMEDIATYPES] = {
-        { "gif",  m_image, find_gif_image,   dispatch_image },
-        { "jpeg", m_image, find_jpeg_image,  dispatch_image },
-        { "png",  m_image, find_png_image,   dispatch_image },
-        { "mpeg", m_audio, find_mpeg_stream, dispatch_mpeg_audio },
-        { "HTTP", m_text,  find_http_req,    dispatch_http_req }
-    };
-
-
-void init_mediadrv(mediatype_t media_type, int play, int enable_ws, int enable_gtk)
-{
-    extract_type = media_type;
-    play_media = play;
-    send_to_ws = enable_ws;
-    send_to_gtk = enable_gtk;
-}
-
-/* connection_extract_media CONNECTION TYPE
- * Attempt to extract media data of the given TYPE from CONNECTION. */
-void extract_media(connection c)
-{
-    struct datablock *b;
-
-    /* Walk through the list of blocks and try to extract media data from
-     * those which have changed. */
-    for (b = c->blocks; b; b = b->next) {
-        if (b->len > 0 && b->dirty) {
-            int i;
-            for (i = 0; i < NMEDIATYPES; ++i)
-                if (driver[i].type & extract_type) {
-                    unsigned char *ptr, *oldptr, *media;
-                    size_t mlen;
-
-                    ptr = c->data + b->off + b->moff[i];
-                    oldptr = NULL;
-
-                    while (ptr != oldptr && ptr < c->data + b->off + b->len) {
-                        oldptr = ptr;
-                        ptr = driver[i].find_data(ptr, (b->off + b->len) - (ptr - c->data), &media, &mlen);
-                        if (media && !tmpfiles_limit_reached())
-                            driver[i].dispatch_data(driver[i].name, media, mlen);
-                    }
-
-                    b->moff[i] = ptr - c->data - b->off;
-                }
-            b->dirty = 0;
-        }
-    }
+    xfree(drivers->list);
+    xfree(drivers);
 }

@@ -1,20 +1,16 @@
-/*
- * log.c:
- * Logging functions.
+/**
+ * @file log.c
  *
- * Copyright (c) 2012 David Suárez.
+ * @brief Logging functions.
+ * @author David Suárez
+ * @date Sun, 21 Oct 2018 18:41:11 +0200
+ *
+ * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
- *
- * Copyright (c) 2002 Chris Lightfoot.
- * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include "compat.h"
+#include <compat.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,8 +18,6 @@
 #include <time.h>
 
 #include "util.h"
-#include "driftnet.h"
-
 #include "log.h"
 
 static loglevel_t loglevel = LOG_WARNING;
@@ -85,7 +79,7 @@ void log_msg(loglevel_t level, const char *fmt, ...)
 		levelstring = get_levelstring(level);
 		timestring  = get_timestring();
 		
-		fprintf(out_descriptor, "%s [%s] %s: %s\n", timestring, PROGNAME, levelstring, msg);
+		fprintf(out_descriptor, "%s - %s: %s\n", timestring, levelstring, msg);
 	}
 	
     xfree(msg);
@@ -118,8 +112,8 @@ char* get_levelstring(loglevel_t level)
             return "error";
 
         default:
-            fprintf(stderr, PROGNAME ": get_level_string(): internal error");
-            unexpected_exit(-1);
+            fprintf(stderr, "get_level_string(): internal error");
+            abort();
     }
 
     return NULL;

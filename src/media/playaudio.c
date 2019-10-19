@@ -17,7 +17,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -29,9 +29,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include "util.h"
-#include "log.h"
-#include "driftnet.h"
+#include "common/util.h"
+#include "common/log.h"
 
 #include "playaudio.h"
 
@@ -39,6 +38,8 @@
 char *audio_mpeg_player = "mpg123 -";
 
 static pthread_mutex_t mpeg_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+sig_atomic_t run_player;
 
 #define m_lock      pthread_mutex_lock(&mpeg_mtx)
 #define m_unlock    pthread_mutex_unlock(&mpeg_mtx)
@@ -135,7 +136,7 @@ static void *mpeg_play(void *a) {
     /*audiochunk A;
     A = (audiochunk)a;*/
 
-    while (1) { /*(!foad) {*/
+    while (run_player) {
         audiochunk A;
 
         m_lock;
@@ -165,14 +166,14 @@ static void *mpeg_play(void *a) {
 /* mpeg_player_manager:
  * Main loop of child process which keeps an MPEG player running. */
 static void mpeg_player_manager(void) {
-    extern sig_atomic_t foad; /* in driftnet.c */
+
     struct sigaction sa = {{0}};
     pid_t mpeg_pid;
 
     sa.sa_handler = SIG_DFL;
     sigaction(SIGCHLD, &sa, NULL);
 
-    while (!foad) {
+    while (run_player) {
         time_t whenstarted;
         int st;
 
@@ -183,12 +184,12 @@ static void mpeg_player_manager(void) {
             case 0:
                 execl("/bin/sh", "/bin/sh", "-c", audio_mpeg_player, NULL);
                 log_msg(LOG_ERROR, "exec: %s", strerror(errno));
-                unexpected_exit(-1);
+                abort(); /* TODO: exit ¿? */
                 break;
 
             case -1:
                 log_msg(LOG_ERROR, "fork: %s", strerror(errno));
-                unexpected_exit(-1);  /* gah, not much we can do now. */
+                abort(); /* gah, not much we can do now. */ /* TODO: exit ¿? */
                 break;
 
             default:
@@ -207,7 +208,7 @@ static void mpeg_player_manager(void) {
             log_msg(LOG_INFO, "MPEG player killed by signal %d", WTERMSIG(st));
         /* else ?? */
 
-        if (!foad && time(NULL) - whenstarted < 5) {
+        if (run_player && time(NULL) - whenstarted < 5) {
             /* The player expired very quickly. Probably something's wrong;
              * sleep for a bit and hope the problem goes away. */
             log_msg(LOG_WARNING, "MPEG player expired after %d seconds, sleeping for a bit", (int)(time(NULL) - whenstarted));
@@ -231,17 +232,32 @@ void do_mpeg_player(void) {
 
     pipe(pp);
 
+    run_player = TRUE;
+
     mpeg_mgr_pid = fork();
+
     if (mpeg_mgr_pid == 0) {
         close(pp[1]);
         dup2(pp[0], 0); /* make pipe our standard input */
         mpeg_player_manager();
-        unexpected_exit(-1);
+        abort(); /* TODO: exit ¿? */
     } else {
         close(pp[0]);
         mpeg_fd = pp[1];
         pthread_create(&thr, NULL, mpeg_play, rd);
     }
+    /* TODO: handle error */
 
     /* away we go... */
+}
+
+void stop_mpeg_player(void)
+{
+    run_player = FALSE;
+
+    /*
+     * Pass on the signal to the MPEG player manager so that it can abort,
+     * since it won't die when the pipe into it dies.
+     */
+    kill(mpeg_mgr_pid, SIGTERM);
 }

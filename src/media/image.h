@@ -13,6 +13,8 @@
 #ifndef __IMAGE_H__
 #define __IMAGE_H__
 
+#include <stddef.h>
+
 unsigned char *find_gif_image(const unsigned char *data, const size_t len,
         unsigned char **gifdata, size_t *giflen);
 

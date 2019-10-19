@@ -12,7 +12,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #ifdef __FreeBSD__
 #include <sys/stat.h>
@@ -24,9 +24,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "log.h"
-#include "tmpdir.h"
-#include "util.h"
+#include "common/log.h"
+#include "common/tmpdir.h"
+#include "common/util.h"
 
 /*
  * XXX: create the pid in tmp. To create on '/var/run' we need proper permisions.

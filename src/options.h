@@ -14,7 +14,7 @@
     #include <config.h>
 #endif
 
-#include "media.h" /* for enum mediatype */
+#include "media/media.h" /* for enum mediatype */
 
 typedef struct {
     const char *tmpdir;

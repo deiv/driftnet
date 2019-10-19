@@ -1,6 +1,9 @@
-/*
- * compat.h:
- * Try to make things more portable.
+/**
+ * @file compat.h
+ *
+ * @brief Try to make things more portable
+ * @author David Suárez
+ * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
  * Copyright (c) 2018 David Suárez.
  * Email: david.sephirot@gmail.com
@@ -27,7 +30,6 @@
 #else
     #error "Not a valid integer types include found"
 #endif
-
 
 
 #define FALSE 0

@@ -11,7 +11,7 @@
     #include <config.h>
 #endif
 
-#include "compat.h"
+#include "compat/compat.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -26,11 +26,10 @@
 
 #include <sys/stat.h>
 
-#include "util.h"
-#include "log.h"
-#include "tmpdir.h"
+#include "common/util.h"
+#include "common/log.h"
+#include "common/tmpdir.h"
 #include "img.h"
-#include "driftnet.h"
 
 #include "display.h"
 
@@ -81,12 +80,12 @@ void do_image_display(char *img_prefix, int beep)
             beep_on_image   = beep;
             savedimg_prefix = img_prefix;
             do_gtkdisplay();
-            unexpected_exit (-1); /* not reached */
+            abort(); /* TODO: exit ¿? */ /* not reached */
 
         case -1:
             log_msg(LOG_ERROR, "fork failed, reason: %s", strerror(errno));
             //log_msg(LOG_FATAL, "fork failed");
-            unexpected_exit (-1);
+            abort(); /* TODO: exit ¿? */
 
         default:
             close (pfd[0]);
@@ -109,9 +108,7 @@ void make_backing_image() {
     img I;
     I = img_new_blank(width, height);
     img_alloc(I);
-/*    wry += height - backing_image->height;
-    if (wry < BORDER || wry > height - BORDER)
-        wry = height - BORDER;*/
+
     if (backing_image) {
         int w2, h2;
         struct imgrect *ir;

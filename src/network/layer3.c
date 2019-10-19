@@ -1,11 +1,16 @@
+/**
+ * @file layer3.c
+ *
+ * @brief Layer 3 handling.
+ * @author David Suárez
+ * @date Sun, 28 Oct 2018 16:14:56 +0100
+ *
+ * Copyright (c) 2018 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
+ */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include "compat.h"
-
-#include "driftnet.h"
+#include "compat/compat.h"
 
 #include <string.h>
 #include <assert.h>
@@ -19,7 +24,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 
-#include "log.h"
+#include "common/log.h"
 #include "layer3.h"
 
 int layer3_find_tcp(const u_char *pkt, uint8_t nextproto, int * offset,

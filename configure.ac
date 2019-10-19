@@ -8,10 +8,10 @@ AC_INIT([driftnet], [1.2.0], [david.sephirot@gmail.com])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/driftnet.c])
-AC_CONFIG_HEADERS(src/[config.h])
+AC_CONFIG_HEADERS(src/[compat/config.h])
 
 #
 # Detect then host and target system
@@ -104,6 +104,7 @@ if test "x$build_windows" = xyes; then
 		[pcap_open_live],
 		[],
 		[AC_MSG_ERROR([cannot find lib wpcap])] )
+    AC_DEFINE([PCAP_LIB_ON_WINDOWS], [1], [Compile using linwinpcap library])
 else
 	AC_CHECK_LIB([pcap],
 		[pcap_open_live],
@@ -174,7 +175,22 @@ if test "x$enable_http_display" = xyes; then
         [lws_create_context],
         [],
         [AC_MSG_ERROR([cannot find lib websockets])] )
+
+    AC_CHECK_HEADER([uv/version.h],
+        [AC_DEFINE([LWS_HAVE_NEW_UV_VERSION_H], [1], [New libuv version header file])],
+        [],
+        [])
+
+     WS_CFLAGS="$(${PKG_CONFIG} --cflags libwebsockets)"
+     AC_SUBST(WS_CFLAGS)
 fi
+
+
+AC_CHECK_LIB([cmocka],
+    _cmocka_run_group_tests,
+    [enable_tests=yes],
+    [AC_MSG_WARN([cannot find lib cmocka, the testsuite will not run])])
+AM_CONDITIONAL(ENABLE_TESTS, test "x$enable_tests" = xyes)
 
 #
 # Checks for header files.
@@ -238,7 +254,14 @@ if test x$sleep_func = xno; then
         [AC_MSG_ERROR([cannot find any usable sleep function])])
 fi
 
-AC_CONFIG_FILES([Makefile src/Makefile src/media/Makefile src/display/Makefile src/http_display/Makefile])
+AC_CONFIG_FILES([Makefile
+                 src/Makefile
+                 src/common/Makefile
+                 src/network/Makefile
+                 src/media/Makefile
+                 src/display/Makefile
+                 src/http_display/Makefile])
+
 AC_OUTPUT
 
 echo \
