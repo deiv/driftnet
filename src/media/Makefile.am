@@ -32,6 +32,5 @@ test_unit_CFLAGS += -D__FAVOR_BSD -D_BSD_SOURCE -D_DEFAULT_SOURCE # Get BSDish d
 test_unit_CFLAGS += -DDRIFTNET_VERSION=\"$(VERSION)\"
 test_unit_CFLAGS += -DDRIFTNET_PROGNAME=\"$(PACKAGE)\"
 #test_unit_CFLAGS += -DNO_HTTP_DISPLAY -DNO_DISPLAY_WINDOW
-test_unit_LDFLAGS = -lcmocka
-test_unit_LDADD = libmedia.a ../common/libcommon.a
+test_unit_LDADD = libmedia.a ../common/libcommon.a -lcmocka
 endif
