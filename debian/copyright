@@ -6,7 +6,7 @@ Files: *
 Copyright: 2012-2018 David Suarez <david.sephirot@gmail.com>
            2001-2004 Chris Lightfoot <chris@ex-parrot.com>
 License: GPL-2+
- 
+
 Files: debian/*
 Copyright: 2013-2018, David Suarez <david.sephirot@gmail.com>
            2006, Christoph Haas <haas@debian.org>
@@ -29,4 +29,3 @@ License: GPL-2+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
-
