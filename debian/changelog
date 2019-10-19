@@ -1,10 +1,10 @@
-driftnet (1.2.0-1) experimental; urgency=medium
+driftnet (1.2.1-1) experimental; urgency=medium
 
   [ Jelmer Vernooĳ ]
   * Use secure URI in Vcs control header.
 
   [ David Suárez ]
-  * Imported Upstream version 1.2.0
+  * Imported Upstream version 1.2.1
   * Remove menu file (a desktop one is provided)
   * Build with dh-autoreconf
   * Add libwebsockets as build depend
@@ -14,7 +14,7 @@ driftnet (1.2.0-1) experimental; urgency=medium
   * d/driftnet.docs: sync with README update to markdown format
   * Remove obsolete build depends.
 
- -- David Suarez <david.sephirot@gmail.com>  Sun, 14 Oct 2018 17:52:21 +0200
+ -- David Suarez <david.sephirot@gmail.com>  Sat, 19 Oct 2019 17:59:25 +0200
 
 driftnet (1.1.5-1) unstable; urgency=medium
 
