@@ -14,12 +14,3 @@
 
 override_dh_install:
 	dh_install debian/driftnet.desktop /usr/share/applications
-
-DEB_DEBIAN_DIR=$(dir $(firstword $(MAKEFILE_LIST)))
-SWVERSION=$(shell dpkg-parsechangelog -l$(DEB_DEBIAN_DIR)/changelog \
-              | sed -rne 's,^Version: (.*)(\-[0-9])?,\1,p')
-TARFILE=driftnet_$(SWVERSION).orig.tar.bz2
-TARBALL=https://github.com/deiv/driftnet/archive/upstream/$(SWVERSION).tar.gz
-
-get-orig-source:
-	wget $(TARBALL) -O $(TARFILE)
