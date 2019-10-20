@@ -5,16 +5,33 @@ driftnet (1.2.1-1) experimental; urgency=medium
 
   [ David Suárez ]
   * Imported Upstream version 1.2.1
-  * Remove menu file (a desktop one is provided)
-  * Build with dh-autoreconf
-  * Add libwebsockets as build depend
-  * d/copyright: update copyright years
-  * d/control: change priority to optional
-  * d/control: update standards version; no changes needed
-  * d/driftnet.docs: sync with README update to markdown format
-  * Remove obsolete build depends.
+  * Remove menu file (a desktop one is provided).
+  * Build with dh-autoreconf.
+  * d/copyright:
+    - Update copyright years.
+    - Use secure protocol for format URL.
+    - Wrap and sort.
+    - Add 'Upstream-Contact' field.
+  * d/control:
+    - Change priority to optional.
+    - Remove obsolete build depends.
+    - Add libwebsockets as build depend.
+    - Update standards version; no changes needed.
+    - Remove useless dh-autoreconf build depend.
+    - Wrap and sort.
+    - Add libcmocka as build depends.
+    - Add field 'Rules-Requires-Root'.
+  * d/driftnet.docs: sync with README update to markdown format.
+  * Remove 'single-debian-patch' option.
+  * d/missing-sources:
+    - Add sources for jquery.js.
+    - Add sources for lightbox.min.js.
+  * d/changelog: remove trailing whitespace.
+  * Bump debhelper from 9 to 12.
+  * d/rules: remove 'get-orig-source' rule.
+  * Add upstream/metadata.
 
- -- David Suarez <david.sephirot@gmail.com>  Sat, 19 Oct 2019 17:59:25 +0200
+ -- David Suarez <david.sephirot@gmail.com>  Sun, 20 Oct 2019 19:36:05 +0200
 
 driftnet (1.1.5-1) unstable; urgency=medium
 
