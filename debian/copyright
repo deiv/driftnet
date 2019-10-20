@@ -3,12 +3,12 @@ Upstream-Name: driftnet
 Source: https://github.com/deiv/driftnet
 
 Files: *
-Copyright: 2012-2018 David Suarez <david.sephirot@gmail.com>
+Copyright: 2012-2019 David Suarez <david.sephirot@gmail.com>
            2001-2004 Chris Lightfoot <chris@ex-parrot.com>
 License: GPL-2+
 
 Files: debian/*
-Copyright: 2013-2018, David Suarez <david.sephirot@gmail.com>
+Copyright: 2013-2019, David Suarez <david.sephirot@gmail.com>
            2006, Christoph Haas <haas@debian.org>
            2001, Ian Eure <ieure@debian.org>
 License: GPL-2+
