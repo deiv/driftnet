@@ -1,5 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: driftnet
+Upstream-Contact: David Suarez <david.sephirot@gmail.com>
 Source: https://github.com/deiv/driftnet
 
 Files: *
