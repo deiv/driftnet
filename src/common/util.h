@@ -6,7 +6,7 @@
  * @author Chris Lightfoot
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2018-2019 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  * Copyright (c) 2003 Chris Lightfoot.
@@ -82,6 +82,23 @@ unsigned char *memstr(const unsigned char *haystack, const size_t hlen, const un
  * @param nanosecs nanosecs to sleep
  */
 void xnanosleep(long nanosecs);
+
+/**
+ * @brief Composes a file path from a base path and a filename.
+ *
+ * @param base the base path
+ * @param filename the filename
+ * @return the joined file path
+ */
+char* compose_path(const char* base, const char* filename);
+
+/**
+ * @brief Extract the filename from a pathname.
+ *
+ * @param pathname the pathname
+ * @return a pointer to the beginning of filename in pathname; NULL if not found
+ */
+const char* xbasename(const char* pathname);
 
 /**
  * @brief Make P point to a new struct S, initialised as if in static storage (like = {0}).

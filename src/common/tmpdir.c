@@ -5,7 +5,7 @@
  * @author David Suárez
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2018-2019 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -219,17 +219,7 @@ int check_dir_is_rw(const char* dir)
 
 char* get_filename_fullpath(const char* filename)
 {
-    char* filepath;
-    int len;
-
-    len  = strlen(tmpdir.path);
-    len += strlen(filename);
-    len += 2; /* for / and null */
-    filepath = xmalloc(len);
-
-    snprintf(filepath, len, "%s/%s", tmpdir.path, filename);
-
-    return filepath;
+    return compose_path(tmpdir.path, filename);
 }
 
 void tmpfile_write_file(const char* filename, const unsigned char *file_data, const size_t data_len)
@@ -266,7 +256,41 @@ void tmpfile_write_file(const char* filename, const unsigned char *file_data, co
     close(fd1);
 }
 
-void tmpfile_delete_file(char* filename)
+int tmpfile_link_file(const char* src_file_path)
+{
+    const char* dest_link_name = xbasename(src_file_path);
+
+    if (dest_link_name == NULL) {
+        log_msg(LOG_ERROR, "tmpfile_link_file: can't get basename from the file path '%s'", src_file_path);
+        return FALSE;
+    }
+
+    return tmpfile_link_file_to_dest(src_file_path, dest_link_name);
+}
+
+int tmpfile_link_file_to_dest(const char* src_file_path, const char *dest_link_name)
+{
+    int ret;
+    char* absolute_path = get_filename_fullpath(dest_link_name);
+
+    ret = symlink(src_file_path, absolute_path);
+
+    xfree(absolute_path);
+
+    if (ret != 0) {
+        log_msg(LOG_ERROR, "can't create link from '%s' to '%s': %s", src_file_path, absolute_path, strerror(ret));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+void tmpfile_unlink_file(const char *dest_link_name)
+{
+    tmpfile_delete_file(dest_link_name);
+}
+
+void tmpfile_delete_file(const char* filename)
 {
     char* filepath;
 
