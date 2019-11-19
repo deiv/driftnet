@@ -63,6 +63,23 @@
             text-decoration: none;
             font-weight: bold;
         }
+
+        /*
+         * Rewrite paths to lightbox2 library images to not depend on the filesystem structure.
+         * TODO: maybe, adapt the code and build system to resembles the former structure ?!
+         */
+        .lb-nav a.lb-prev {
+            background: url(prev.png) left 48% no-repeat;
+        }
+        .lb-nav a.lb-next {
+            background: url(next.png) right 48% no-repeat;
+        }
+        .lb-data .lb-close {
+            background: url(close.png) top right no-repeat;
+        }
+        .lb-cancel {
+            background: url(loading.gif) no-repeat;
+        }
     </style>
 </head>
 
