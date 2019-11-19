@@ -2,11 +2,12 @@
  * @file util.c
  *
  * @brief Various wrappers around some utility functions.
+ *
  * @author David Suárez
  * @author Chris Lightfoot
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2018-2019 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  * Copyright (c) 2003 Chris Lightfoot.
@@ -114,4 +115,38 @@ void xnanosleep(long nanosecs)
     /* sleep() can't help ... */
     #error cannot find an usable sleep function
 #endif
+}
+
+char* compose_path(const char* base, const char* filename)
+{
+    char* filepath;
+    int len;
+
+    len  = strlen(base);
+    len += strlen(filename);
+    len += 2; /* for / and null */
+    filepath = xmalloc(len);
+
+    snprintf(filepath, len, "%s/%s", base, filename);
+
+    return filepath;
+}
+
+const char* xbasename(const char* pathname)
+{
+    if (pathname == NULL) {
+        return NULL;
+    }
+
+    char* base = strrchr(pathname, '/');
+
+    if (base == NULL) {
+        return NULL;
+    }
+
+    if (*(base+1) == 0) {
+        return NULL;
+    }
+
+    return base + 1;
 }

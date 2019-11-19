@@ -1,37 +1,28 @@
 
+STATIC_WEB_FILES = $(shell find static_web/ -not -type d -name '*')
+
 noinst_LIBRARIES = libhttpdisplay.a
 libhttpdisplay_a_SOURCES = httpd.c httpd.h web_data.c web_data.h
+
+htmldir = $(pkgdatadir)/static-html
+dist_html_DATA = $(STATIC_WEB_FILES)
 
 AM_CFLAGS  = -Wall
 AM_CFLAGS += @WS_CFLAGS@
 AM_CFLAGS += -I$(srcdir)/../
-
-STATIC_WEB_FILES = $(wildcard static_web/*)
+AM_CFLAGS += -DSTATIC_WEB_DIR=\"$(htmldir)\"
 
 web_data.c: $(STATIC_WEB_FILES)
 	rm -f '$@'
 
 	echo '#include "web_data.h"' >> $@
-	echo '#include <stddef.h>' >> $@
 
+	echo 'char* static_files[] = {' >> $@
 	for f in $^ ; do \
-		printf 'unsigned char %s' `basename $$f | sed 's@[-. ]@_@g'` >> $@; \
-		echo '[] = {' >> $@; \
-		cat $$f | xxd -i >> $@; \
-		echo '};' >> $@; \
-	done
-
-	echo 'web_static_file_t static_content[] = {' >> $@
-	for f in $^ ; do \
-		echo '{' >> $@; \
 		basename $$f | sed 's@\(.*\)@"\1",@g' >> $@; \
-		basename $$f | sed 's@[-. ]@_@g' >> $@; \
-		echo ',' >> $@; \
-		cat $$f | wc -c >> $@; \
-		echo '},' >> $@ ;\
 	done
 
-	echo '{NULL, NULL, 0}};' >> $@
+	echo '0};' >> $@
 
 static-web: web_data.c
 

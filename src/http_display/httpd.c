@@ -2,20 +2,13 @@
  * httpd.c:
  * HTTP server.
  *
- * Copyright (c) 2012-2018 David Suárez.
+ * Copyright (c) 2012-2019 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
+#include "compat.h"
 
-#ifdef LWS_HAVE_NEW_UV_VERSION_H
-    #include <uv/version.h>
-    #undef LWS_WITH_LIBUV
-    #undef LWS_HAVE_UV_VERSION_H
-#endif
 #include <libwebsockets.h>
 #include <string.h>
 #include <signal.h>
@@ -140,21 +133,32 @@ struct per_vhost_data *vhost_data;          /* our vhost */
 
 void write_static_resources()
 {
-    web_static_file_t* static_file = &static_content[0];
+    int idx = 0;
+    char* static_file = static_files[idx];
 
-    while (static_file->size != 0) {
-        tmpfile_write_file(static_file->name, static_file->data, static_file->size);
-        static_file++;
+    while (static_file != NULL) {
+        char* static_source_path = compose_path(STATIC_WEB_DIRECTORY, static_file);
+
+        if (tmpfile_link_file(static_source_path) == FALSE) {
+            log_msg(LOG_ERROR, "httpd: we can't link the neccesary static resource");
+            exit(1);
+        }
+
+        xfree(static_source_path);
+        idx += 1;
+        static_file = static_files[idx];
     }
 }
 
 void delete_static_resources()
 {
-    web_static_file_t* static_file = &static_content[0];
+    int idx = 0;
+    char* static_file = static_files[idx];
 
-    while (static_file->size != 0) {
-        tmpfile_delete_file(static_file->name);
-        static_file++;
+    while (static_file != NULL) {
+        tmpfile_unlink_file(static_file);
+        idx += 1;
+        static_file = static_files[idx];
     }
 }
 
@@ -190,9 +194,6 @@ static void * http_server_dispatch(void *arg)
         { NULL, NULL } // sentinel
     };
 
-
-    write_static_resources();
-
     memset(&info, 0, sizeof info);
 
     info.port = server_port;
@@ -216,8 +217,6 @@ static void * http_server_dispatch(void *arg)
     }
 
     lws_context_destroy(context);
-
-    delete_static_resources();
 
     return NULL;
 }
@@ -343,6 +342,8 @@ void init_http_display(const char* server_root, int port)
 {
     server_port = port;
 
+    write_static_resources();
+
     pthread_create(&server_thread, NULL, http_server_dispatch, (void*)server_root);
 }
 
@@ -350,6 +351,12 @@ void stop_http_display()
 {
     interrupted = 1;
 
+    /*
+     * XXX: TODO: not cancel on first terminate signal (crtl-c), lets the websocket library clean up itselfs (it takes
+     *              some seconds). Force cancel on second or more signals.
+     */
     pthread_cancel(server_thread);
     pthread_join(server_thread, NULL);
+
+    delete_static_resources();
 }

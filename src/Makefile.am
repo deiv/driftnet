@@ -1,7 +1,7 @@
 
 bin_PROGRAMS = driftnet
 
-driftnet_SOURCES = compat.h driftnet.c driftnet.h \
+driftnet_SOURCES = compat/compat.h driftnet.c driftnet.h \
 				   options.c options.h \
 				   pid.c pid.h uid.c uid.h
 

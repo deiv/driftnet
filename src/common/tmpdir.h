@@ -5,7 +5,7 @@
  * @author David Suárez
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2018-2019 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -108,6 +108,30 @@ void tmpfile_write_file(const char* filename, const unsigned char *file_data, co
  *
  * @param filename filename to delete
  */
-void tmpfile_delete_file(char* filename);
+void tmpfile_delete_file(const char* filename);
+
+/**
+ * @brief Links a file to the temporary directory (the link name is derived from the source filename).
+ *
+ * @param src_file_path file path of the source file to link
+ * @return TRUE on success; FALSE on error
+ */
+int tmpfile_link_file(const char* src_file_path);
+
+/**
+ * @brief Links a file to the temporary directory.
+ *
+ * @param src_file_path file path of the source file to link
+ * @param dest_link_name destination link name
+ * @return TRUE on success; FALSE on error
+ */
+int tmpfile_link_file_to_dest(const char* src_file_path, const char *dest_link_name);
+
+/**
+ * @brief Unlinks a soft link from the temp dir.
+ *
+ * @param dest_link_name link filename to delete
+ */
+void tmpfile_unlink_file(const char *dest_link_name);
 
 #endif /* __TMPDIR_H__ */
