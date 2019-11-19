@@ -1,8 +1,8 @@
 /*
  * web_data.h:
- * static content files.
+ * static content files list.
  *
- * Copyright (c) 2012-2018 David Suárez.
+ * Copyright (c) 2012-2019 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -10,12 +10,8 @@
 #ifndef __WEB_DATA_H_
 #define __WEB_DATA_H_
 
-typedef struct web_static_file_t {
-    char* name;
-    unsigned char *data;
-    unsigned int size;
-} web_static_file_t;
+#define STATIC_WEB_DIRECTORY STATIC_WEB_DIR
 
-extern web_static_file_t static_content[];
+extern char* static_files[];
 
 #endif /* __WEB_DATA_H_ */

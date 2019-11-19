@@ -3,7 +3,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([driftnet], [1.2.0], [david.sephirot@gmail.com])
+AC_INIT([driftnet], [1.3.0], [david.sephirot@gmail.com])
 
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -177,7 +177,7 @@ if test "x$enable_http_display" = xyes; then
         [AC_MSG_ERROR([cannot find lib websockets])] )
 
     AC_CHECK_HEADER([uv/version.h],
-        [AC_DEFINE([LWS_HAVE_NEW_UV_VERSION_H], [1], [New libuv version header file])],
+        [],
         [],
         [])
 
