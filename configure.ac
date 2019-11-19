@@ -177,7 +177,7 @@ if test "x$enable_http_display" = xyes; then
         [AC_MSG_ERROR([cannot find lib websockets])] )
 
     AC_CHECK_HEADER([uv/version.h],
-        [AC_DEFINE([LWS_HAVE_NEW_UV_VERSION_H], [1], [New libuv version header file])],
+        [],
         [],
         [])
 

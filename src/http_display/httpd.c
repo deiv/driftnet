@@ -11,11 +11,6 @@
     #include <config.h>
 #endif
 
-#ifdef LWS_HAVE_NEW_UV_VERSION_H
-    #include <uv/version.h>
-    #undef LWS_WITH_LIBUV
-    #undef LWS_HAVE_UV_VERSION_H
-#endif
 #include <libwebsockets.h>
 #include <string.h>
 #include <signal.h>
