@@ -38,6 +38,41 @@ driftnet (1.3.0+dfsg-1) experimental; urgency=medium
 
  -- David Suarez <david.sephirot@gmail.com>  Tue, 19 Nov 2019 17:09:25 +0100
 
+driftnet (1.2.1-1) experimental; urgency=medium
+
+  [ Jelmer Vernooĳ ]
+  * Use secure URI in Vcs control header.
+
+  [ David Suárez ]
+  * Imported Upstream version 1.2.1
+  * Remove menu file (a desktop one is provided).
+  * Build with dh-autoreconf.
+  * d/copyright:
+    - Update copyright years.
+    - Use secure protocol for format URL.
+    - Wrap and sort.
+    - Add 'Upstream-Contact' field.
+  * d/control:
+    - Change priority to optional.
+    - Remove obsolete build depends.
+    - Add libwebsockets as build depend.
+    - Update standards version; no changes needed.
+    - Remove useless dh-autoreconf build depend.
+    - Wrap and sort.
+    - Add libcmocka as build depends.
+    - Add field 'Rules-Requires-Root'.
+  * d/driftnet.docs: sync with README update to markdown format.
+  * Remove 'single-debian-patch' option.
+  * d/missing-sources:
+    - Add sources for jquery.js.
+    - Add sources for lightbox.min.js.
+  * d/changelog: remove trailing whitespace.
+  * Bump debhelper from 9 to 12.
+  * d/rules: remove 'get-orig-source' rule.
+  * Add upstream/metadata.
+
+ -- David Suarez <david.sephirot@gmail.com>  Sun, 20 Oct 2019 19:36:05 +0200
+
 driftnet (1.1.5-1) unstable; urgency=medium
 
   * Imported Upstream version 1.1.5
