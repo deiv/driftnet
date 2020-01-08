@@ -1,3 +1,9 @@
+driftnet (1.3.0+dfsg-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- David Suarez <david.sephirot@gmail.com>  Wed, 08 Jan 2020 18:25:00 +0100
+
 driftnet (1.3.0+dfsg-1) experimental; urgency=medium
 
   * Imported Upstream version 1.3.0
