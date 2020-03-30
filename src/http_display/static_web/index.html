@@ -27,14 +27,19 @@
             font-size: 18px;
             font-weight: bold;
         }
-        #img-container { min-height: 90vh; }
+        #img-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-gap: 0.6em;
+            margin: 0.4em;
+        }
         #img-container img {
-            max-width: 200px;
+            max-width: 100%;
+            margin: auto;
+            display: block;
         }
         .img-wrap {
-            display: inline-block;
             position: relative;
-            margin: 0.6em;
         }
         .close-image {
             width: 12px;
