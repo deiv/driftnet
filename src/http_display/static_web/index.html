@@ -33,20 +33,27 @@
             grid-gap: 0.6em;
             margin: 0.4em;
         }
-        #img-container img {
-            max-width: 100%;
-            margin: auto;
-            display: block;
-        }
-        .img-wrap {
+        #img-container a {
             position: relative;
         }
+        #img-container img {
+            max-width: 100%;
+        }
+        .img-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         .close-image {
+            display: none;
             width: 12px;
             position: absolute;
             top: 0;
             right: 0;
             cursor: pointer;
+        }
+        #img-container a:hover .close-image {
+            display: block;
         }
         .close-image:hover {
             width: 14px;
@@ -136,9 +143,9 @@
             $('#img-container').append(
                 '<div class="img-wrap" src="' +
                 msg.data +
-                '"><img class="close-image" src="close.png" title="close image"/><a href="' +
+                '"><a href="' +
                 msg.data +
-                '" data-lightbox="driftnet"><img class="dritfnet-image" id="' +
+                '" data-lightbox="driftnet"><img class="close-image" src="close.png" title="close image"/><img class="dritfnet-image" id="' +
                 msg.data +
                 '" src="'+
                 msg.data +
@@ -146,7 +153,8 @@
 
             $(".close-image").click(function(event){
                 event.stopPropagation();
-                $( this ).parent().remove();
+                $( this ).parent().parent().remove();
+                return false;
             });
 
         };
