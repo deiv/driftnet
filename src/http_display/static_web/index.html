@@ -204,11 +204,8 @@
                 msg.data +
                 '" /></div></div>');
 
-            $(".close-image").click(function(event){
-                event.stopPropagation();
-                $( this ).parent().parent().remove();
-                return false;
-            });
+            const closeImages = document.querySelectorAll(".close-image");
+            closeImages.forEach(closeImage => closeImage.addEventListener("click", removeImage));
 
             const thumbs = document.querySelectorAll(".dritfnet-image");
             thumbs.forEach(img => img.addEventListener("click", imgActivate));
@@ -289,6 +286,12 @@
                 changeGalleryImage(currentImage.src);
             }
         }
+    }
+
+    function removeImage(e) {
+        e.stopPropagation();
+
+        e.target.parentElement.parentElement.remove();
     }
 </script>
 
