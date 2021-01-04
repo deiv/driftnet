@@ -5,7 +5,7 @@ Driftnet
 [![release](https://img.shields.io/github/release/deiv/driftnet.svg)](https://github.com/deiv/driftnet/releases)
 [![version](https://img.shields.io/github/release-date/deiv/driftnet.svg)](https://github.com/deiv/driftnet/releases)
 [![license](https://img.shields.io/github/license/deiv/driftnet.svg)](https://github.com/deiv/driftnet/blob/master/COPYING)
-[![IDE](https://img.shields.io/badge/IDE-CLion-00AA00.svg)](https://www.jetbrains.com/clion/)
+[![IDE](https://img.shields.io/badge/IDE-CLion-00AA00.svg)](https://www.jetbrains.com/clion/?from=driftnet)
 [![Refactored](https://img.shields.io/badge/Refactored%20with-Structure101-8A2BE2.svg)](https://structure101.com/)
 [![CircleCI](https://img.shields.io/circleci/project/github/deiv/driftnet/master.svg?colorB=CEC109)](https://circleci.com/gh/deiv/driftnet/tree/master)
 [![codecov](https://codecov.io/gh/deiv/driftnet/branch/master/graph/badge.svg)](https://codecov.io/gh/deiv/driftnet)
