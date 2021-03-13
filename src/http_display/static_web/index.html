@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <title>Drifnet Display</title>
 
-
-    <script src="jquery.min.js" ></script>
     <style>
         body {
             margin: 0;
@@ -196,12 +194,22 @@
             console.log("websocket connection opened");
         };
         ws.onmessage =function got_packet(msg) {
-            $('#img-container').append(
-                '<div class="img-wrap"><div><span class="close-image" title="close image"/><img class="dritfnet-image" id="' +
-                msg.data +
-                '" src="'+
-                msg.data +
-                '" /></div></div>');
+            let imgWrap = document.createElement("div");
+            let imgContainer = document.createElement("div");
+            let closeButton = document.createElement("span");
+            let img = document.createElement("img");
+
+            imgWrap.className = "img-wrap";
+            closeButton.className = "close-image";
+            closeButton.title = "close image";
+            img.className = "dritfnet-image";
+            img.src = msg.data;
+
+            imgContainer.append(closeButton);
+            imgContainer.append(img);
+            imgWrap.append(imgContainer);
+
+            document.querySelector("#img-container").append(imgWrap);
 
             const closeImages = document.querySelectorAll(".close-image");
             closeImages.forEach(closeImage => closeImage.addEventListener("click", removeImage));
