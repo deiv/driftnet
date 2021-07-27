@@ -1,6 +1,6 @@
 
 noinst_LIBRARIES = libdisplay.a
-libdisplay_a_SOURCES = display.c display.h img.c img.h gif.c jpeg.c png.c
+libdisplay_a_SOURCES = display.c display.h img.c img.h gif.c jpeg.c png.c webp.c
 
 AM_CFLAGS  = -Wall
 AM_CFLAGS += @GTK_CFLAGS@

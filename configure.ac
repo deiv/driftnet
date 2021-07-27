@@ -164,6 +164,11 @@ if test "x$enable_display" = xyes; then
     [],
     [AC_MSG_ERROR([cannot find lib png])] )
 
+    AC_CHECK_LIB([webp],
+    [WebPDecodeRGBInto],
+    [],
+    [AC_MSG_ERROR([cannot find lib webp])] )
+
     AC_CHECK_LIB([jpeg],
     [jpeg_read_header],
     [],

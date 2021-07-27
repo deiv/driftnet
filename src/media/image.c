@@ -339,6 +339,75 @@ unsigned char *find_png_image(const unsigned char *data, const size_t len, unsig
     return png_eoi;
 }
 
+typedef struct {
+    unsigned char riff[4];// = {'R', 'I', 'F', 'F' };
+    uint32_t size;
+    unsigned char webp[4];// = {'W', 'E', 'B', 'P' };
+    unsigned const char vp8[3];// = {'V', 'P', '8' };
+    unsigned char lossy_or_lossless;
+    uint32_t size_padded;
+
+//    char frame[];
+//    char padding[];
+} webp_header_t;
+
+/* find_webp_image DATA LEN WEBPDATA WEBPLEN
+ * Look for WEBP images in LEN bytes buffer DATA. */
+unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsigned char **webpdata, size_t *webplen) {
+    webp_header_t header;
+    unsigned char *hdr_begin;
+
+    const unsigned char riff[] = {'R', 'I', 'F', 'F' };
+
+    // Could have these together, but meh
+    const unsigned char webp_sig[] = {'W', 'E', 'B', 'P' };
+    const unsigned char vp8_sig[] = {'V', 'P', '8' };
+
+    if (len < sizeof(header)) {
+        return (unsigned char*)data;
+    }
+
+    hdr_begin = memstr(data, len, riff, sizeof(riff));
+    if (!hdr_begin) {
+        return (unsigned char*)data;
+    }
+
+    // Not enough data left for the entire header
+    if ((ssize_t)(hdr_begin - data) < len - sizeof(header)) {
+        return (unsigned char*)data;
+    }
+
+    memcpy(&header, hdr_begin, sizeof(header));
+
+    header.size = ntohl(header.size); // ? idk
+    header.size_padded = ntohl(header.size_padded);
+
+    if (memcmp(header.webp, webp_sig, sizeof(webp_sig)) != 0) {
+        return (unsigned char*)data;
+    }
+    if (memcmp(header.vp8, vp8_sig, sizeof(vp8_sig)) != 0) {
+        return (unsigned char*)data;
+    }
+
+    if (header.size > header.size_padded) {
+        return (unsigned char*)data;
+    }
+
+    if (header.size_padded > len) {
+        return (unsigned char*)data;
+    }
+
+    // Max 10MB?
+    if (header.size > 1024u * 1024u * 10u) {
+        return (unsigned char*)data;
+    }
+
+    *webpdata = hdr_begin;
+    *webplen = header.size + 8;
+
+    return (unsigned char*)data + header.size_padded;
+}
+
 
 #if 0
 #include <unistd.h>
