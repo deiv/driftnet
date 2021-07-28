@@ -41,7 +41,14 @@ char* png_image_list[] = {
 };
 
 char* webp_image_list[] = {
-    "tests/resources/Johnrogershousemay2020.webp"
+    // ffmpeg's test file, intentionally corrupt (missing some bytes at the end)
+    // Could be decoded, but meh for now
+    //"tests/resources/bigbuckbunny-title.webp",
+    // Demo file from wikipedia
+    "tests/resources/Johnrogershousemay2020.webp",
+    // From webp's official doc
+    "tests/resources/alpha.webp",
+    "tests/resources/lossless.webp"
 };
 
 char* ico_image_list[] = {
@@ -230,7 +237,7 @@ void test_correct_media_drivers_for_mediatype_count()
     image_drivers = get_drivers_for_mediatype(MEDIATYPE_IMAGE);
 
     assert_non_null(image_drivers);
-    assert_int_equal(3, image_drivers->count);
+    assert_int_equal(4, image_drivers->count);
 
     close_media_drivers(image_drivers);
 
