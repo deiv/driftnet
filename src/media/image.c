@@ -15,6 +15,8 @@
 
 #include <netinet/in.h> /* ntohl */
 
+#include <webp/decode.h>
+
 #include "common/util.h"
 
 #include "pngformat.h"
@@ -340,12 +342,12 @@ unsigned char *find_png_image(const unsigned char *data, const size_t len, unsig
 }
 
 typedef struct {
-    unsigned char riff[4];// = {'R', 'I', 'F', 'F' };
-    uint32_t size;
-    unsigned char webp[4];// = {'W', 'E', 'B', 'P' };
-    unsigned const char vp8[3];// = {'V', 'P', '8' };
-    unsigned char lossy_or_lossless;
-    uint32_t size_padded;
+    unsigned char chunk1_id[4];// = {'R', 'I', 'F', 'F' };
+    uint32_t filesize;
+    unsigned char format[4];// = {'W', 'E', 'B', 'P' };
+    unsigned const char subchunk1_id[3];// = {'V', 'P', '8' };
+    unsigned char variant; // = 'L' if lossless, 'X' if extended so subchunk1 id is actually VP8, VP8L or VP8X
+    uint32_t subchunk1_size;
 
 //    char frame[];
 //    char padding[];
@@ -356,12 +358,21 @@ typedef struct {
 unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsigned char **webpdata, size_t *webplen) {
     webp_header_t header;
     unsigned char *hdr_begin;
+    int ret;
+    int width, height;
+    size_t filesize;
 
-    const unsigned char riff[] = {'R', 'I', 'F', 'F' };
+    static const unsigned char riff[] = {'R', 'I', 'F', 'F' };
 
     // Could have these together, but meh
-    const unsigned char webp_sig[] = {'W', 'E', 'B', 'P' };
-    const unsigned char vp8_sig[] = {'V', 'P', '8' };
+    static const unsigned char webp_sig[] = {'W', 'E', 'B', 'P' };
+    static const unsigned char vp8_sig[] = {'V', 'P', '8' };
+
+    static const size_t plain_header_size = sizeof(header.chunk1_id) + sizeof(header.filesize) + sizeof(header.format);
+    static const size_t max_filesize = 1024llu * 1024llu * 10llu; // Max 10MB?
+
+    *webpdata = NULL;
+    *webplen = 0llu;
 
     if (len < sizeof(header)) {
         return (unsigned char*)data;
@@ -373,39 +384,45 @@ unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsi
     }
 
     // Not enough data left for the entire header
-    if ((ssize_t)(hdr_begin - data) < len - sizeof(header)) {
+    if (len - (ssize_t)(hdr_begin - data) < sizeof(header)) {
         return (unsigned char*)data;
     }
 
     memcpy(&header, hdr_begin, sizeof(header));
 
-    header.size = ntohl(header.size); // ? idk
-    header.size_padded = ntohl(header.size_padded);
-
-    if (memcmp(header.webp, webp_sig, sizeof(webp_sig)) != 0) {
+    if (memcmp(header.format, webp_sig, sizeof(webp_sig)) != 0) {
         return (unsigned char*)data;
     }
-    if (memcmp(header.vp8, vp8_sig, sizeof(vp8_sig)) != 0) {
+    if (memcmp(header.subchunk1_id, vp8_sig, sizeof(vp8_sig)) != 0) {
         return (unsigned char*)data;
     }
 
-    if (header.size > header.size_padded) {
+    if (header.variant == ' ' || header.variant == 'L') {
+        if (header.filesize != header.subchunk1_size + plain_header_size) {
+            return (unsigned char*)data;
+        }
+    } else if (header.variant != 'X') {
         return (unsigned char*)data;
     }
 
-    if (header.size_padded > len) {
+    filesize = header.filesize + sizeof(header.chunk1_id) + sizeof(header.filesize);
+    if (filesize > len) {
         return (unsigned char*)data;
     }
 
-    // Max 10MB?
-    if (header.size > 1024u * 1024u * 10u) {
+    ret = WebPGetInfo(hdr_begin, len - (ssize_t)(hdr_begin - data), &width, &height);
+    if (ret == 0 || width <= 0 || height <= 0) {
+        return (unsigned char*)data;
+    }
+
+    if (filesize > max_filesize) {
         return (unsigned char*)data;
     }
 
     *webpdata = hdr_begin;
-    *webplen = header.size + 8;
+    *webplen = filesize;
 
-    return (unsigned char*)data + header.size_padded;
+    return (unsigned char*)hdr_begin + *webplen;
 }
 
 
