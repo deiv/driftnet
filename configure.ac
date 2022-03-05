@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 #
 
-AC_PREREQ([2.69])
-AC_INIT([driftnet], [1.3.0], [david.sephirot@gmail.com])
+AC_PREREQ([2.71])
+AC_INIT([driftnet],[1.3.0],[david.sephirot@gmail.com])
 
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -44,7 +44,7 @@ case "${host_os}" in
 esac
 
 AC_ARG_ENABLE([display],
-    [AC_HELP_STRING([--disable-display], [disable display (default is no)])],
+    [AS_HELP_STRING([--disable-display],[disable display (default is no)])],
     ,
     [enable_display=yes])
 
@@ -54,7 +54,7 @@ fi
 AM_CONDITIONAL(ENABLE_DISPLAY, test "x$enable_display" = xyes)
 
 AC_ARG_ENABLE([http-display],
-    [AC_HELP_STRING([--disable-http-display], [disable http display (default is yes)])],
+    [AS_HELP_STRING([--disable-http-display],[disable http display (default is yes)])],
     ,
     [enable_http_display=yes])
 
@@ -64,7 +64,7 @@ fi
 AM_CONDITIONAL(ENABLE_HTTP_DISPLAY, test "x$enable_http_display" = xyes)
 
 AC_ARG_ENABLE([debug],
-	[AC_HELP_STRING([--disable-debug], [disable debugging (default is no)])],
+	[AS_HELP_STRING([--disable-debug],[disable debugging (default is no)])],
     ,
     [enable_debug=yes])
 
