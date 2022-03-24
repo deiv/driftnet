@@ -191,7 +191,9 @@ static void * http_server_dispatch(void *arg)
         LWSMPRO_FILE,	                /* mount type is a directory in a filesystem */
         1,		                        /* strlen("/"), ie length of the mountpoint */
         NULL,
+#if LWS_LIBRARY_VERSION_MAJOR <= 4 && LWS_LIBRARY_VERSION_MINOR < 3
         { NULL, NULL } // sentinel
+#endif
     };
 
     memset(&info, 0, sizeof info);
