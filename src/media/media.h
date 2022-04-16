@@ -26,7 +26,7 @@
 /**
  * @brief Number of media types we recognize.
  */
-#define NMEDIATYPES 5
+#define NMEDIATYPES 6
 
 /* TODO: NMEDIATYPES -> NMEDIA_DRIVERS */
 

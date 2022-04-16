@@ -24,4 +24,7 @@ unsigned char *find_jpeg_image(const unsigned char *data, const size_t len,
 unsigned char *find_png_image(const unsigned char *data, const size_t len,
         unsigned char **pngdata, size_t *pnglen);
 
+unsigned char *find_webp_image(const unsigned char *data, const size_t len,
+        unsigned char **webpdata, size_t *webplen);
+
 #endif /* __IMAGE_H__ */

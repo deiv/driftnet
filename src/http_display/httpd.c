@@ -170,7 +170,8 @@ static void * http_server_dispatch(void *arg)
     struct lws_context *context;
 
     static const struct lws_protocol_vhost_options mime_types[] = {
-       { NULL, NULL, ".jpeg", "image/jpeg" }
+       { &mime_types[1], NULL, ".jpeg", "image/jpeg" },
+       { NULL, NULL, ".webp", "image/webp" }
     };
 
    const struct lws_http_mount mount = {

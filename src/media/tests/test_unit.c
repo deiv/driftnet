@@ -40,6 +40,17 @@ char* png_image_list[] = {
         "tests/resources/png_test_file_3.png"
 };
 
+char* webp_image_list[] = {
+    // ffmpeg's test file, intentionally corrupt (missing some bytes at the end)
+    // Could be decoded, but meh for now
+    //"tests/resources/bigbuckbunny-title.webp",
+    // Demo file from wikipedia
+    "tests/resources/Johnrogershousemay2020.webp",
+    // From webp's official doc
+    "tests/resources/alpha.webp",
+    "tests/resources/lossless.webp"
+};
+
 char* ico_image_list[] = {
         "tests/resources/ico_test_file_1.ico"
 };
@@ -54,6 +65,7 @@ typedef struct test_media_state_t {
 test_media_state_t gif_test_media_resource  = {.image_list = gif_image_list,  .find_media_func = find_gif_image};
 test_media_state_t jpeg_test_media_resource = {.image_list = jpeg_image_list, .find_media_func = find_jpeg_image};
 test_media_state_t png_test_media_resource  = {.image_list = png_image_list,  .find_media_func = find_png_image};
+test_media_state_t webp_test_media_resource  = {.image_list = webp_image_list,  .find_media_func = find_webp_image};
 
 
 /**
@@ -91,6 +103,19 @@ static int jpeg_media_test_group_setup (void** state)
 static int png_media_test_group_setup (void** state)
 {
     *state = &png_test_media_resource;
+
+    return 0;
+}
+
+/**
+ * Setup the needed state for webp media group tests
+ *
+ * @param state
+ * @return
+ */
+static int webp_media_test_group_setup (void** state)
+{
+    *state = &webp_test_media_resource;
 
     return 0;
 }
@@ -212,7 +237,7 @@ void test_correct_media_drivers_for_mediatype_count()
     image_drivers = get_drivers_for_mediatype(MEDIATYPE_IMAGE);
 
     assert_non_null(image_drivers);
-    assert_int_equal(3, image_drivers->count);
+    assert_int_equal(4, image_drivers->count);
 
     close_media_drivers(image_drivers);
 
@@ -247,6 +272,7 @@ int main(void)
     ret += cmocka_run_group_tests_name("gif media tests", image_tests, gif_media_test_group_setup, NULL);
     ret += cmocka_run_group_tests_name("jpeg media tests", image_tests, jpeg_media_test_group_setup, NULL);
     ret += cmocka_run_group_tests_name("png media tests", image_tests, png_media_test_group_setup, NULL);
+    ret += cmocka_run_group_tests_name("webp media tests", image_tests, webp_media_test_group_setup, NULL);
 
     const struct CMUnitTest media_tests[] = {
             cmocka_unit_test(test_correct_media_drivers_for_mediatype_count)
