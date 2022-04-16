@@ -1,3 +1,16 @@
+/*
+ * webp.c:
+ * WebP file support.
+ *
+ * Copyright (c) 2022 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
+ * Copyright (c) 2022 Martin.
+ * Email: martin@sandsmark.ninja
+ *
+ */
+
+
 #include <webp/decode.h>
 
 #include <string.h>
