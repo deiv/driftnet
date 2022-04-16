@@ -3,7 +3,7 @@
 #
 
 AC_PREREQ([2.71])
-AC_INIT([driftnet],[1.3.0],[david.sephirot@gmail.com])
+AC_INIT([driftnet],[1.4.0],[david.sephirot@gmail.com])
 
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
