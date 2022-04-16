@@ -17,6 +17,7 @@ Driftnet watches network traffic, and picks out and displays JPEG, GIF and other
 News
 ------------
 
+    Added WebP image format support
     Added new, http and websockets based, display
     Added basic windows support (cygwin)
     Added option to list capture interfaces
@@ -33,10 +34,11 @@ You will need:
 * [libjpeg](http://libjpeg.sourceforge.net/)
 * [libungif](http://directory.fsf.org/wiki/Libungif)
 * [libpng](http://www.libpng.org/pub/png/libpng.html)
+* [libwebp](https://developers.google.com/speed/webp/)
 * [libwebsockets](https://libwebsockets.org/) (if you want the http server)
 * [libgtk](https://www.gtk.org/) (if you want the GTK display)
 
-On most Linux distributions (APT based) these can be installed by executing `sudo apt-get install libpcap-dev libjpeg-dev libpng12-dev giflib-tools`. If you don't want a version of driftnet which will display images itself, but just want  to use it to gather images for some other application, you only need `libpcap`. See comments in the Makefile for more information. To play MPEG audio, you need an MPEG player. By default, driftnet will use [mpg123](http://www.mpg123.de/).
+On most Linux distributions (APT based) these can be installed by executing `sudo apt-get install libpcap-dev libjpeg-dev libpng12-dev giflib-tools libwebp-dev`. If you don't want a version of driftnet which will display images itself, but just want  to use it to gather images for some other application, you only need `libpcap`. See comments in the Makefile for more information. To play MPEG audio, you need an MPEG player. By default, driftnet will use [mpg123](http://www.mpg123.de/).
 
 ## Windows (on cygwin)
 
@@ -45,6 +47,7 @@ You will need:
 * ~~[libjpeg](http://libjpeg.sourceforge.net/)~~
 * ~~[libungif](http://directory.fsf.org/wiki/Libungif)~~
 * ~~[libpng](http://www.libpng.org/pub/png/libpng.html)~~
+* ~~[libwebp](https://developers.google.com/speed/webp/)~~
 
 Only 32 bits builds are supported (libwinpcap did not provide a x64 library). You should pass a x86 compiler to configure:
 `./configure --target=i686-pc-cygwin --host=i686-pc-cygwin`
