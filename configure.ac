@@ -22,7 +22,7 @@ build_linux=no
 build_mac=no
 
 case "${host_os}" in
-    linux*)
+    linux*|freebsd*)
         build_linux=yes
         ;;
     cygwin*|mingw*)
@@ -69,9 +69,9 @@ AC_ARG_ENABLE([debug],
     [enable_debug=yes])
 
 if test "x$enable_debug" = xyes; then
-    CFLAGS="-O2 -g -DDEBUG"
+    CFLAGS+="-O2 -g -DDEBUG"
 else
-	CFLAGS="-O2 -DNDEBUG"
+	CFLAGS+="-O2 -DNDEBUG"
 fi
 #AM_CONDITIONAL(ENABLE_DEBUG, test "$enable_debug" = "yes")
 
