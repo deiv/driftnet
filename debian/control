@@ -7,8 +7,8 @@ Build-Depends: debhelper-compat (= 12),
                libgif-dev,
                libgtk2.0-dev,
                libjpeg-dev,
-               libjs-jquery (>= 3.3.1~dfsg),
-               libjs-lightbox2  (>= 2.11.1+dfsg),
+               libjs-jquery,
+               libjs-lightbox2 (>= 2.11.1+dfsg),
                libpcap-dev,
                libpng-dev,
                libwebsockets-dev (>= 3.2.0)
@@ -20,7 +20,7 @@ Vcs-Git: https://github.com/deiv/driftnet.git -b debian
 
 Package: driftnet
 Architecture: any
-Depends: libjs-jquery (>= 3.3.1~dfsg),
+Depends: libjs-jquery,
          libjs-lightbox2 (>= 2.11.1+dfsg),
          ${misc:Depends},
          ${shlibs:Depends}
