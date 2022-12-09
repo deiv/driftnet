@@ -1,0 +1,2 @@
+# This *is* the code. lintian, don't assume every HTML file with long lines is generated, thanks, bye!
+driftnet source: source-is-missing [src/http_display/static_web/index.html]
