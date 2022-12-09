@@ -1,3 +1,17 @@
+driftnet (1.4.0-1) unstable; urgency=medium
+
+  * New upstream version (Closes: #1018734).
+  * d/copyright:
+    - Remove 'Files-Excluded' field, dfsg not required anymore.
+  * d/control:
+    - Remove libjs-{jquery, lightbox2} as build/runtime depends.
+    - Add libwebp build depend.
+    - Update standards version; no changes needed.
+  * Add d/gbp.conf.
+  * Override source-is-missing for index.html file.
+
+ -- David Suarez <david.sephirot@gmail.com>  Fri, 09 Dec 2022 20:40:10 +0100
+
 driftnet (1.3.0+dfsg-2) unstable; urgency=medium
 
   * Upload to unstable.
