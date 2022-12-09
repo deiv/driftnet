@@ -44,7 +44,7 @@ typedef uint32_t pel;
 #endif
 
 
-typedef enum { unknown = 0, pnm = 1, gif = 2, jpeg = 3, png = 4, raw = 5 } imgtype;
+typedef enum { unknown = 0, pnm = 1, gif = 2, jpeg = 3, png = 4, webp = 5, raw = 6 } imgtype;
 typedef enum { none = 0, header = 1, full = 2 } imgstate;
 
 typedef enum {

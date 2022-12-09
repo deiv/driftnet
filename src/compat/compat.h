@@ -17,7 +17,7 @@
     #include <config.h>
 #endif
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
     #include <sys/types.h>
 #endif
 

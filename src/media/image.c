@@ -15,6 +15,8 @@
 
 #include <netinet/in.h> /* ntohl */
 
+#include <webp/decode.h>
+
 #include "common/util.h"
 
 #include "pngformat.h"
@@ -337,6 +339,90 @@ unsigned char *find_png_image(const unsigned char *data, const size_t len, unsig
     *pngdata = pnghdr;
     *pnglen = (png_eoi - pnghdr);
     return png_eoi;
+}
+
+typedef struct {
+    unsigned char chunk1_id[4];// = {'R', 'I', 'F', 'F' };
+    uint32_t filesize;
+    unsigned char format[4];// = {'W', 'E', 'B', 'P' };
+    unsigned const char subchunk1_id[3];// = {'V', 'P', '8' };
+    unsigned char variant; // = 'L' if lossless, 'X' if extended so subchunk1 id is actually VP8, VP8L or VP8X
+    uint32_t subchunk1_size;
+
+//    char frame[];
+//    char padding[];
+} webp_header_t;
+
+/* find_webp_image DATA LEN WEBPDATA WEBPLEN
+ * Look for WEBP images in LEN bytes buffer DATA. */
+unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsigned char **webpdata, size_t *webplen) {
+    webp_header_t header;
+    unsigned char *hdr_begin;
+    int ret;
+    int width, height;
+    size_t filesize;
+
+    static const unsigned char riff[] = {'R', 'I', 'F', 'F' };
+
+    // Could have these together, but meh
+    static const unsigned char webp_sig[] = {'W', 'E', 'B', 'P' };
+    static const unsigned char vp8_sig[] = {'V', 'P', '8' };
+
+    static const size_t plain_header_size = sizeof(header.chunk1_id) + sizeof(header.filesize) + sizeof(header.format);
+    static const size_t max_filesize = 1024llu * 1024llu * 10llu; // Max 10MB?
+
+    *webpdata = NULL;
+    *webplen = 0llu;
+
+    if (len < sizeof(header)) {
+        return (unsigned char*)data;
+    }
+
+    hdr_begin = memstr(data, len, riff, sizeof(riff));
+    if (!hdr_begin) {
+        return (unsigned char*)data;
+    }
+
+    // Not enough data left for the entire header
+    if (len - (ssize_t)(hdr_begin - data) < sizeof(header)) {
+        return (unsigned char*)data;
+    }
+
+    memcpy(&header, hdr_begin, sizeof(header));
+
+    if (memcmp(header.format, webp_sig, sizeof(webp_sig)) != 0) {
+        return (unsigned char*)data;
+    }
+    if (memcmp(header.subchunk1_id, vp8_sig, sizeof(vp8_sig)) != 0) {
+        return (unsigned char*)data;
+    }
+
+    if (header.variant == ' ' || header.variant == 'L') {
+        if (header.filesize != header.subchunk1_size + plain_header_size) {
+            return (unsigned char*)data;
+        }
+    } else if (header.variant != 'X') {
+        return (unsigned char*)data;
+    }
+
+    filesize = header.filesize + sizeof(header.chunk1_id) + sizeof(header.filesize);
+    if (filesize > len) {
+        return (unsigned char*)data;
+    }
+
+    ret = WebPGetInfo(hdr_begin, len - (ssize_t)(hdr_begin - data), &width, &height);
+    if (ret == 0 || width <= 0 || height <= 0) {
+        return (unsigned char*)data;
+    }
+
+    if (filesize > max_filesize) {
+        return (unsigned char*)data;
+    }
+
+    *webpdata = hdr_begin;
+    *webplen = filesize;
+
+    return (unsigned char*)hdr_begin + *webplen;
 }
 
 

@@ -140,7 +140,7 @@ void write_static_resources()
         char* static_source_path = compose_path(STATIC_WEB_DIRECTORY, static_file);
 
         if (tmpfile_link_file(static_source_path) == FALSE) {
-            log_msg(LOG_ERROR, "httpd: we can't link the neccesary static resource");
+            log_msg(LOG_ERROR, "httpd: we can't link the necessary static resource");
             exit(1);
         }
 
@@ -170,7 +170,8 @@ static void * http_server_dispatch(void *arg)
     struct lws_context *context;
 
     static const struct lws_protocol_vhost_options mime_types[] = {
-       { NULL, NULL, ".jpeg", "image/jpeg" }
+       { &mime_types[1], NULL, ".jpeg", "image/jpeg" },
+       { NULL, NULL, ".webp", "image/webp" }
     };
 
    const struct lws_http_mount mount = {
@@ -191,7 +192,9 @@ static void * http_server_dispatch(void *arg)
         LWSMPRO_FILE,	                /* mount type is a directory in a filesystem */
         1,		                        /* strlen("/"), ie length of the mountpoint */
         NULL,
+#if LWS_LIBRARY_VERSION_MAJOR <= 4 && LWS_LIBRARY_VERSION_MINOR < 3
         { NULL, NULL } // sentinel
+#endif
     };
 
     memset(&info, 0, sizeof info);
@@ -352,7 +355,7 @@ void stop_http_display()
     interrupted = 1;
 
     /*
-     * XXX: TODO: not cancel on first terminate signal (crtl-c), lets the websocket library clean up itselfs (it takes
+     * XXX: TODO: not cancel on first terminate signal (crtl-c), lets the websocket library clean up itself (it takes
      *              some seconds). Force cancel on second or more signals.
      */
     pthread_cancel(server_thread);

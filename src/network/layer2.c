@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 #else
@@ -29,7 +29,7 @@
 /*
  * Freebsd and Cygwin doesn't define 'ethhdr'
  */
-#if defined(__FreeBSD__) || defined(__CYGWIN__)
+#if defined(__FreeBSD__) || defined(__CYGWIN__) || defined(__APPLE__)
 
 #define ETH_ALEN	6			/* Octets in one ethernet addr	 */
 #define ETH_P_IP	0x0800		/* Internet Protocol packet	*/

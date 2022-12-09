@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <title>Drifnet Display</title>
 
-    <link rel="stylesheet" href="lightbox.min.css">
-
-    <script src="jquery.min.js" ></script>
-    <script src="lightbox.min.js"></script>
-
     <style>
         body {
             margin: 0;
@@ -27,24 +22,38 @@
             font-size: 18px;
             font-weight: bold;
         }
-        #img-container { min-height: 90vh; }
+        #img-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-gap: 0.6em;
+            margin: 0.4em;
+        }
+        #img-container div {
+            position: relative;
+        }
         #img-container img {
-            max-width: 200px;
+            max-width: 100%;
         }
         .img-wrap {
-            display: inline-block;
-            position: relative;
-            margin: 0.6em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .close-image {
+            display: none;
             width: 12px;
+            height: 12px;
             position: absolute;
             top: 0;
             right: 0;
             cursor: pointer;
         }
+        .img-wrap div:hover .close-image {
+            display: block;
+        }
         .close-image:hover {
             width: 14px;
+            height: 14px;
         }
         .dritfnet-image {
             border: 1px solid #999;
@@ -64,21 +73,58 @@
             font-weight: bold;
         }
 
-        /*
-         * Rewrite paths to lightbox2 library images to not depend on the filesystem structure.
-         * TODO: maybe, adapt the code and build system to resembles the former structure ?!
-         */
-        .lb-nav a.lb-prev {
-            background: url(prev.png) left 48% no-repeat;
+        .close-image {
+            background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAMAAAC6CgRnAAAAPFBMVEX///8AAAD9/f2CgoKAgIAAAAAAAAAAAABLS0sAAAAAAACqqqqqqqq6urpKSkpISEgAAAC7u7u5ubn////zbsMcAAAAE3RSTlMASv6rqwAWS5YMC7/AyZWVFcrJCYaKfAAAAHhJREFUeF590kkOgCAQRFEaFVGc+/53FYmbz6JqBbyQMFSYuoQuV+iTflnstI7ssLXRvMWRaEMs84e2uVckuZe6knL0hiSPObXhj6ChzoEkIolIIpKIO4joICAIeDd7QGIfCCjOKe9HEk8mnxpIAup/F31RPZP9fAG3IAyBSJe0igAAAABJRU5ErkJggg==)
+              no-repeat left center;
+            background-size: 12px;
         }
-        .lb-nav a.lb-next {
-            background: url(next.png) right 48% no-repeat;
+        #gallery-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            background-color: black;
+            filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=80);
+            opacity: .8;
+            display: none;
+            width: 100vw;
+            height: 100vh;
         }
-        .lb-data .lb-close {
-            background: url(close.png) top right no-repeat;
+        #gallery {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10000;
+            width: 100vw;
+            height: 100vh;
+            text-align: center;
+            line-height: 0;
+            font-weight: normal;
+            outline: none;
         }
-        .lb-cancel {
-            background: url(loading.gif) no-repeat;
+        #gallery-menu {
+            height: 2vh;
+            text-align: right;
+            padding: 1vh;
+        }
+        #gallery-image-container {
+            height: 92vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #gallery-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+        #gallery-buttons {
+            height: 2vh;
+            padding: 1vh;
+        }
+        .gallery-button {
+            width: 2vh;
         }
     </style>
 </head>
@@ -93,13 +139,33 @@
 
 <footer>fork me on <a href="https://www.github.com/deiv/driftnet">GitHub</a></footer>
 
+<div id="gallery-overlay" tabindex="-1" style="display: none;"></div>
+<div id="gallery" tabindex="-1" class="lightbox" style="display: none;">
+
+    <div id="gallery-menu">
+        <img id="gallery-close-button"
+             class="gallery-button"
+             alt="close gallery"
+             src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAMAAAC6CgRnAAAAPFBMVEX///8AAAD9/f2CgoKAgIAAAAAAAAAAAABLS0sAAAAAAACqqqqqqqq6urpKSkpISEgAAAC7u7u5ubn////zbsMcAAAAE3RSTlMASv6rqwAWS5YMC7/AyZWVFcrJCYaKfAAAAHhJREFUeF590kkOgCAQRFEaFVGc+/53FYmbz6JqBbyQMFSYuoQuV+iTflnstI7ssLXRvMWRaEMs84e2uVckuZe6knL0hiSPObXhj6ChzoEkIolIIpKIO4joICAIeDd7QGIfCCjOKe9HEk8mnxpIAup/F31RPZP9fAG3IAyBSJe0igAAAABJRU5ErkJggg==" />
+    </div>
+    <div id="gallery-image-container">
+        <img id="gallery-image" class="lb-image"
+             src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+             alt="">
+    </div>
+    <div id="gallery-buttons">
+        <img id="gallery-prev-button"
+             class="gallery-button"
+             alt="previous image"
+             src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAtCAYAAADsvzj/AAAFF0lEQVR4Ac2ZW0xcVRSGPTNnhlPKcCsUAeeChkEVxhutDQwzMANaqamNWgpaH+yDIaZp1cRHbgH0gTsxkmDCI/hiRAqgD5qYRgKQ8II6TE00wfgGAcIdKeM/ydrNZIezxxg9m518gRxWmn6s9a9zhvNQJBL5T/gfjokwA5Uw0zWFeHBOugiTsAArfSWZky+iABVowAZSwRkiDSTRz1iHlJMmogATsIDTIAPYgRs8SeTTtXSQSLVKFNkivIQKksDDJFCsquqLmqZdAa/i+yCuPQ1cJHOKjdpJEWGdsIFs8BQoy83NvTEzMzO3t7f318HBweHc3Nxdj8dznWQeIWmpIryENUaiCPgdDsfN+fn5XyLcWV5eDlmt1gBqHgOpbAHIFmESySAHeECF0+m8hd/+vcgxZ3d39wBj9grqCkA6iaiyRBRunJhEpcvl+nBhYeG3iM7Z2dnZgkg1ZSgNqLI6wgebSVTZ7faPlpaW/tSTWF9f36ivr+9AbQkF3iZRhAs2dSInJ+eDUCj0h0Biq7S09BPUBkEhyAKJssKusE6QRCGoQLDfn56eDulJrK6ubgeDwS7UXgTPAztIkXUfUbhxKgLlyMRtBPtXPYm1tbXdqqoqJnEOOGhbJQCTkSJ8sJlEMNoJrFhdicPDw6PKyspe1FaD85yE2YBnLUGwSSIrK+s2bnZLehIbGxubfr+/B7WXSMJJ42QlCcVAES7YJJGdnR0dp7BgnLZKSko6qBPngIvrBEkYIKIT7PLoOKET4TjB7kbty+A8SaRxmcAxQEQn2BUI9q3Z2dl7gk7sINhRiZeoE87jMmGECB/s3JhgR8dJV2Jzc3Pb5/N1UieKKdgsEyaAY5wIk2Dj5GHBRifCgmBHb3adLBNsO3HBNkxEAWZwCmSCx4EPwb4ZJ9jbCHYXSRQDpyDYhomoNFIOUIRMvINO/KQnsbKyshMIBD5D7RVwgQWblzBahD2Sp5jN5jzM+9uLi4s/60mEw+FNbKcvUH8DVIECcAZoXLCliaRaLBbX8PBwb0RwRkZGfkftx+BdUM4+KInDbdxoWUCKoih5CQkJgYGBgS/xs6PjRPb394+ampp+RP174CIoBGcpYypQZIqYY+4dz4DLvb29Y6LONDY2fou6OuAF+SCDZCgj8kQSQDqNihfU9vX1TYlkGhoa7qDuDVBKMpQVrjMG30fYCs6gAHuRmdqurq5JkUxLS8sEaq+CMq4zJGOgCB2Fk8kHJSaTqaazs3Pi2MzQaWtrm0RtDfDFyCQyGUNFOJlEkMlkwLWenp5vRDKtra1TNGYsM5mcjKEifGeYjBfUQUaYmebm5omYzLjFC8C4zyNqTGfcNDZ1/2ABjKHudZLXkTFARJAZN/CqqnqNMqN7Ojo6vqMF4ONkVFmvFUQLQNiZ7u7u76PZAn6S4TJjrIhoAdT+iwXAdQYYKCJaAG/iPhNvAYyj7jXwAngUpAGrDBF+ATCZAuBXFOX60NDQ3TiPM1/hyfoyPf7kgNNSXyvwmSGZMk3T3hocHPwhzlPzJLLFnpZT5PztV5wZNyilbTZFmTnZrxU4GZWXATV4ap4kmeNELlEticjsSHyZq/39/V/j374P2Lk/Pj5+BznxUuDlj1acJ4B8cAH/4er29vbPR0dH58fGxubx/ac2my1Ab3iz5Yc9/gJIB05QCJ4Fz9FXD3gC5HIfi+WKCGQ0GpuzwA7yCDtdS+b/SCFfRPwaQqPxSSaS6JrlwUjR+RtEvCM0ct4sLQAAAABJRU5ErkJggg==" />
+        <img id="gallery-next-button"
+             class="gallery-button"
+             alt="next image"
+             src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAtCAYAAADsvzj/AAAFDUlEQVR4Ac2ZS0xcVRjHvTN3hisw0GIRZ3AeLWHQWqdVsRqgA86AUmpqoy20Whd2YYhprJq45BVAF7yJkQQTluDGiEhBF5qYRsIjYYMKQxNNMO4gQHgjZfxP8pF8ufEe0qQ5pyf5BTKcWfzyff/vnHt5xLQ0wgbsQCfswEY80BWPxx8I5sUlHMBJP0nm4RfRWAUMkAqOgseII8AFDNqjPYwiGuEAySADeEEuOEkE6bNjIIX22riQchHWSo+SRACc1nU9ahjGG+ASfn8Vn+WT0BNUMV0so04kFTwJTodCoeuTk5N3dnd397a3t/8dHx+fzM7OvoG/nQPPADdwscqoF2HBPgJynE5nZGFhYTZuWlNTU3/4fL6b2FMMnmUyTpJRLqKTSAbIQyu9vrW1tRv/n4Uqzfv9/g+x7xUQAh6QxmVUV0SnKRWESMXm5uZ63GJNT0//GQgEPsHeUibD20xTLeKioBdUV1e3rKysrFrJzM3N/eP1ej/F3jImIxgAcsOeDLLAKRAtLCz8HDKWlZmdnf3b4/F8zCojGADyz5F04AUvgPJoNNq2tLS0YSUzNjY2iwHwEWXmFHCzymiqRGwgiaaXD7wIysvKytqWl5e3rGQwAO4iM7ewt4SmmYfLqLpr2U0yZ0FFaWlp597e3r6VDEbzXapMlGQEA0COiEYyTmozP8lcKC4u7lhdXV2zksGhOZeVlXWLy5gHgDwRJsMqE6A2qygoKGhBm60L2izmdruZjGkAyBShxTNzlGTOgvMYAO2iAYDKxKjNSgQDQI6IRWb8VJnXMADaUZlNK5mJiYl5DAC6AQgGgCwRWjaWGR/IB+fD4XDr2trahqDN5lEZ3mbZ5gEgW4QPAD6aK3BotmIArAsqE2MDIMTajGTkinAZ3mb5NAAS58zGIQPgJvaGwVMgk5597ECTLcJl+AB4GVyKRCJfLi4uijLzGzLzHrWYj1pMVyXCB4BBz/J5oAzcwDT7OhaLWZ4zMzMzvyNX79rt9uOUNyewqRSxsbzk0Jh9H3w2MDDwV1yw+vv7Ox0OR4C+q1REAzr1+ON0TpSDD+rq6n7d2dmxusbs9/T0fJOUlBTRNO2gIg6lGSGJYyAXFIFrtbW1P4oq0dnZOYR9F8EZdqaoCDtVgrJBEoXgck1Nzfciia6urlHsu0rSOSADJEkXYRK8EufAlYaGhtsiiba2thFk4kAij75Po1fiOcIkkplEGFQ2NTWNCBz2W1tbb9tstkrsLaDvcQlN5hWFS2SyTFxubGwcFUl0dHT8gH1VTCITJHMJWSLmYAcPMlFfXy9sJ0gkMnGNpEnCXAkJIhYSReAtBHvosGCTRBgEWSV0qc8jPNhMIgyutLS0/CSSSGRC1/Uqkg5aZUKGiDkTQVAMqtrb238+RGJUHGyZb1F4Je4/2FfFwZYr4qRb7QnwEngTwR4+5JxIZOJtcbDlv2lMAR5wBjfUi7h2fCuS6Ovru6Np2nVqvzwmQcFW9+43HeSg10twix0RSfT29v5iGMY7dMLniTOh+N8KghN7lKZTIQgKMiG/IkwkCJELFiL7uMWOYE+lWUL8elRNa51APoqGh4cTN9p7TOJed3f3d4nz5P4l1ITdDU66XK5Ic3PzF0NDQ1ODg4NT+P0rCFbQM3qu4MRWLsIfX7PB0yAEngPP089TwA8yBMFWKmJ+qZBGj7FecJzw0mfpwBBLqBexseAbIBWkESnAEPybQLnIf4JfIzSb+FymAAAAAElFTkSuQmCC" />
+    </div>
+</div>
+
 <script>
-    $(document).ready(function(){
-        lightbox.option({
-            'resizeDuration': 200,
-            'wrapAround': true
-        })
-    });
 
     function get_ws_url(extra_url)
     {
@@ -128,21 +194,28 @@
             console.log("websocket connection opened");
         };
         ws.onmessage =function got_packet(msg) {
-            $('#img-container').append(
-                '<div class="img-wrap" src="' +
-                msg.data +
-                '"><img class="close-image" src="close.png" title="close image"/><a href="' +
-                msg.data +
-                '" data-lightbox="driftnet"><img class="dritfnet-image" id="' +
-                msg.data +
-                '" src="'+
-                msg.data +
-                '" /></a></div>');
+            let imgWrap = document.createElement("div");
+            let imgContainer = document.createElement("div");
+            let closeButton = document.createElement("span");
+            let img = document.createElement("img");
 
-            $(".close-image").click(function(event){
-                event.stopPropagation();
-                $( this ).parent().remove();
-            });
+            imgWrap.className = "img-wrap";
+            closeButton.className = "close-image";
+            closeButton.title = "close image";
+            img.className = "dritfnet-image";
+            img.src = msg.data;
+
+            imgContainer.append(closeButton);
+            imgContainer.append(img);
+            imgWrap.append(imgContainer);
+
+            document.querySelector("#img-container").append(imgWrap);
+
+            const closeImages = document.querySelectorAll(".close-image");
+            closeImages.forEach(closeImage => closeImage.addEventListener("click", removeImage));
+
+            const thumbs = document.querySelectorAll(".dritfnet-image");
+            thumbs.forEach(img => img.addEventListener("click", imgActivate));
 
         };
         ws.onclose = function(){
@@ -150,7 +223,83 @@
         }
     } catch(exception) {
         alert("Error: can't connect to websocket");
-    };
+    }
+
+    const body = document.querySelector("body");
+    const galleryOverlay = document.querySelector("#gallery-overlay");
+    const gallery = document.querySelector("#gallery");
+    const galleryImage = document.querySelector("#gallery-image");
+
+    const closeButton = document.querySelector("#gallery-close-button");
+    const prevButton = document.querySelector("#gallery-prev-button");
+    const nextButton = document.querySelector("#gallery-next-button");
+    let currentImage = null;
+
+    closeButton.addEventListener("click", imgDeActivate);
+    prevButton.addEventListener("click", imgPrev);
+    nextButton.addEventListener("click", imgNext);
+
+    function changeGalleryImage(imageSrc) {
+        galleryImage.src = imageSrc;
+
+        galleryImage.classList.add("fade-in");
+        setTimeout(() => galleryImage.classList.remove("fade-in"), 500);
+    }
+
+    function imgActivate(e) {
+        e.stopPropagation();
+
+        currentImage = e.target;
+        changeGalleryImage(currentImage.src);
+
+        galleryOverlay.style.display = "block";
+        gallery.style.display = "block";
+        body.style.overflow = "hidden";
+    }
+
+    function imgDeActivate(e) {
+        e.stopPropagation();
+
+        galleryOverlay.style.display = "none";
+        gallery.style.display = "none";
+        body.style.overflow = "auto";
+    }
+
+    function imgPrev(e) {
+        e.stopPropagation();
+
+        const previousElement = currentImage.parentElement.parentElement.previousElementSibling;
+
+        if (previousElement) {
+            const previousImage = previousElement.firstElementChild.lastElementChild;
+
+            if (previousImage.src) {
+                currentImage = previousImage;
+                changeGalleryImage(currentImage.src);
+            }
+        }
+    }
+
+    function imgNext(e) {
+        e.stopPropagation();
+
+        const nextElement = currentImage.parentElement.parentElement.nextElementSibling;
+
+        if (nextElement) {
+            const nextImage = nextElement.firstElementChild.lastElementChild;
+
+            if (nextImage.src) {
+                currentImage = nextImage;
+                changeGalleryImage(currentImage.src);
+            }
+        }
+    }
+
+    function removeImage(e) {
+        e.stopPropagation();
+
+        e.target.parentElement.parentElement.remove();
+    }
 </script>
 
 </body>

@@ -15,7 +15,7 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
