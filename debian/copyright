@@ -2,15 +2,6 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: driftnet
 Upstream-Contact: David Suarez <david.sephirot@gmail.com>
 Source: https://github.com/deiv/driftnet
-Files-Excluded:
-    src/http_display/static_web/jquery.min.js
-    src/http_display/static_web/lightbox.min.js
-    src/http_display/static_web/lightbox.min.css
-    src/http_display/static_web/close.png
-    src/http_display/static_web/loading.gif
-    src/http_display/static_web/next.png
-    src/http_display/static_web/prev.png
-Comment: removed because there are distributed without the original source code
 
 Files: *
 Copyright: 2012-2019 David Suarez <david.sephirot@gmail.com>
