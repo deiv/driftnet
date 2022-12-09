@@ -14,7 +14,7 @@
 
 #include "compat/compat.h"
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <sys/stat.h>
 #endif
 #include <fcntl.h>

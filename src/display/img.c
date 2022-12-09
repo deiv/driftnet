@@ -46,6 +46,12 @@ int png_load_hdr(img I);
 int png_load_img(img I);
 /*int png_save_img(const img I, FILE *fp);*/
 
+/* webp.c */
+int webp_load_hdr(img I);
+int webp_abort_load(img I);
+int webp_load_img(img I);
+/*int webp_save_img(const img I, FILE *fp);*/
+
 #if 0
 /* raw.c */
 int raw_load_img(img I);
@@ -69,6 +75,7 @@ struct filedrv {
         {jpeg,      ".jpg\0.jpeg\0",            jpeg_load_hdr,  jpeg_abort_load,    jpeg_load_img,  jpeg_save_img},
         {png,       ".png\0",                   png_load_hdr,   NULL /*png_abort_load*/,
                                                                                     png_load_img,   NULL /*png_save_img*/},
+        {webp,       ".webp\0",                   webp_load_hdr, webp_abort_load, webp_load_img,   NULL /*webp_save_img todo or something*/},
 /*
         {raw,       "",                         NULL,           raw_load_img,       NULL,           raw_save_img},
 */

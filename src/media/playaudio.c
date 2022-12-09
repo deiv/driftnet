@@ -114,7 +114,7 @@ void mpeg_submit_chunk(const unsigned char *data, const size_t len) {
     m_lock;
 
     if (buffered > MAX_BUFFERED) {
-        log_msg(LOG_INFO, "MPEG buffer full with %d bytes", buffered);
+        log_msg(LOG_INFO, "MPEG buffer full with %zu bytes", buffered);
         goto finish;
     }
     A = audiochunk_new(data, len);

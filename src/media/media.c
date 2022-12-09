@@ -31,6 +31,7 @@ static mediadrv_t media_drivers[NMEDIATYPES] = {
     { "gif",  MEDIATYPE_IMAGE, find_gif_image },
     { "jpeg", MEDIATYPE_IMAGE, find_jpeg_image },
     { "png",  MEDIATYPE_IMAGE, find_png_image },
+    { "webp", MEDIATYPE_IMAGE, find_webp_image },
     { "mpeg", MEDIATYPE_AUDIO, find_mpeg_stream },
     { "HTTP", MEDIATYPE_TEXT,  find_http_req }
 };
