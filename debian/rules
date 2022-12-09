@@ -14,4 +14,3 @@
 
 override_dh_install:
 	dh_install debian/driftnet.desktop /usr/share/applications
-
