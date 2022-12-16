@@ -1,7 +1,7 @@
 Source: driftnet
 Section: admin
 Priority: optional
-Maintainer: David Suarez <david.sephirot@gmail.com>
+Maintainer: David Suárez <deiv@debian.org>
 Build-Depends: debhelper-compat (= 12),
                libcmocka-dev,
                libgif-dev,
