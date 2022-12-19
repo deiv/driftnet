@@ -1,3 +1,10 @@
+driftnet (1.4.0-2) unstable; urgency=medium
+
+  * Bump debhelper compat.
+  * Disable tests for s390x.
+
+ -- David Suárez <deiv@debian.org>  Mon, 19 Dec 2022 19:45:39 +0100
+
 driftnet (1.4.0-1) unstable; urgency=medium
 
   * New upstream version (Closes: #1018734).
