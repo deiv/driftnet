@@ -2,7 +2,7 @@ Source: driftnet
 Section: admin
 Priority: optional
 Maintainer: David Suárez <deiv@debian.org>
-Build-Depends: debhelper-compat (= 12),
+Build-Depends: debhelper-compat (= 13),
                libcmocka-dev,
                libgif-dev,
                libgtk2.0-dev,
