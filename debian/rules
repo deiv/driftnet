@@ -12,7 +12,7 @@
 DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 
 %:
-	dh $@ --with autoreconf
+	dh $@
 
 override_dh_install:
 	dh_install debian/driftnet.desktop /usr/share/applications

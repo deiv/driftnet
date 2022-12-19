@@ -191,7 +191,7 @@ driftnet (0.1.6-6) unstable; urgency=low
   * Added .desktop file, from Ubuntu.
     (Closes: #375511)
 
- -- Steve Kemp <skx@debian.org>  Thu,  26 June 2006 16:12:04 +0000
+ -- Steve Kemp <skx@debian.org>  Mon, 26 Jun 2006 16:12:04 +0000
 
 driftnet (0.1.6-5) unstable; urgency=low
 
@@ -199,7 +199,7 @@ driftnet (0.1.6-5) unstable; urgency=low
     (Closes: #337400)
   * Updated standards version to 3.7.2, no changes.
 
- -- Steve Kemp <skx@debian.org>  Thu,  12 May 2006 15:57:43 +0000
+ -- Steve Kemp <skx@debian.org>  Fri, 12 May 2006 15:57:43 +0000
 
 driftnet (0.1.6-4) unstable; urgency=low
 
