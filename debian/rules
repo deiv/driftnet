@@ -9,8 +9,17 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+
 %:
 	dh $@ --with autoreconf
 
 override_dh_install:
 	dh_install debian/driftnet.desktop /usr/share/applications
+
+override_dh_auto_test:
+ifeq (, $(filter nocheck, $(DEB_BUILD_OPTIONS)))
+ifeq (, $(filter s390x, $(DEB_HOST_ARCH)))
+	make check
+endif
+endif
