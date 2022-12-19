@@ -7,7 +7,7 @@ Build-Depends: debhelper-compat (= 13),
                libgif-dev,
                libgtk2.0-dev,
                libjpeg-dev,
-               libpcap-dev,
+               libpcap0.8-dev,
                libpng-dev,
                libwebsockets-dev (>= 3.2.0),
                libwebp-dev
