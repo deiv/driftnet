@@ -159,16 +159,16 @@ if test "x$enable_display" = xyes; then
     [],
     [AC_MSG_ERROR([cannot find lib png])] )
 
-    AC_CHECK_LIB([webp],
-    [WebPDecodeRGBInto],
-    [],
-    [AC_MSG_ERROR([cannot find lib webp])] )
-
     AC_CHECK_LIB([jpeg],
     [jpeg_read_header],
     [],
     [AC_MSG_ERROR([cannot find lib jpeg])] )
 fi
+
+AC_CHECK_LIB([webp],
+    [WebPDecodeRGBInto],
+    [],
+    [AC_MSG_ERROR([cannot find lib webp])] )
 
 if test "x$enable_http_display" = xyes; then
     AC_CHECK_LIB([websockets],
@@ -274,6 +274,7 @@ echo \
 
  Package features:
    - enable display: ${enable_display}
+   - enable http display: ${enable_http_display}
    - enable debug: ${enable_debug}
 
  Now type:
