@@ -244,25 +244,25 @@ int validate_options(options_t* options)
      * Check for (at least) one display option (GTK by default), if not in adjunct mode.
      */
     if (!options->adjunct) {
+#if !defined(NO_DISPLAY_WINDOW) && !defined(NO_HTTP_DISPLAY)
         if (options->enable_gtk_display && options->enable_http_display) {
             log_msg(LOG_ERROR, "can't specify -w and -g");
             return FALSE;
         }
 
         if (!(options->enable_gtk_display || options->enable_http_display)) {
-#ifndef NO_DISPLAY_WINDOW
             options->enable_gtk_display = TRUE;
-
-#else
-  #ifndef NO_DISPLAY_WINDOW
-            options->enable_http_display = TRUE;
-  #else
-            log_msg(LOG_WARNING, "this version of driftnet was compiled without any display support");
-            log_msg(LOG_WARNING, "switching to adjunct mode");
-            options->adjunct = TRUE;
-  #endif
-#endif
         }
+#elif !defined(NO_DISPLAY_WINDOW)
+        options->enable_gtk_display = TRUE;
+
+#elif !defined(NO_HTTP_DISPLAY)
+        options->enable_http_display = TRUE;
+#else
+        log_msg(LOG_WARNING, "this version of driftnet was compiled without any display support");
+        log_msg(LOG_WARNING, "switching to adjunct mode");
+        options->adjunct = TRUE;
+#endif
     }
 
     return TRUE;

@@ -321,15 +321,23 @@ int main(int argc, char *argv[])
                     driver->dispatch_data = dispatch_image_to_stdout;
 
                 } else {
+#if !defined(NO_DISPLAY_WINDOW) && !defined(NO_HTTP_DISPLAY)
                     if (options->enable_gtk_display) {
-#ifndef NO_DISPLAY_WINDOW
                         driver->dispatch_data = dispatch_image_to_display;
-#endif
+
                     } else {
-#ifndef NO_HTTP_DISPLAY
                         driver->dispatch_data = dispatch_image_to_httpdisplay;
-#endif
                     }
+#elif !defined(NO_DISPLAY_WINDOW)
+                    driver->dispatch_data = dispatch_image_to_display;
+#elif !defined(NO_HTTP_DISPLAY)
+                    driver->dispatch_data = dispatch_image_to_httpdisplay;
+#else
+                    log_msg(
+                            LOG_ERROR,
+                            "driftnet was compiled without any display options, use adjunct mode only");
+                    return -1;
+#endif
                 }
                 break;
 
