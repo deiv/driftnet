@@ -264,6 +264,7 @@ int main(int argc, char *argv[])
      * Otherwise, check that it's a directory into which we may write files.
      */
     if (options->tmpdir) {
+        log_msg(LOG_INFO, "setting custom tmpdir in: %s", options->tmpdir);
         if (check_dir_is_rw(options->tmpdir) == FALSE) {
             log_msg(LOG_ERROR, "we can't write to the temporary directory");
             exit(1);
