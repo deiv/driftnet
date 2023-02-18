@@ -92,7 +92,8 @@ int png_abort_load(img I) {
 }
 
 int png_load_img(img I) {
-    unsigned char **p, **q;
+    pel **p;
+    unsigned char **q;
     png_structp png_ptr;
     png_infop info_ptr;
     png_uint_32 width, height;
@@ -168,12 +169,12 @@ int png_load_img(img I) {
     /* Read in the image and copy it to the gdk img structure */
     png_read_image(png_ptr, row_pointers);
 
-    p = (unsigned char **)I->data;
+    p = I->data;
     q = (unsigned char **)row_pointers;
 
     for (i = 0; i < height; i++) {
-        for (j = 0; j < png_get_rowbytes(png_ptr, info_ptr); j++) {
-           p[i][j] = q[i][j];
+        for (j = 0; j < png_get_rowbytes(png_ptr, info_ptr); j = j+4) {
+            p[i][j/4] = PEL(q[i][j], q[i][j+1], q[i][j+2]);
         }
     }
 
