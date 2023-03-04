@@ -43,7 +43,8 @@ case "${host_os}" in
         ;;
 esac
 
-AC_ARG_ENABLE([display],
+AC_ARG_ENABLE(
+    [display],
     [AS_HELP_STRING([--disable-display],[disable display (default is no)])],
     ,
     [enable_display=yes])
@@ -52,6 +53,17 @@ if test "x$enable_display" = xno; then
     AC_DEFINE([NO_DISPLAY_WINDOW], [1], [Compile without support for a display window])
 fi
 AM_CONDITIONAL(ENABLE_DISPLAY, test "x$enable_display" = xyes)
+
+AC_ARG_ENABLE(
+    [gtk3],
+    [AS_HELP_STRING([--disable-gtk3],[disable gtk+ 3.x and compile with gtk+ 2.x])],
+    ,
+    [enable_gtk3=yes])
+
+if test "x$enable_gtk3" = xno; then
+    AC_DEFINE([DISABLE_GTK3], [1], [Compile without support for gtk+ 3.x])
+fi
+AM_CONDITIONAL(ENABLE_GTK3, test "x$enable_gtk3" = xyes)
 
 AC_ARG_ENABLE([http-display],
     [AS_HELP_STRING([--disable-http-display],[disable http display (default is yes)])],
@@ -114,40 +126,28 @@ AC_CHECK_LIB([pthread],
 
 if test "x$enable_display" = xyes; then
 
-	AC_CHECK_LIB([glib-2.0],
-        [g_free],
-        [],
-		[AC_MSG_ERROR([cannot find lib glib-2.x])])
+    HAVE_GTK_VERSION3=false
 
-	AC_CHECK_LIB([gobject-2.0],
-        [g_signal_connect_data],
-        [],
-		[AC_MSG_ERROR([cannot find lib libgobject-2.0])])
+    if test "x$enable_gtk3" = "xyes" ; then
+        PKG_CHECK_EXISTS(
+            [gtk+-3.0 >= 3.0.0],
+            [HAVE_GTK_VERSION3=true],
+            [HAVE_GTK_VERSION3=false])
+    fi
 
-	AC_CHECK_LIB([gtk-x11-2.0],
-        [gtk_main],
-        [],
-		[AC_MSG_ERROR([cannot find lib gtk-2.x])])
-
-#	AC_CHECK_LIB([gthread-2.0],
-#        [g_thread_init],
-#        [],
-#		[AC_MSG_ERROR([cannot find lib libgthread-2.0])])
-
-	AC_CHECK_LIB([gdk-x11-2.0],
-        [gdk_window_get_state],
-        [],
-		[AC_MSG_ERROR([cannot find lib gdk-x11-2.0])])
-
-#	AC_CHECK_LIB([Xrender],
-#        [XRenderComposite],
-#        [],
-#		[AC_MSG_ERROR([cannot find lib XRender])])
-
-	GTK_CFLAGS="$(${PKG_CONFIG} --cflags gtk+-x11-2.0 glib-2.0 gobject-2.0 gdk-x11-2.0)"
-    #gthread-2.0)"
-
-    AC_SUBST(GTK_CFLAGS)
+    if test "x$HAVE_GTK_VERSION3" = "xfalse"; then
+        PKG_CHECK_MODULES(
+            GTK,
+            gtk+-2.0 >= 2.0.0,
+            [gtk_version_to_link=2.x.x],
+            [AC_MSG_ERROR([cannot find gtk+-2.0 >= 2.0.0])])
+    else
+       PKG_CHECK_MODULES(
+            GTK,
+            gtk+-3.0 >= 3.0.0,
+            [gtk_version_to_link=3.x.x],
+            [AC_MSG_ERROR([cannot find gtk+-3.0 >= 3.0.0])])
+    fi
 
     AC_CHECK_LIB([gif],
     [DGifOpenFileHandle],
@@ -163,7 +163,10 @@ if test "x$enable_display" = xyes; then
     [jpeg_read_header],
     [],
     [AC_MSG_ERROR([cannot find lib jpeg])] )
+else
+    gtk_version_to_link=none
 fi
+
 
 AC_CHECK_LIB([webp],
     [WebPDecodeRGBInto],
@@ -274,6 +277,8 @@ echo \
 
  Package features:
    - enable display: ${enable_display}
+   - enable gtk3: ${enable_gtk3}
+   - GTK version found: ${gtk_version_to_link}
    - enable http display: ${enable_http_display}
    - enable debug: ${enable_debug}
 
