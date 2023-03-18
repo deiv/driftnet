@@ -150,10 +150,30 @@ void make_backing_image() {
  * Copy the backing image onto the window. */
 void update_window() {
     if (backing_image) {
+#ifdef DISABLE_GTK3
         GdkGC *gc;
         gc = gdk_gc_new(drawable);
         gdk_draw_rgb_32_image(drawable, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, (guchar*)backing_image->flat, sizeof(pel) * width);
         g_object_unref(gc);
+#else
+        cairo_t *cr = gdk_cairo_create(drawable);
+
+        cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+        cairo_rectangle(cr, 0.0, 0.0, width, height);
+        cairo_fill(cr);
+
+        cairo_surface_t *pSurface = cairo_image_surface_create_for_data(
+                (guchar*)backing_image->flat,
+                CAIRO_FORMAT_RGB24,
+                width,
+                height,
+                (width * 4));
+
+        cairo_set_source_surface(cr, pSurface, 0.0, 0.0);
+        cairo_paint(cr);
+
+        cairo_destroy(cr);
+#endif
     }
 }
 
