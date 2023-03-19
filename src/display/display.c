@@ -240,8 +240,15 @@ struct imgrect *find_image_rectangle(const int x, const int y) {
 /* expose_event:
  * React to an expose event, perhaps changing the backing image size. */
 void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
+#ifdef DISABLE_GTK3
     if (darea) drawable = darea->window;
     gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
+#else
+    if (darea) drawable = gtk_widget_get_window (darea);
+    width = gdk_window_get_width(drawable);
+    height = gdk_window_get_height(drawable);
+#endif
+
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -251,8 +258,15 @@ void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
 /* configure_event:
  * React to a configure event, perhaps changing the backing image size. */
 void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
+#ifdef DISABLE_GTK3
     if (darea) drawable = darea->window;
     gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
+#else
+    if (darea) drawable = gtk_widget_get_window (darea);
+    width = gdk_window_get_width(drawable);
+    height = gdk_window_get_height(drawable);
+#endif
+
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -459,15 +473,20 @@ static void do_gtkdisplay(void)
     gtk_container_add(GTK_CONTAINER(window), darea);
     gtk_widget_set_events(darea, GDK_EXPOSURE_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK);
 
-    g_signal_connect(G_OBJECT(window), "delete_event", GTK_SIGNAL_FUNC(delete_event), NULL);
-    g_signal_connect(G_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
+    g_signal_connect(G_OBJECT(window), "delete_event", G_CALLBACK(delete_event), NULL);
+    g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(destroy), NULL);
 
-    g_signal_connect(G_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
-    g_signal_connect(G_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
+#if DISABLE_GTK3
+    g_signal_connect(G_OBJECT(darea), "expose-event", G_CALLBACK(expose_event), NULL);
+#else
+    g_signal_connect(G_OBJECT(darea), "draw", G_CALLBACK(expose_event), NULL);
+#endif
+
+    g_signal_connect(G_OBJECT(darea), "configure_event", G_CALLBACK(expose_event), NULL);
 
     /* mouse button press/release for saving images */
-    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
-    g_signal_connect(G_OBJECT(darea), "button_release_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_press_event", G_CALLBACK(button_press_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_release_event", G_CALLBACK(button_release_event), NULL);
 
     gtk_widget_show_all(window);
 
