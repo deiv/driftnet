@@ -336,11 +336,29 @@ void button_release_event(GtkWidget *widget, GdkEventButton *event) {
     if (ir && ir == find_image_rectangle((int)event->x, (int)event->y)) {
         /* We draw a little frame around the image while we're saving it, to
          * give some visual feedback. */
+#ifdef DISABLE_GTK3
         gdk_draw_rectangle(drawable, darea->style->white_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+#else
+        cairo_t *cr = gdk_cairo_create(drawable);
+
+        cairo_set_line_width (cr, 1.0);
+        cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+        cairo_rectangle(cr, ir->x, ir->y, ir->w+3, ir->h + 3);
+        cairo_stroke(cr);
+#endif
         gdk_flush();    /* force X to actually draw the damn thing. */
         save_image(ir);
         xnanosleep(100000000);
+#ifdef DISABLE_GTK3
         gdk_draw_rectangle(drawable, darea->style->black_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+#else
+        cairo_set_line_width (cr, 1.0);
+        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        cairo_rectangle(cr, ir->x, ir->y, ir->w+3, ir->h + 3);
+        cairo_stroke(cr);
+
+        cairo_destroy(cr);
+#endif
     }
 }
 
