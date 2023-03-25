@@ -17,6 +17,7 @@ Driftnet watches network traffic, and picks out and displays JPEG, GIF and other
 News
 ------------
 
+    Migrate display to GKT3 (GTK2 still supported)
     Added WebP image format support
     Added new, http and websockets based, display
     Added basic windows support (cygwin)
@@ -38,7 +39,20 @@ You will need:
 * [libwebsockets](https://libwebsockets.org/) (if you want the http server)
 * [libgtk](https://www.gtk.org/) (if you want the GTK display)
 
-On most Linux distributions (APT based) these can be installed by executing `sudo apt-get install libpcap-dev libjpeg-dev libpng12-dev giflib-tools libwebp-dev`. If you don't want a version of driftnet which will display images itself, but just want  to use it to gather images for some other application, you only need `libpcap`. See comments in the Makefile for more information. To play MPEG audio, you need an MPEG player. By default, driftnet will use [mpg123](http://www.mpg123.de/).
+On most Linux distributions (APT based) these can be installed by executing `sudo apt-get install libpcap-dev libjpeg-dev libpng-dev libgif-dev libwebp-dev`. If you don't want a version of driftnet which will display images itself, but just want  to use it to gather images for some other application, you only need `libpcap`. See comments in the Makefile for more information. To play MPEG audio, you need an MPEG player. By default, driftnet will use [mpg123](http://www.mpg123.de/).
+
+### GTK display
+
+Driftnet links by default against GTK 3 (GTK2 is still supported disabling GTK3 in the configure script `./configure --disable-gtk3`).
+
+- GTK3 dependencies: `sudo apt-get install libgtk-3-dev`
+- GTK2 dependencies: `sudo apt-get install libgtk2.0-dev`
+
+### HTTP display
+
+Instead of the GTK interface you can use a new HTML based one (the display could be selected at launch time).
+
+Dependencies: `sudo apt-get install libwebsockets-dev`
 
 ## Windows (on cygwin)
 
