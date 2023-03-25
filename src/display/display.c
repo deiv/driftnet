@@ -481,7 +481,9 @@ static void do_gtkdisplay(void)
     /* do some init thing */
     gtk_init(0, NULL);
 
+#ifdef DISABLE_GTK3
     gtk_widget_push_colormap(gdk_rgb_get_colormap());
+#endif
 
     /* Make our own window. */
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -517,7 +519,9 @@ static void do_gtkdisplay(void)
 
     img_delete(backing_image);
 
+#ifdef DISABLE_GTK3
     gtk_exit(0);
+#endif
 
     return; /* NOTREACHED */
 }
