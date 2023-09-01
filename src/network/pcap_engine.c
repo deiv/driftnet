@@ -236,7 +236,15 @@ void *capture_thread(void *v)
 
 void packetcapture_dispatch(void)
 {
-    pcap_dispatch(pc, -1, process_packet, NULL);
+    int ret = pcap_dispatch(pc, -1, process_packet, NULL);
+
+    if (ret == -1) {
+        char* pcap_err = pcap_geterr(pc);
+
+        if (pcap_err) {
+            log_msg(LOG_ERROR, "pcap_dispatch: %s", pcap_err);
+        }
+    }
 }
 
 /* process_packet:
