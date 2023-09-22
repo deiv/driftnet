@@ -264,6 +264,7 @@ int main(int argc, char *argv[])
      * Otherwise, check that it's a directory into which we may write files.
      */
     if (options->tmpdir) {
+        log_msg(LOG_INFO, "setting custom tmpdir in: %s", options->tmpdir);
         if (check_dir_is_rw(options->tmpdir) == FALSE) {
             log_msg(LOG_ERROR, "we can't write to the temporary directory");
             exit(1);
@@ -321,15 +322,23 @@ int main(int argc, char *argv[])
                     driver->dispatch_data = dispatch_image_to_stdout;
 
                 } else {
+#if !defined(NO_DISPLAY_WINDOW) && !defined(NO_HTTP_DISPLAY)
                     if (options->enable_gtk_display) {
-#ifndef NO_DISPLAY_WINDOW
                         driver->dispatch_data = dispatch_image_to_display;
-#endif
+
                     } else {
-#ifndef NO_HTTP_DISPLAY
                         driver->dispatch_data = dispatch_image_to_httpdisplay;
-#endif
                     }
+#elif !defined(NO_DISPLAY_WINDOW)
+                    driver->dispatch_data = dispatch_image_to_display;
+#elif !defined(NO_HTTP_DISPLAY)
+                    driver->dispatch_data = dispatch_image_to_httpdisplay;
+#else
+                    log_msg(
+                            LOG_ERROR,
+                            "driftnet was compiled without any display options, use adjunct mode only");
+                    return -1;
+#endif
                 }
                 break;
 
