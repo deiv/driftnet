@@ -1,5 +1,5 @@
 version=4
 opts=\
 repacksuffix=+dfsg,\
-dversionmangle=auto,\
+dversionmangle=auto \
  https://github.com/deiv/driftnet/tags .*/v?(\d[\d\.]+)\.tar\.gz
