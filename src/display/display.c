@@ -150,10 +150,30 @@ void make_backing_image() {
  * Copy the backing image onto the window. */
 void update_window() {
     if (backing_image) {
+#ifdef DISABLE_GTK3
         GdkGC *gc;
         gc = gdk_gc_new(drawable);
         gdk_draw_rgb_32_image(drawable, gc, 0, 0, width, height, GDK_RGB_DITHER_NORMAL, (guchar*)backing_image->flat, sizeof(pel) * width);
         g_object_unref(gc);
+#else
+        cairo_t *cr = gdk_cairo_create(drawable);
+
+        cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+        cairo_rectangle(cr, 0.0, 0.0, width, height);
+        cairo_fill(cr);
+
+        cairo_surface_t *pSurface = cairo_image_surface_create_for_data(
+                (guchar*)backing_image->flat,
+                CAIRO_FORMAT_RGB24,
+                width,
+                height,
+                (width * 4));
+
+        cairo_set_source_surface(cr, pSurface, 0.0, 0.0);
+        cairo_paint(cr);
+
+        cairo_destroy(cr);
+#endif
     }
 }
 
@@ -220,8 +240,15 @@ struct imgrect *find_image_rectangle(const int x, const int y) {
 /* expose_event:
  * React to an expose event, perhaps changing the backing image size. */
 void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
+#ifdef DISABLE_GTK3
     if (darea) drawable = darea->window;
     gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
+#else
+    if (darea) drawable = gtk_widget_get_window (darea);
+    width = gdk_window_get_width(drawable);
+    height = gdk_window_get_height(drawable);
+#endif
+
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -231,8 +258,15 @@ void expose_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
 /* configure_event:
  * React to a configure event, perhaps changing the backing image size. */
 void configure_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
+#ifdef DISABLE_GTK3
     if (darea) drawable = darea->window;
     gdk_drawable_get_size(GDK_DRAWABLE(drawable), &width, &height);
+#else
+    if (darea) drawable = gtk_widget_get_window (darea);
+    width = gdk_window_get_width(drawable);
+    height = gdk_window_get_height(drawable);
+#endif
+
     if (!backing_image || backing_image->width != width || backing_image->height != height)
         make_backing_image();
 
@@ -302,11 +336,29 @@ void button_release_event(GtkWidget *widget, GdkEventButton *event) {
     if (ir && ir == find_image_rectangle((int)event->x, (int)event->y)) {
         /* We draw a little frame around the image while we're saving it, to
          * give some visual feedback. */
+#ifdef DISABLE_GTK3
         gdk_draw_rectangle(drawable, darea->style->white_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+#else
+        cairo_t *cr = gdk_cairo_create(drawable);
+
+        cairo_set_line_width (cr, 1.0);
+        cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+        cairo_rectangle(cr, ir->x, ir->y, ir->w+3, ir->h + 3);
+        cairo_stroke(cr);
+#endif
         gdk_flush();    /* force X to actually draw the damn thing. */
         save_image(ir);
         xnanosleep(100000000);
+#ifdef DISABLE_GTK3
         gdk_draw_rectangle(drawable, darea->style->black_gc, 0, ir->x - 2, ir->y - 2, ir->w + 3, ir->h + 3);
+#else
+        cairo_set_line_width (cr, 1.0);
+        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        cairo_rectangle(cr, ir->x, ir->y, ir->w+3, ir->h + 3);
+        cairo_stroke(cr);
+
+        cairo_destroy(cr);
+#endif
     }
 }
 
@@ -429,7 +481,9 @@ static void do_gtkdisplay(void)
     /* do some init thing */
     gtk_init(0, NULL);
 
+#ifdef DISABLE_GTK3
     gtk_widget_push_colormap(gdk_rgb_get_colormap());
+#endif
 
     /* Make our own window. */
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -439,15 +493,20 @@ static void do_gtkdisplay(void)
     gtk_container_add(GTK_CONTAINER(window), darea);
     gtk_widget_set_events(darea, GDK_EXPOSURE_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK);
 
-    g_signal_connect(G_OBJECT(window), "delete_event", GTK_SIGNAL_FUNC(delete_event), NULL);
-    g_signal_connect(G_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
+    g_signal_connect(G_OBJECT(window), "delete_event", G_CALLBACK(delete_event), NULL);
+    g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(destroy), NULL);
 
-    g_signal_connect(G_OBJECT(darea), "expose-event", GTK_SIGNAL_FUNC(expose_event), NULL);
-    g_signal_connect(G_OBJECT(darea), "configure_event", GTK_SIGNAL_FUNC(expose_event), NULL);
+#if DISABLE_GTK3
+    g_signal_connect(G_OBJECT(darea), "expose-event", G_CALLBACK(expose_event), NULL);
+#else
+    g_signal_connect(G_OBJECT(darea), "draw", G_CALLBACK(expose_event), NULL);
+#endif
+
+    g_signal_connect(G_OBJECT(darea), "configure_event", G_CALLBACK(expose_event), NULL);
 
     /* mouse button press/release for saving images */
-    g_signal_connect(G_OBJECT(darea), "button_press_event", GTK_SIGNAL_FUNC(button_press_event), NULL);
-    g_signal_connect(G_OBJECT(darea), "button_release_event", GTK_SIGNAL_FUNC(button_release_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_press_event", G_CALLBACK(button_press_event), NULL);
+    g_signal_connect(G_OBJECT(darea), "button_release_event", G_CALLBACK(button_release_event), NULL);
 
     gtk_widget_show_all(window);
 
@@ -460,7 +519,9 @@ static void do_gtkdisplay(void)
 
     img_delete(backing_image);
 
+#ifdef DISABLE_GTK3
     gtk_exit(0);
+#endif
 
     return; /* NOTREACHED */
 }

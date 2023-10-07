@@ -7,7 +7,12 @@ EXTRA_DIST = driftnet.1.in CREDITS Changelog
 MANPAGE = driftnet.1.gz
 MAN1DIR = $(DESTDIR)$(mandir)/man1/
 
-clean-local: clean-coverage clean-docs
+CLEAN_RULES = clean-docs
+if ENABLE_TESTS
+CLEAN_RULES += clean-coverage
+endif
+
+clean-local: $(CLEAN_RULES)
 	rm -f $(MANPAGE)
 
 install-data-local: driftnet.1.in

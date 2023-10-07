@@ -21,6 +21,7 @@ if ENABLE_DISPLAY
 SUBDIRS += display
 AM_CFLAGS += -I$(srcdir)/display
 driftnet_LDADD += display/libdisplay.a
+driftnet_LDADD += @GTK_LIBS@
 endif
 
 if ENABLE_HTTP_DISPLAY

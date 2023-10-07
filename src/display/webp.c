@@ -1,3 +1,16 @@
+/*
+ * webp.c:
+ * WebP file support.
+ *
+ * Copyright (c) 2022 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
+ * Copyright (c) 2022 Martin.
+ * Email: martin@sandsmark.ninja
+ *
+ */
+
+
 #include <webp/decode.h>
 
 #include <string.h>
@@ -29,7 +42,7 @@ int webp_load_hdr(img I) {
     }
 
     actual = fread(internal->data, internal->size, 1, I->fp);
-    if (actual != internal->size) {
+    if (actual != 1) {
         // wtf;
         return 0;
     }
@@ -50,9 +63,23 @@ int webp_load_img(img I) {
     webp_internal *internal = (webp_internal*)I->us;
     size_t allocated_size;
 
+    img_alloc(I);
     allocated_size = I->height * sizeof(pel*) + I->width * I->height * sizeof(pel); // copied from img.c, because why the fuck not
-    decoded = WebPDecodeRGBInto(internal->data, internal->size,
-            (unsigned char*)*I->data, allocated_size, I->width); // apparently we always use dumb stride
+#ifdef DISABLE_GTK3
+    decoded = WebPDecodeRGBAInto(
+            internal->data,
+            internal->size,
+            (unsigned char*)*I->data,
+            allocated_size,
+            I->width*4);
+#else
+    decoded = WebPDecodeBGRAInto(
+            internal->data,
+            internal->size,
+            (unsigned char*)*I->data,
+            allocated_size,
+            I->width*4);
+#endif
 
     if (!decoded) {
         return 0;

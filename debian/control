@@ -5,7 +5,7 @@ Maintainer: David Suárez <deiv@debian.org>
 Build-Depends: debhelper-compat (= 13),
                libcmocka-dev,
                libgif-dev,
-               libgtk2.0-dev,
+               libgtk-3-dev,
                libjpeg-dev,
                libpcap-dev,
                libpng-dev,

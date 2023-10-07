@@ -16,6 +16,7 @@ config.log
 config.status
 stamp-h1
 ar-lib
+test-driver
 driftnet
 
 # eclipse files
@@ -34,8 +35,11 @@ driftnet
 cmake-build-*
 docs/
 
-#coverage files
+# coverage files
 *.gcda
 *.gcno
 coverage.info
 coverage-docs/
+
+# generated files
+src/http_display/web_data.c
