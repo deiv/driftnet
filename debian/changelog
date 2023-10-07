@@ -1,3 +1,11 @@
+driftnet (1.5.0-0.2) unstable; urgency=medium
+
+  * Non-maintainer upload
+  * Patch: Recover else clause in endianess if (Closes: #1053612)
+  * d/watch: Terminate opts before URL
+
+ -- Bastian Germann <bage@debian.org>  Sat, 07 Oct 2023 13:31:13 +0000
+
 driftnet (1.5.0-0.1) unstable; urgency=medium
 
   * Non-maintainer upload
