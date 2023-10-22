@@ -2,7 +2,7 @@
  * options.h:
  * Options parsing.
  *
- * Copyright (c) 2012 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -26,13 +26,14 @@
 
 #include "options.h"
 
-options_t options = {NULL, FALSE, 0, TRUE, FALSE, FALSE, FALSE, TRUE,
-        NULL, NULL, NULL, MEDIATYPE_IMAGE, NULL, FALSE, FALSE,
+options_t options = {
+    NULL, FALSE, 0, TRUE, FALSE, FALSE,FALSE, FALSE, TRUE,
+    NULL, NULL, NULL, MEDIATYPE_IMAGE, NULL, FALSE, FALSE,
 #ifndef NO_DISPLAY_WINDOW
-        "driftnet-",
-        FALSE,
+    "driftnet-",
+    FALSE,
 #endif
-        NULL, 0, 0, FALSE, 9090
+    NULL, 0, 0, FALSE, 9090
 };
 
 static int validate_options(options_t* options);
@@ -43,7 +44,7 @@ static void usage(FILE *fp);
  */
 options_t* parse_options(int argc, char *argv[])
 {
-    char optstring[] = "abd:f:hi:M:m:pSsvx:Z:lr:wW:g";
+    char optstring[] = "abd:f:hi:M:m:pSsvDx:Z:lr:wW:g";
     int c;
 
     opterr = 0;
@@ -63,6 +64,10 @@ options_t* parse_options(int argc, char *argv[])
 
             case 'v':
                 options.verbose = TRUE;
+                break;
+
+            case 'D':
+                options.debug = TRUE;
                 break;
 
             case 'b':
@@ -265,6 +270,10 @@ int validate_options(options_t* options)
 #endif
     }
 
+    if (options->verbose && options->debug) {
+        log_msg(LOG_WARNING, "verbose and debug are mutually exclusive: switching to debug mode anyway");
+    }
+
     return TRUE;
 }
 
@@ -282,6 +291,7 @@ void usage(FILE *fp)
 "\n"
 "  -h               Display this help message.\n"
 "  -v               Verbose operation.\n"
+"  -D               Debug operation.\n"
 "  -b               Beep when a new image is captured.\n"
 "  -i interface     Select the interface on which to listen (default: all\n"
 "                   interfaces).\n"

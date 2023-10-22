@@ -2,7 +2,7 @@
  * driftnet.c:
  * Pick out images from passing network traffic.
  *
- * Copyright (c) 2012 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  * Copyright (c) 2001 Chris Lightfoot.
@@ -224,6 +224,11 @@ int main(int argc, char *argv[])
 	if (options->verbose) {
         set_loglevel(LOG_INFO);
     }
+
+    /* Debug have priority over Info */
+    if (options->debug) {
+        set_loglevel(LOG_DEBUG);
+    }
 	
 	if (options->list_interfaces == 1) {
 		return !network_list_interfaces();
@@ -357,7 +362,7 @@ int main(int argc, char *argv[])
     while (!foad)
         sleep(1);
 
-    if (options->verbose)
+    if (options->verbose || options->debug)
         print_exit_reason();
 
 #ifndef NO_HTTP_DISPLAY
