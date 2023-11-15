@@ -37,6 +37,9 @@ Print a summary of usage.
 \fB-v\fP
 Print additional details of packets captured to the terminal.
 .TP
+\fB-D\fP
+Print debug details to the terminal.
+.TP
 \fB-b\fP
 Beep when a new image is displayed.
 .TP
