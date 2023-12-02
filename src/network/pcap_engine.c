@@ -9,7 +9,7 @@
  * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -179,6 +179,7 @@ int network_open_live(char *interface, char *filterexpr, int promisc, int monito
 void network_close(void)
 {
     running = FALSE;
+    pcap_breakloop(pc);
 
     pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */
     pthread_join(packetth, NULL);
@@ -244,6 +245,10 @@ void packetcapture_dispatch(void)
         if (pcap_err) {
             log_msg(LOG_ERROR, "pcap_dispatch: %s", pcap_err);
         }
+    }
+
+    if (ret == -2) {
+        log_msg(LOG_DEBUG, "pcap_dispatch: pcap_breakloop called, exiting");
     }
 }
 
