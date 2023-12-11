@@ -111,6 +111,10 @@ Port number for the HTTP server (implies -w). Default: 9090.
 \fIfilter code\fP
 Additional filter code to restrict the packets captured, in the libpcap
 syntax. User filter code is evaluated as `tcp and (\fIfilter code\fP)'.
+.TP
+\fB-y\fP \fImiliseconds\fP
+If offline mode, use \fImiliseconds\fP delay between packets.
+.TP
 
 .SH SEE ALSO
 .BR tcpdump (8),

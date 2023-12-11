@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 
     /* Start up pcap as soon as posible to later drop root privileges. */
     if (options->dumpfile) {
-        ok = network_open_offline(options->dumpfile);
+        ok = network_open_offline(options->dumpfile, options->offline_delay);
 
     } else {
         ok = network_open_live(options->interface, options->filterexpr, options->promisc, options->monitor_mode);

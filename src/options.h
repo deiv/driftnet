@@ -42,6 +42,7 @@ typedef struct {
     int monitor_mode;
     int enable_http_display;
     int http_server_port;
+    int offline_delay;
 } options_t;
 
 options_t* parse_options(int argc, char *argv[]);

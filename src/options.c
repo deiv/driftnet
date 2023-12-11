@@ -33,7 +33,7 @@ options_t options = {
     "driftnet-",
     FALSE,
 #endif
-    NULL, 0, 0, FALSE, 9090
+    NULL, 0, 0, FALSE, 9090, 0
 };
 
 static int validate_options(options_t* options);
@@ -44,7 +44,7 @@ static void usage(FILE *fp);
  */
 options_t* parse_options(int argc, char *argv[])
 {
-    char optstring[] = "abd:f:hi:M:m:pSsvDx:Z:lr:wW:g";
+    char optstring[] = "abd:f:hi:M:m:pSsvDx:Z:lr:wW:gy:";
     int c;
 
     opterr = 0;
@@ -152,6 +152,10 @@ options_t* parse_options(int argc, char *argv[])
                 options.enable_http_display = TRUE;
                 break;
 #endif
+
+            case 'y':
+                options.offline_delay = atoi(optarg);
+                break;
 
             case '?':
             default:
@@ -323,6 +327,7 @@ void usage(FILE *fp)
 "  -w               Enable the HTTP server to display images.\n"
 "  -W               Port number for the HTTP server (implies -w). Default: 9090.\n"
 #endif
+"  -y miliseconds   In offline mode, use specified miliseconds delay between packets.\n"
 "\n"
 "Filter code can be specified after any options in the manner of tcpdump(8).\n"
 "The filter code will be evaluated as `tcp and (user filter code)'\n"
