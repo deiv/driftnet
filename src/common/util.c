@@ -117,7 +117,7 @@ void xnanosleep(long nanosecs)
 #endif
 }
 
-int mssleep(long miliseconds)
+void mssleep(long miliseconds)
 {
 #if HAVE_NANOSLEEP
     struct timespec tm = {

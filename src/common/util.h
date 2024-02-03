@@ -88,7 +88,7 @@ void xnanosleep(long nanosecs);
  *
  * @param miliseconds miliseconds to sleep
  */
-int mssleep(long miliseconds);
+void mssleep(long miliseconds);
 
 /**
  * @brief Composes a file path from a base path and a filename.
