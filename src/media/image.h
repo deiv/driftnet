@@ -27,4 +27,7 @@ unsigned char *find_png_image(const unsigned char *data, const size_t len,
 unsigned char *find_webp_image(const unsigned char *data, const size_t len,
         unsigned char **webpdata, size_t *webplen);
 
+unsigned char *find_avif_image(const unsigned char *data, const size_t len,
+        unsigned char **avifdata, size_t *aviflen);
+
 #endif /* __IMAGE_H__ */

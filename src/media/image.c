@@ -425,6 +425,32 @@ unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsi
     return (unsigned char*)hdr_begin + *webplen;
 }
 
+unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsigned char **avifdata, size_t *aviflen) {
+
+    static const unsigned char webp_sig[] = {'f', 't', 'y', 'p' };
+    unsigned char *avifhdr;
+
+    *avifdata = NULL;
+    *aviflen = 0;
+
+    if (data == NULL) {
+        return NULL;
+    }
+
+    if (len < 8) {
+        return (unsigned char*)data;
+    }
+
+    avifhdr = memstr(data, len, (unsigned char*)webp_sig, 4);
+    if (!avifhdr) return (unsigned char*)(data + len - 1);
+
+    /* TODO: find until end */
+    *avifdata = avifhdr;
+    *aviflen = 0;
+
+    return avifhdr;
+}
+
 
 #if 0
 #include <unistd.h>

@@ -55,6 +55,12 @@ char* ico_image_list[] = {
         "tests/resources/ico_test_file_1.ico"
 };
 
+char* avif_image_list[] = {
+        "tests/resources/avif_test_file_1.avif",
+        "tests/resources/avif_test_file_2.avif",
+        "tests/resources/avif_test_file_3.avif"
+};
+
 typedef struct test_media_state_t {
 
     char** image_list;
@@ -66,7 +72,7 @@ test_media_state_t gif_test_media_resource  = {.image_list = gif_image_list,  .f
 test_media_state_t jpeg_test_media_resource = {.image_list = jpeg_image_list, .find_media_func = find_jpeg_image};
 test_media_state_t png_test_media_resource  = {.image_list = png_image_list,  .find_media_func = find_png_image};
 test_media_state_t webp_test_media_resource  = {.image_list = webp_image_list,  .find_media_func = find_webp_image};
-
+test_media_state_t avif_test_media_resource  = {.image_list = avif_image_list,  .find_media_func = find_avif_image};
 
 /**
  * Setup the needed state for gif media group tests
@@ -116,6 +122,19 @@ static int png_media_test_group_setup (void** state)
 static int webp_media_test_group_setup (void** state)
 {
     *state = &webp_test_media_resource;
+
+    return 0;
+}
+
+/**
+ * Setup the needed state for avif media group tests
+ *
+ * @param state
+ * @return
+ */
+static int avif_media_test_group_setup (void** state)
+{
+    *state = &avif_test_media_resource;
 
     return 0;
 }
@@ -188,8 +207,6 @@ void test_parse_images(void** state)
 
         }
     }
-
-
 }
 
 void test_dont_parse_corrupt_data(void** state)
@@ -273,6 +290,7 @@ int main(void)
     ret += cmocka_run_group_tests_name("jpeg media tests", image_tests, jpeg_media_test_group_setup, NULL);
     ret += cmocka_run_group_tests_name("png media tests", image_tests, png_media_test_group_setup, NULL);
     ret += cmocka_run_group_tests_name("webp media tests", image_tests, webp_media_test_group_setup, NULL);
+    ret += cmocka_run_group_tests_name("avif media tests", image_tests, avif_media_test_group_setup, NULL);
 
     const struct CMUnitTest media_tests[] = {
             cmocka_unit_test(test_correct_media_drivers_for_mediatype_count)
