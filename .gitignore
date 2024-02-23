@@ -35,6 +35,10 @@ driftnet
 cmake-build-*
 docs/
 
+# test files
+test-suite.log
+test_unit*
+
 # coverage files
 *.gcda
 *.gcno
