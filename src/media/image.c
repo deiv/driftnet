@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
+#include <byteswap.h>
 
 #include <netinet/in.h> /* ntohl */
 
@@ -427,7 +428,8 @@ unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsi
 
 unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsigned char **avifdata, size_t *aviflen) {
 
-    static const unsigned char webp_sig[] = {'f', 't', 'y', 'p' };
+    static const unsigned char filetype_box_tag[] = {'f', 't', 'y', 'p' };
+
     unsigned char *avifhdr;
 
     *avifdata = NULL;
@@ -441,12 +443,21 @@ unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsi
         return (unsigned char*)data;
     }
 
-    avifhdr = memstr(data, len, (unsigned char*)webp_sig, 4);
-    if (!avifhdr) return (unsigned char*)(data + len - 1);
+    avifhdr = memstr(data, len, (unsigned char*)filetype_box_tag, 4);
 
-    /* TODO: find until end */
-    *avifdata = avifhdr;
-    *aviflen = 0;
+    if (!avifhdr) {
+        return (unsigned char*)(data + len - 1);
+    }
+
+    avifhdr = avifhdr - 4;
+
+    unsigned char *current_box = avifhdr;
+    u_int32_t current_box_len = __bswap_32(*((u_int32_t*) avifhdr));
+
+    while (len > (current_box + current_box_len + 8) - avifhdr) {
+        current_box = current_box + current_box_len;
+        current_box_len = __bswap_32(*((u_int32_t *) current_box));
+    }
 
     return avifhdr;
 }
