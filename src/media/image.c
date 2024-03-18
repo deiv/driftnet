@@ -429,6 +429,7 @@ unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsi
 unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsigned char **avifdata, size_t *aviflen) {
 
     static const unsigned char filetype_box_tag[] = {'f', 't', 'y', 'p' };
+    static const unsigned char media_box_tag[] = {'m', 'd', 'a', 't' };
 
     unsigned char *avifhdr;
 
@@ -457,6 +458,13 @@ unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsi
     while (len > (current_box + current_box_len + 8) - avifhdr) {
         current_box = current_box + current_box_len;
         current_box_len = __bswap_32(*((u_int32_t *) current_box));
+
+        unsigned char *current_box_type = current_box + 4;
+
+        /* media box ? */
+        if (memcmp(current_box_type, media_box_tag, sizeof(media_box_tag)) != 0) {
+            continue;
+        }
     }
 
     return avifhdr;
