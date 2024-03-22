@@ -465,6 +465,16 @@ unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsi
         if (memcmp(current_box_type, media_box_tag, sizeof(media_box_tag)) != 0) {
             continue;
         }
+
+        u_int32_t file_len = (current_box - avifhdr) + current_box_len;
+
+        /* enough room ? */
+        if (len >= file_len) {
+            *avifdata = avifhdr;
+            *aviflen = file_len;
+
+            return avifhdr + file_len;
+        }
     }
 
     return avifhdr;
