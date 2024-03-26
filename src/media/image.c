@@ -429,6 +429,7 @@ unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsi
 unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsigned char **avifdata, size_t *aviflen) {
 
     static const unsigned char filetype_box_tag[] = {'f', 't', 'y', 'p' };
+    static const unsigned char avif_major_brand[] = {'a', 'v', 'i', 'f' };
     static const unsigned char media_box_tag[] = {'m', 'd', 'a', 't' };
 
     unsigned char *avifhdr;
@@ -470,8 +471,13 @@ unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsi
 
         /* enough room ? */
         if (len >= file_len) {
-            *avifdata = avifhdr;
-            *aviflen = file_len;
+            unsigned char *major_brand = avifhdr + 8;
+
+            /* is AVIF ? */
+            if (memcmp(major_brand, avif_major_brand, sizeof(avif_major_brand)) == 0) {
+                *avifdata = avifhdr;
+                *aviflen = file_len;
+            }
 
             return avifhdr + file_len;
         }
