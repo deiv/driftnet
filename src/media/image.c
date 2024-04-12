@@ -2,6 +2,9 @@
  * image.c:
  * Attempt to find GIF/JPEG/PNG data embedded in buffers.
  *
+ * Copyright (c) 2012-2024 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
  * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
