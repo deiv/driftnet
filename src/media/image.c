@@ -17,6 +17,11 @@
 #include <string.h>
 #include <byteswap.h>
 
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#endif
+
+
 #include <netinet/in.h> /* ntohl */
 
 #include <webp/decode.h>
