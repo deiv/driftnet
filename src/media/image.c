@@ -2,6 +2,9 @@
  * image.c:
  * Attempt to find GIF/JPEG/PNG data embedded in buffers.
  *
+ * Copyright (c) 2012-2024 David Suárez.
+ * Email: david.sephirot@gmail.com
+ *
  * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
@@ -12,9 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (Darwin...), stdio.h is a prerequisite. */
 #include <string.h>
+#include <byteswap.h>
+
 #ifdef __FreeBSD__
 #include <sys/types.h>
 #endif
+
 
 #include <netinet/in.h> /* ntohl */
 
@@ -426,6 +432,66 @@ unsigned char *find_webp_image(const unsigned char *data, const size_t len, unsi
     *webplen = filesize;
 
     return (unsigned char*)hdr_begin + *webplen;
+}
+
+unsigned char *find_avif_image(const unsigned char *data, const size_t len, unsigned char **avifdata, size_t *aviflen) {
+
+    static const unsigned char filetype_box_tag[] = {'f', 't', 'y', 'p' };
+    static const unsigned char avif_major_brand[] = {'a', 'v', 'i', 'f' };
+    static const unsigned char media_box_tag[] = {'m', 'd', 'a', 't' };
+
+    unsigned char *avifhdr;
+
+    *avifdata = NULL;
+    *aviflen = 0;
+
+    if (data == NULL) {
+        return NULL;
+    }
+
+    if (len < 8) {
+        return (unsigned char*)data;
+    }
+
+    avifhdr = memstr(data, len, (unsigned char*)filetype_box_tag, 4);
+
+    if (!avifhdr) {
+        return (unsigned char*)(data + len - 1);
+    }
+
+    avifhdr = avifhdr - 4;
+
+    unsigned char *current_box = avifhdr;
+    u_int32_t current_box_len = __bswap_32(*((u_int32_t*) avifhdr));
+
+    while (len > (current_box + current_box_len + 8) - avifhdr) {
+        current_box = current_box + current_box_len;
+        current_box_len = __bswap_32(*((u_int32_t *) current_box));
+
+        unsigned char *current_box_type = current_box + 4;
+
+        /* media box ? */
+        if (memcmp(current_box_type, media_box_tag, sizeof(media_box_tag)) != 0) {
+            continue;
+        }
+
+        u_int32_t file_len = (current_box - avifhdr) + current_box_len;
+
+        /* enough room ? */
+        if (len >= file_len) {
+            unsigned char *major_brand = avifhdr + 8;
+
+            /* is AVIF ? */
+            if (memcmp(major_brand, avif_major_brand, sizeof(avif_major_brand)) == 0) {
+                *avifdata = avifhdr;
+                *aviflen = file_len;
+            }
+
+            return avifhdr + file_len;
+        }
+    }
+
+    return avifhdr;
 }
 
 

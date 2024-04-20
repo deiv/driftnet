@@ -5,7 +5,7 @@
  * @author David Suárez
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -31,7 +31,10 @@ typedef enum {
     LOG_WARNING,
 
     /** Info level */
-    LOG_INFO
+    LOG_INFO,
+
+    /** Debug level */
+    LOG_DEBUG
 } loglevel_t;
 
 /**
