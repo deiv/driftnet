@@ -2,7 +2,7 @@
  * options.h:
  * Options parsing.
  *
- * Copyright (c) 2012 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -22,6 +22,7 @@ typedef struct {
     int max_tmpfiles;
     int extract_images;
     int verbose;
+    int debug;
     int adjunct;
     int beep;
     int promisc;
@@ -41,6 +42,7 @@ typedef struct {
     int monitor_mode;
     int enable_http_display;
     int http_server_port;
+    int offline_delay;
 } options_t;
 
 options_t* parse_options(int argc, char *argv[]);

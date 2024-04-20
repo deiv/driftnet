@@ -9,7 +9,7 @@
  * Copyright (c) 2001 Chris Lightfoot.
  * Email: chris@ex-parrot.com; WWW: http://www.ex-parrot.com/~chris/
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -36,6 +36,7 @@
 
 #include "common/tmpdir.h"
 #include "common/log.h"
+#include "common/util.h"
 #include "media/media.h"
 #include "connection.h"
 #include "layer3.h"
@@ -55,12 +56,15 @@ static datalink_info_t datalink_info;
 
 static int running = FALSE;
 static pthread_t packetth;
+static int is_offline = FALSE;
+static int offline_delay = 0;
 
 static drivers_t* media_drivers;
 
 void extract_media(connection c);
-void packetcapture_dispatch(void);
-static void *capture_thread(void *v);
+void packetcapture_dispatch(int);
+static void *online_capture_thread(void *v);
+static void *offline_capture_thread(void *v);
 
 int network_list_interfaces(void)
 { 
@@ -87,7 +91,7 @@ int network_list_interfaces(void)
 	return TRUE;
 }
 
-int network_open_offline(char *dumpfile) {
+int network_open_offline(char *dumpfile, int delay) {
     char ebuf[PCAP_ERRBUF_SIZE];
 
     if (!(pc = pcap_open_offline(dumpfile, ebuf))) {
@@ -97,7 +101,15 @@ int network_open_offline(char *dumpfile) {
 
     datalink_info = get_datalink_info(pc);
 
-    log_msg(LOG_INFO, "reading packets from %s", dumpfile);
+    is_offline = TRUE;
+    offline_delay = delay;
+
+    if (offline_delay > 0) {
+        log_msg(LOG_INFO, "reading packets from %s, with %i miliseconds of delay", dumpfile, offline_delay);
+
+    } else {
+        log_msg(LOG_INFO, "reading packets from %s", dumpfile);
+    }
 
     return TRUE;
 }
@@ -172,6 +184,7 @@ int network_open_live(char *interface, char *filterexpr, int promisc, int monito
         promisc ? " in promiscuous mode" : "");
 
     datalink_info = get_datalink_info(pc);
+    is_offline = FALSE;
 
     return TRUE;
 }
@@ -179,6 +192,7 @@ int network_open_live(char *interface, char *filterexpr, int promisc, int monito
 void network_close(void)
 {
     running = FALSE;
+    pcap_breakloop(pc);
 
     pthread_cancel(packetth); /* make sure thread quits even if it's stuck in pcap_dispatch */
     pthread_join(packetth, NULL);
@@ -207,7 +221,7 @@ char* network_get_default_interface(void)
     return interface;
 }
 
-void network_start(drivers_t*drivers)
+void network_start(drivers_t* drivers)
 {
     media_drivers = drivers;
 
@@ -220,23 +234,58 @@ void network_start(drivers_t*drivers)
      * libpcap doesn't have read timeouts, so we start the thing up in a
      * separate thread. Yay!
      */
-    pthread_create(&packetth, NULL, capture_thread, NULL);
+    if (is_offline) {
+        pthread_create(&packetth, NULL, offline_capture_thread, NULL);
+
+    } else {
+        pthread_create(&packetth, NULL, online_capture_thread, NULL);
+    }
 }
 
 /*
- * Thread in which packet capture runs.
+ * Thread in which online packet capture runs.
  */
-void *capture_thread(void *v)
+void *online_capture_thread(void *v)
 {
-    while (running)
-        packetcapture_dispatch();
+    while (running) {
+        packetcapture_dispatch(-1);
+    }
 
     return NULL;
 }
 
-void packetcapture_dispatch(void)
+/*
+ * Thread in which offline packet read runs.
+ */
+void *offline_capture_thread(void *v)
 {
-    pcap_dispatch(pc, -1, process_packet, NULL);
+    while (running) {
+        packetcapture_dispatch(1);
+
+        if (offline_delay > 0) {
+            mssleep(offline_delay);
+        }
+    }
+
+    return NULL;
+}
+
+
+void packetcapture_dispatch(int packet_count)
+{
+    int ret = pcap_dispatch(pc, packet_count, process_packet, NULL);
+
+    if (ret == -1) {
+        char* pcap_err = pcap_geterr(pc);
+
+        if (pcap_err) {
+            log_msg(LOG_ERROR, "pcap_dispatch: %s", pcap_err);
+        }
+    }
+
+    if (ret == -2) {
+        log_msg(LOG_DEBUG, "pcap_dispatch: pcap_breakloop called, exiting");
+    }
 }
 
 /* process_packet:

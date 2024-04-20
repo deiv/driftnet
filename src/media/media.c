@@ -17,6 +17,9 @@
 #include "compat/compat.h"
 
 #include <string.h>
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#endif
 
 #include "common/util.h"
 #include "common/tmpdir.h"

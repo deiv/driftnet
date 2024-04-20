@@ -13,10 +13,4 @@ TODO for driftnet
 
 * More portability / bug fixes.
 
-* Web-based version. Server push? Feedback problems.
-
 * `Bogus image' problem after running for a while?
-
-* Safe(r) setuid operation.
-
-* Delay between reading packets from dump file?

@@ -7,7 +7,7 @@
  * @author Chris Lightfoot
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018-2019 David Suárez.
+ * Copyright (c) 2018-2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  * Copyright (c) 2003 Chris Lightfoot.
@@ -114,6 +114,25 @@ void xnanosleep(long nanosecs)
 #else
     /* sleep() can't help ... */
     #error cannot find an usable sleep function
+#endif
+}
+
+void mssleep(long miliseconds)
+{
+#if HAVE_NANOSLEEP
+    struct timespec tm = {
+        (int)(miliseconds / 1000),
+        (miliseconds % 1000) * 1000000
+    };
+
+    nanosleep(&tm, NULL);
+
+#elif HAVE_USLEEP
+    usleep(miliseconds * 1000); /* obsolete: POSIX.1-2001 */
+
+#else
+    /* sleep() can't help ... */
+#error cannot find an usable sleep function
 #endif
 }
 

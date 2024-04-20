@@ -5,7 +5,7 @@
  * @author David Suárez
  * @date Sun, 28 Oct 2018 16:14:56 +0100
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -53,7 +53,7 @@ int network_open_live(char *interface, char *filterexpr, int promisc, int monito
  * @param dumpfile Path to dump file
  * @return TRUE if all ok, FALSE if error
  */
-int network_open_offline(char *dumpfile);
+int network_open_offline(char *dumpfile, int delay);
 
 /**
  * @brief Start capturing packets and handling inbound connections

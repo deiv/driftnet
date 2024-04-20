@@ -6,7 +6,7 @@
  * @author Chris Lightfoot
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018-2019 David Suárez.
+ * Copyright (c) 2018-2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  * Copyright (c) 2003 Chris Lightfoot.
@@ -82,6 +82,13 @@ unsigned char *memstr(const unsigned char *haystack, const size_t hlen, const un
  * @param nanosecs nanosecs to sleep
  */
 void xnanosleep(long nanosecs);
+
+/**
+ * @brief Sleep for x miliseconds
+ *
+ * @param miliseconds miliseconds to sleep
+ */
+void mssleep(long miliseconds);
 
 /**
  * @brief Composes a file path from a base path and a filename.

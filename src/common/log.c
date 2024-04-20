@@ -5,7 +5,7 @@
  * @author David Suárez
  * @date Sun, 21 Oct 2018 18:41:11 +0200
  *
- * Copyright (c) 2018 David Suárez.
+ * Copyright (c) 2024 David Suárez.
  * Email: david.sephirot@gmail.com
  *
  */
@@ -102,6 +102,9 @@ char* get_timestring(void)
 char* get_levelstring(loglevel_t level)
 {
     switch (level) {
+        case LOG_DEBUG:
+            return "debug";
+
         case LOG_INFO:
             return "info";
 

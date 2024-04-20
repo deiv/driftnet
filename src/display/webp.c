@@ -65,21 +65,12 @@ int webp_load_img(img I) {
 
     img_alloc(I);
     allocated_size = I->height * sizeof(pel*) + I->width * I->height * sizeof(pel); // copied from img.c, because why the fuck not
-#ifdef DISABLE_GTK3
-    decoded = WebPDecodeRGBAInto(
-            internal->data,
-            internal->size,
-            (unsigned char*)*I->data,
-            allocated_size,
-            I->width*4);
-#else
     decoded = WebPDecodeBGRAInto(
             internal->data,
             internal->size,
             (unsigned char*)*I->data,
             allocated_size,
             I->width*4);
-#endif
 
     if (!decoded) {
         return 0;

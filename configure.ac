@@ -22,7 +22,7 @@ build_linux=no
 build_mac=no
 
 case "${host_os}" in
-    linux*)
+    linux*|freebsd*)
         build_linux=yes
         ;;
     cygwin*|mingw*)
@@ -53,17 +53,6 @@ if test "x$enable_display" = xno; then
     AC_DEFINE([NO_DISPLAY_WINDOW], [1], [Compile without support for a display window])
 fi
 AM_CONDITIONAL(ENABLE_DISPLAY, test "x$enable_display" = xyes)
-
-AC_ARG_ENABLE(
-    [gtk3],
-    [AS_HELP_STRING([--disable-gtk3],[disable gtk+ 3.x and compile with gtk+ 2.x])],
-    ,
-    [enable_gtk3=yes])
-
-if test "x$enable_gtk3" = xno; then
-    AC_DEFINE([DISABLE_GTK3], [1], [Compile without support for gtk+ 3.x])
-fi
-AM_CONDITIONAL(ENABLE_GTK3, test "x$enable_gtk3" = xyes)
 
 AC_ARG_ENABLE([http-display],
     [AS_HELP_STRING([--disable-http-display],[disable http display (default is yes)])],
@@ -126,28 +115,11 @@ AC_CHECK_LIB([pthread],
 
 if test "x$enable_display" = xyes; then
 
-    HAVE_GTK_VERSION3=false
-
-    if test "x$enable_gtk3" = "xyes" ; then
-        PKG_CHECK_EXISTS(
-            [gtk+-3.0 >= 3.0.0],
-            [HAVE_GTK_VERSION3=true],
-            [HAVE_GTK_VERSION3=false])
-    fi
-
-    if test "x$HAVE_GTK_VERSION3" = "xfalse"; then
-        PKG_CHECK_MODULES(
-            GTK,
-            gtk+-2.0 >= 2.0.0,
-            [gtk_version_to_link=2.x.x],
-            [AC_MSG_ERROR([cannot find gtk+-2.0 >= 2.0.0])])
-    else
-       PKG_CHECK_MODULES(
-            GTK,
-            gtk+-3.0 >= 3.0.0,
-            [gtk_version_to_link=3.x.x],
-            [AC_MSG_ERROR([cannot find gtk+-3.0 >= 3.0.0])])
-    fi
+    PKG_CHECK_MODULES(
+        GTK,
+        gtk+-3.0 >= 3.0.0,
+        [gtk_version_to_link=3.x.x],
+        [AC_MSG_ERROR([cannot find gtk+-3.0 >= 3.0.0])])
 
     AC_CHECK_LIB([gif],
     [DGifOpenFileHandle],
@@ -277,7 +249,6 @@ echo \
 
  Package features:
    - enable display: ${enable_display}
-   - enable gtk3: ${enable_gtk3}
    - GTK version found: ${gtk_version_to_link}
    - enable http display: ${enable_http_display}
    - enable debug: ${enable_debug}
