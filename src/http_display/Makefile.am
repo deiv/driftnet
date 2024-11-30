@@ -11,6 +11,7 @@ AM_CFLAGS  = -Wall
 AM_CFLAGS += @WS_CFLAGS@
 AM_CFLAGS += -I$(srcdir)/../
 AM_CFLAGS += -DSTATIC_WEB_DIR=\"$(htmldir)\"
+AM_CFLAGS += -I$(srcdir)/../compat
 
 web_data.c: $(STATIC_WEB_FILES)
 	rm -f '$@'
