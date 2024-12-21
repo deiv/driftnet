@@ -7,7 +7,7 @@
  *
  */
 
-#include "compat.h"
+#include <compat.h>
 
 #include <libwebsockets.h>
 #include <string.h>
