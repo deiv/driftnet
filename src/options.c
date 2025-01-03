@@ -44,8 +44,9 @@ static void usage(FILE *fp);
  */
 options_t* parse_options(int argc, char *argv[])
 {
-    char optstring[] = "abd:f:hi:M:m:pSsvDx:Z:lr:wW:gy:";
+    char optstring[] = "abd:f:hi:M:m:pSsvDx:Z:lr:wW:gy:tT";
     int c;
+    mediatype_t specific_media = 0;
 
     opterr = 0;
     while ((c = getopt(argc, argv, optstring)) != -1) {
@@ -86,8 +87,26 @@ options_t* parse_options(int argc, char *argv[])
                 break;
 
             case 'S':
+                if (specific_media == MEDIATYPE_TEXT) {
+                    log_msg(LOG_ERROR, "text only capture already selected");
+                    return NULL;
+                }
+                specific_media = MEDIATYPE_AUDIO;
                 options.extract_type = MEDIATYPE_AUDIO;
                 break;
+
+            case 't':
+                options.extract_type |= MEDIATYPE_TEXT;
+            break;
+
+            case 'T':
+                if (specific_media == MEDIATYPE_AUDIO) {
+                    log_msg(LOG_ERROR, "audio only capture already selected");
+                    return NULL;
+                }
+                specific_media = MEDIATYPE_TEXT;
+                options.extract_type = MEDIATYPE_TEXT;
+            break;
 
             case 'M':
                 options.audio_mpeg_player = optarg;
@@ -313,7 +332,11 @@ void usage(FILE *fp)
 "  -s               Attempt to extract streamed audio data from the network,\n"
 "                   in addition to images. At present this supports MPEG data\n"
 "                   only.\n"
-"  -S               Extract streamed audio but not images.\n"
+"  -S               Extract streamed audio only.\n"
+"  -t               Attempt to extract text data from the network,\n"
+"                   in addition to images. At present this supports HTTP request\n"
+"                   only.\n"
+"  -T               Extract text data only.\n"
 "  -M command       Use the given command to play MPEG audio data extracted\n"
 "                   with the -s option; this should process MPEG frames\n"
 "                   supplied on standard input. Default: `mpg123 -'.\n"
