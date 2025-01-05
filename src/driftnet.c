@@ -171,30 +171,28 @@ void dispatch_mpeg_audio(const char *mname, const unsigned char *data, const siz
 
 void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len) {
     char *url;
-    const char *path, *host;
-    int pathlen, hostlen;
     const unsigned char *p;
 
     if (!(p = memstr(data, len, (unsigned char*)"\r\n", 2)))
         return;
 
-    path = (const char*)(data + 4);
-    pathlen = (p - 9) - (unsigned char*)path;
+    const char *path = (const char *) (data + 4);
+    int pathlen = (p - 9) - (unsigned char *) path;
 
     if (memcmp(path, "http://", 7) == 0) {
         url = malloc(pathlen + 1);
         sprintf(url, "%.*s", pathlen, path);
-    } else {
 
+    } else {
         if (!(p = memstr(p, len - (p - data), (unsigned char*)"\r\nHost: ", 8)))
             return;
 
-        host = (const char*)(p + 8);
+        const char *host = (const char *) (p + 8);
 
         if (!(p = memstr(p + 8, len - (p + 8 - data), (unsigned char*)"\r\n", 2)))
             return;
 
-        hostlen = p - (const unsigned char*)host;
+        int hostlen = p - (const unsigned char *) host;
 
         if (hostlen == 0)
             return;
@@ -203,7 +201,7 @@ void dispatch_http_req(const char *mname, const unsigned char *data, const size_
         sprintf(url, "http://%.*s%.*s", hostlen, host, pathlen, path);
     }
 
-    fprintf(stderr, "\n\n  %s\n\n", url);
+    log_msg(LOG_SIMPLY, "HTTP Request Captured: %s", url);
     free(url);
 }
 
