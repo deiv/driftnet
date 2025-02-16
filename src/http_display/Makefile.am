@@ -1,5 +1,5 @@
 
-STATIC_WEB_FILES = $(shell find static_web/ -not -type d -name '*')
+STATIC_WEB_FILES = $(shell find $(srcdir)/static_web/ -not -type d -name '*')
 
 noinst_LIBRARIES = libhttpdisplay.a
 libhttpdisplay_a_SOURCES = httpd.c httpd.h web_data.c web_data.h
