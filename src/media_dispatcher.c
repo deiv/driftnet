@@ -43,7 +43,7 @@ void dispatch_image_to_stdout(const char *mname, const unsigned char *data, cons
     if (name == NULL)
         return;
 
-    printf("%s/%s\n", get_tmpdir(), name);
+    log_msg(LOG_SIMPLY, "%s/%s", get_tmpdir(), name);
 }
 
 /*
@@ -59,9 +59,7 @@ void dispatch_image_to_display(const char *mname, const unsigned char *data, con
     if (name == NULL)
         return;
 
-
     display_send_img(name, TMPNAMELEN);
-
 }
 #endif /* !NO_DISPLAY_WINDOW */
 
