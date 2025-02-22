@@ -16,6 +16,7 @@
 #include "common/util.h"
 #include "common/log.h"
 #include "playaudio.h"
+#include "media.h"
 #ifndef NO_DISPLAY_WINDOW
     #include "display.h"
 #endif
@@ -77,7 +78,7 @@ void dispatch_image_to_httpdisplay(const char *mname, const unsigned char *data,
         return;
 
 
-    ws_send_text(name);
+    ws_send_media(name, MEDIATYPE_IMAGE);
 }
 #endif /* !NO_HTTP_DISPLAY */
 
