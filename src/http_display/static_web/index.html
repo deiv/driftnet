@@ -187,42 +187,57 @@
 
     window.WebSocket = window.WebSocket || window.MozWebSocket;
 
-    var ws = new WebSocket(get_ws_url(), "images-pipe-protocol");
+    const ws = new WebSocket(get_ws_url(), "images-pipe-protocol");
 
     try {
         ws.onopen = function() {
             console.log("websocket connection opened");
         };
-        ws.onmessage =function got_packet(msg) {
-            let imgWrap = document.createElement("div");
-            let imgContainer = document.createElement("div");
-            let closeButton = document.createElement("span");
-            let img = document.createElement("img");
 
-            imgWrap.className = "img-wrap";
-            closeButton.className = "close-image";
-            closeButton.title = "close image";
-            img.className = "dritfnet-image";
-            img.src = msg.data;
+        ws.onmessage = function got_packet(plainMessage) {
+            const message = JSON.parse(plainMessage.data);
 
-            imgContainer.append(closeButton);
-            imgContainer.append(img);
-            imgWrap.append(imgContainer);
+            switch (message.type) {
+                case 1:
+                    addImageMedia(message.content);
+                    break;
 
-            document.querySelector("#img-container").append(imgWrap);
-
-            const closeImages = document.querySelectorAll(".close-image");
-            closeImages.forEach(closeImage => closeImage.addEventListener("click", removeImage));
-
-            const thumbs = document.querySelectorAll(".dritfnet-image");
-            thumbs.forEach(img => img.addEventListener("click", imgActivate));
-
+                default:
+                    console.log("invalid message media type: " + message.content);
+            }
         };
+
         ws.onclose = function(){
             console.log("websocket connection closed");
         }
+
     } catch(exception) {
         alert("Error: can't connect to websocket");
+    }
+
+    function addImageMedia(imgUrl) {
+        let imgWrap = document.createElement("div");
+        let imgContainer = document.createElement("div");
+        let closeButton = document.createElement("span");
+        let img = document.createElement("img");
+
+        imgWrap.className = "img-wrap";
+        closeButton.className = "close-image";
+        closeButton.title = "close image";
+        img.className = "dritfnet-image";
+        img.src = imgUrl;
+
+        imgContainer.append(closeButton);
+        imgContainer.append(img);
+        imgWrap.append(imgContainer);
+
+        document.querySelector("#img-container").append(imgWrap);
+
+        const closeImages = document.querySelectorAll(".close-image");
+        closeImages.forEach(closeImage => closeImage.addEventListener("click", removeImage));
+
+        const thumbs = document.querySelectorAll(".dritfnet-image");
+        thumbs.forEach(img => img.addEventListener("click", imgActivate));
     }
 
     const body = document.querySelector("body");
@@ -301,6 +316,5 @@
         e.target.parentElement.parentElement.remove();
     }
 </script>
-
 </body>
 </html>
