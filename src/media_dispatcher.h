@@ -23,6 +23,9 @@ void dispatch_image_to_httpdisplay(const char *mname, const unsigned char *data,
 
 void dispatch_mpeg_audio(const char *mname, const unsigned char *data, const size_t len);
 
-void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len);
+void dispatch_text_to_stdout(const char *mname, const unsigned char *data, const size_t len);
+#ifndef NO_HTTP_DISPLAY
+void dispatch_text_to_httpdisplay(const char *mname, const unsigned char *data, const size_t len);
+#endif /* !NO_HTTP_DISPLAY */
 
 #endif //MEDIA_DISPATCHER_H
