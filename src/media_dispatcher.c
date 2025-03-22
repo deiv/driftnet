@@ -26,6 +26,7 @@
 
 #include "media_dispatcher.h"
 
+static char *parse_http_req(const unsigned char *data, size_t len);
 
 const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len)
 {
@@ -38,9 +39,8 @@ const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *dat
 
 void dispatch_image_to_stdout(const char *mname, const unsigned char *data, const size_t len)
 {
-    const char *name;
+    const char *name = tmpfile_write_mediaffile(mname, data, len);
 
-    name = tmpfile_write_mediaffile(mname, data, len);
     if (name == NULL)
         return;
 
@@ -91,12 +91,41 @@ void dispatch_mpeg_audio(const char *mname, const unsigned char *data, const siz
     mpeg_submit_chunk(data, len);
 }
 
-void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len) {
+void dispatch_text_to_stdout(const char *mname, const unsigned char *data, const size_t len)
+{
+    char* text = parse_http_req(data, len);
+
+    if (text != NULL) {
+        log_msg(LOG_SIMPLY, "%s", text);
+        free(text);
+    }
+}
+
+#ifndef NO_HTTP_DISPLAY
+void dispatch_text_to_httpdisplay(const char *mname, const unsigned char *data, const size_t len)
+{
+    char* text = parse_http_req(data, len);
+
+    if (text != NULL) {
+        ws_send_media(text, MEDIATYPE_TEXT);
+        free(text);
+    }
+}
+#endif /* !NO_HTTP_DISPLAY */
+
+#define HTTP_URL_PREFIX_FORMAT "HTTP Request Captured: %s"
+size_t http_url_prefix_format_len = strlen(HTTP_URL_PREFIX_FORMAT) - 2;
+
+/*
+ * TODO: move the parse to the driver
+ */
+static char *parse_http_req(const unsigned char *data, const size_t len)
+{
     char *url;
     const unsigned char *p;
 
     if (!(p = memstr(data, len, (unsigned char*)"\r\n", 2)))
-        return;
+        return NULL;
 
     const char *path = (const char *) (data + 4);
     int pathlen = (p - 9) - (unsigned char *) path;
@@ -107,22 +136,29 @@ void dispatch_http_req(const char *mname, const unsigned char *data, const size_
 
     } else {
         if (!(p = memstr(p, len - (p - data), (unsigned char*)"\r\nHost: ", 8)))
-            return;
+            return NULL;
 
         const char *host = (const char *) (p + 8);
 
         if (!(p = memstr(p + 8, len - (p + 8 - data), (unsigned char*)"\r\n", 2)))
-            return;
+            return NULL;
 
         int hostlen = p - (const unsigned char *) host;
 
         if (hostlen == 0)
-            return;
+            return NULL;
 
         url = malloc(hostlen + pathlen + 9);
         sprintf(url, "http://%.*s%.*s", hostlen, host, pathlen, path);
     }
 
-    log_msg(LOG_SIMPLY, "HTTP Request Captured: %s", url);
+    //log_msg(LOG_SIMPLY, "HTTP Request Captured: %s", url);
+    size_t final_http_text_len = strlen(url) + http_url_prefix_format_len;
+    char* final_http_text = malloc(final_http_text_len);
+
+    snprintf(final_http_text, final_http_text_len, HTTP_URL_PREFIX_FORMAT, url);
+
     free(url);
+
+    return final_http_text;
 }

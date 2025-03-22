@@ -247,7 +247,25 @@ int main(int argc, char *argv[])
                 break;
 
             case MEDIATYPE_TEXT:
-                driver->dispatch_data = dispatch_http_req;
+                if (options->adjunct) {
+                    driver->dispatch_data = dispatch_text_to_stdout;
+
+                } else {
+#if !defined(NO_DISPLAY_WINDOW) && !defined(NO_HTTP_DISPLAY)
+                    if (options->enable_gtk_display) {
+                        driver->dispatch_data = dispatch_text_to_stdout;
+
+                    } else {
+                        driver->dispatch_data = dispatch_text_to_httpdisplay;
+                    }
+#elif !defined(NO_DISPLAY_WINDOW)
+                    driver->dispatch_data = dispatch_text_to_stdout;
+#elif !defined(NO_HTTP_DISPLAY)
+                    driver->dispatch_data = dispatch_text_to_httpdisplay;
+#else
+                    driver->dispatch_data = dispatch_text_to_stdout;
+#endif
+                }
                 break;
         }
     }
