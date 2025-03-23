@@ -114,7 +114,7 @@ void dispatch_text_to_httpdisplay(const char *mname, const unsigned char *data, 
 #endif /* !NO_HTTP_DISPLAY */
 
 #define HTTP_URL_PREFIX_FORMAT "HTTP Request Captured: %s"
-size_t http_url_prefix_format_len = strlen(HTTP_URL_PREFIX_FORMAT) - 2;
+size_t http_url_prefix_format_len = strlen(HTTP_URL_PREFIX_FORMAT) - 1;
 
 /*
  * TODO: move the parse to the driver
