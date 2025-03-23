@@ -6,13 +6,18 @@
 
     <style>
         body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
             margin: 0;
+            overflow: auto;
         }
         header {
             margin-top: 0;
             background-color: #333;
             color: white;
             border-bottom: 1px solid lightgray;
+            height: 4vh;
         }
         header h2 {
             margin: 0 1em 0 0;
@@ -22,11 +27,20 @@
             font-size: 18px;
             font-weight: bold;
         }
+        #main-content {
+            display: flex;
+            flex-direction: column;
+            height: 92vh;
+        }
         #img-container {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-gap: 0.6em;
-            margin: 0.4em;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            flex: 5;
+            border-bottom: 2px solid gainsboro;
+            margin: 0.4em 0.4em 0.6em;
         }
         #img-container div {
             position: relative;
@@ -39,8 +53,12 @@
             align-items: center;
             justify-content: center;
         }
+        .close-button {
+            background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAMAAAC6CgRnAAAAPFBMVEX///8AAAD9/f2CgoKAgIAAAAAAAAAAAABLS0sAAAAAAACqqqqqqqq6urpKSkpISEgAAAC7u7u5ubn////zbsMcAAAAE3RSTlMASv6rqwAWS5YMC7/AyZWVFcrJCYaKfAAAAHhJREFUeF590kkOgCAQRFEaFVGc+/53FYmbz6JqBbyQMFSYuoQuV+iTflnstI7ssLXRvMWRaEMs84e2uVckuZe6knL0hiSPObXhj6ChzoEkIolIIpKIO4joICAIeDd7QGIfCCjOKe9HEk8mnxpIAup/F31RPZP9fAG3IAyBSJe0igAAAABJRU5ErkJggg==) no-repeat left center;
+        }
         .close-image {
             display: none;
+            background-size: 12px;
             width: 12px;
             height: 12px;
             position: absolute;
@@ -48,15 +66,35 @@
             right: 0;
             cursor: pointer;
         }
-        .img-wrap div:hover .close-image {
-            display: block;
-        }
         .close-image:hover {
             width: 14px;
             height: 14px;
         }
+        .img-wrap div:hover .close-image {
+            display: block;
+        }
         .dritfnet-image {
             border: 1px solid #999;
+        }
+        #text-container {
+            flex: 1;
+            overflow: scroll;
+            display: none;
+        }
+        #text-media-list {
+            list-style-type: square;
+        }
+        .close-text {
+            display: inline-block;
+            margin-left: 0.2em;
+            background-size: 10px;
+            width: 10px;
+            height: 10px;
+            cursor: pointer;
+        }
+        .close-text:hover {
+            width: 12px;
+            height: 12px;
         }
         footer {
             font-size: 8px;
@@ -64,6 +102,7 @@
             border-top: 1px solid gainsboro;
             padding-top: 0.8em;
             margin-bottom: 0.2em;
+            height: 2vh;
         }
         footer a {
             margin: 0 1.2em 0 0;
@@ -71,12 +110,6 @@
             font-style: italic;
             text-decoration: none;
             font-weight: bold;
-        }
-
-        .close-image {
-            background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAMAAAC6CgRnAAAAPFBMVEX///8AAAD9/f2CgoKAgIAAAAAAAAAAAABLS0sAAAAAAACqqqqqqqq6urpKSkpISEgAAAC7u7u5ubn////zbsMcAAAAE3RSTlMASv6rqwAWS5YMC7/AyZWVFcrJCYaKfAAAAHhJREFUeF590kkOgCAQRFEaFVGc+/53FYmbz6JqBbyQMFSYuoQuV+iTflnstI7ssLXRvMWRaEMs84e2uVckuZe6knL0hiSPObXhj6ChzoEkIolIIpKIO4joICAIeDd7QGIfCCjOKe9HEk8mnxpIAup/F31RPZP9fAG3IAyBSJe0igAAAABJRU5ErkJggg==)
-              no-repeat left center;
-            background-size: 12px;
         }
         #gallery-overlay {
             position: fixed;
@@ -135,7 +168,13 @@
     <h2 >Driftnet</h2>
 </header>
 
-<div id="img-container"></div>
+<div id="main-content">
+    <div id="img-container"></div>
+
+    <div id="text-container">
+        <ul id="text-media-list"></ul>
+    </div>
+</div>
 
 <footer>fork me on <a href="https://www.github.com/deiv/driftnet">GitHub</a></footer>
 
@@ -202,6 +241,10 @@
                     addImageMedia(message.content);
                     break;
 
+                case 4:
+                    addTextMedia(message.content);
+                    break;
+
                 default:
                     console.log("invalid message media type for message: " + JSON.stringify(message));
                     break;
@@ -216,6 +259,13 @@
         alert("Error: can't connect to websocket");
     }
 
+    /*
+     * Media containers
+     */
+    const imageMediaContainer = document.querySelector("#img-container");
+    const textMediaContainer = document.querySelector("#text-container");
+    const textMediaContainerMediaList = document.querySelector("#text-media-list");
+
     function addImageMedia(imgUrl) {
         let imgWrap = document.createElement("div");
         let imgContainer = document.createElement("div");
@@ -223,7 +273,7 @@
         let img = document.createElement("img");
 
         imgWrap.className = "img-wrap";
-        closeButton.className = "close-image";
+        closeButton.className = "close-button close-image";
         closeButton.title = "close image";
         img.className = "dritfnet-image";
         img.src = imgUrl;
@@ -232,7 +282,7 @@
         imgContainer.append(img);
         imgWrap.append(imgContainer);
 
-        document.querySelector("#img-container").append(imgWrap);
+        imageMediaContainer.append(imgWrap);
 
         const closeImages = document.querySelectorAll(".close-image");
         closeImages.forEach(closeImage => closeImage.addEventListener("click", removeImage));
@@ -241,6 +291,39 @@
         thumbs.forEach(img => img.addEventListener("click", imgActivate));
     }
 
+    function removeImage(e) {
+        e.stopPropagation();
+
+        e.target.parentElement.parentElement.remove();
+    }
+
+    function addTextMedia(textContent) {
+        let textWrap = document.createElement("li");
+        let text = document.createElement("span");
+        let closeButton = document.createElement("span");
+
+        text.innerHTML = textContent;
+        closeButton.className = "close-button close-text";
+        closeButton.title = "close text";
+        textWrap.append(text);
+        textWrap.append(closeButton);
+
+        textMediaContainer.style.display = "block";
+        textMediaContainerMediaList.appendChild(textWrap);
+
+        const closeImages = document.querySelectorAll(".close-text");
+        closeImages.forEach(closeImage => closeImage.addEventListener("click", removeText));
+    }
+
+    function removeText(e) {
+        e.stopPropagation();
+
+        e.target.parentElement.remove();
+    }
+
+    /*
+     * Image Gallery
+     */
     const body = document.querySelector("body");
     const galleryOverlay = document.querySelector("#gallery-overlay");
     const gallery = document.querySelector("#gallery");
@@ -309,12 +392,6 @@
                 changeGalleryImage(currentImage.src);
             }
         }
-    }
-
-    function removeImage(e) {
-        e.stopPropagation();
-
-        e.target.parentElement.parentElement.remove();
     }
 </script>
 </body>
