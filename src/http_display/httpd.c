@@ -306,7 +306,7 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
             vhd->protocol = lws_get_protocol(wsi);
             vhd->vhost = lws_get_vhost(wsi);
 
-            vhd->ring = lws_ring_create(sizeof(struct msg), 50,
+            vhd->ring = lws_ring_create(sizeof(struct msg), 250,
                                         destroy_message);
             if (!vhd->ring) {
                 log_msg(LOG_ERROR, "httpd: can't create message buffer");
