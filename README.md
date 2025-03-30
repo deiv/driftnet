@@ -17,14 +17,12 @@ Driftnet watches network traffic, and picks out and displays JPEG, GIF and other
 News
 ------------
 
+    Enable Text Media Capture (atm http requests)
     Added option to delay between reading packets from dump file
     Deprecate GTK2
     Migrate display to GKT3 (GTK2 still supported)
     Added WebP image format support
     Added new, http and websockets based, display
-    Added basic windows support (cygwin)
-    Added option to list capture interfaces
-    Added support for putting the interface in monitor mode
 
 Dependencies
 ------------
