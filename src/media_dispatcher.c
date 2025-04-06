@@ -1,6 +1,6 @@
 /*
  * media_dispatcher.c:
- * Dispathc media handling.
+ * Dispatch media handling.
  *
  * Copyright (c) 2025 David Suárez.
  * Email: david.sephirot@gmail.com
