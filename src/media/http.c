@@ -40,6 +40,8 @@ unsigned char *find_http_req(const unsigned char *data, const size_t len, unsign
 	#define HTTPGET_LEN 4
 	#define HTTPPOST_LEN 5
 
+    *http = NULL;
+
     /* HTTP requests look like:
      *
      *      GET {path} HTTP/1.(0|1)\r\n

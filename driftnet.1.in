@@ -83,7 +83,14 @@ or, in adjunct mode, save it in files. At present this only works with MPEG
 data.
 .TP
 \fB-S\fP
-Capture streamed audio data only, ignoring images.
+Capture streamed audio data only, ignoring images and text.
+.TP
+\fB-t\fP
+Attempt to capture text data from the network, and output then in stdout.
+At present this supports HTTP request only.
+.TP
+\fB-T\fP
+Capture text data only, ignoring images and audio.
 .TP
 \fB-M\fP \fIcommand\fP
 Use the named \fIcommand\fP to play MPEG audio data. The \fIcommand\fP, which

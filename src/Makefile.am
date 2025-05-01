@@ -3,7 +3,8 @@ bin_PROGRAMS = driftnet
 
 driftnet_SOURCES = compat/compat.h driftnet.c driftnet.h \
 				   options.c options.h \
-				   pid.c pid.h uid.c uid.h
+				   pid.c pid.h uid.c uid.h \
+				   media_dispatcher.c media_dispatcher.h
 
 SUBDIRS = common
 AM_CFLAGS = -I$(srcdir)/common

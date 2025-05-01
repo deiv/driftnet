@@ -13,6 +13,6 @@
 void init_http_display(const char* server_root, int port);
 void stop_http_display();
 
-void ws_send_text(const char* text);
+void ws_send_media(const char* text, mediatype_t type);
 
 #endif /* __HTTPD_H_ */

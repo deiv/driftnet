@@ -7,11 +7,13 @@
  *
  */
 
-#include "compat.h"
+#include <compat.h>
 
 #include <libwebsockets.h>
 #include <string.h>
 #include <signal.h>
+#include <compat/compat.h>
+#include <media/media.h>
 
 #include "web_data.h"
 #include "common/log.h"
@@ -224,23 +226,45 @@ static void * http_server_dispatch(void *arg)
     return NULL;
 }
 
-void ws_send_text(const char* text)
+/*
+ * Json to sent:
+ * {
+ *      "type": [1,2,3],
+ *      "content": "media content"
+ * }
+ */
+char* json_template = "{\"type\":%d,\"content\":\"%s\"}";
+
+void ws_send_media(const char* text, mediatype_t type)
 {
     struct msg amsg;
     size_t text_len = strlen(text);
+    size_t max_json_len = text_len + 30;
+    char* json_data = malloc(max_json_len);
 
-    amsg.len = text_len;
-    amsg.payload = malloc(LWS_PRE + text_len);
+    if (!json_data) {
+        log_msg(LOG_WARNING, "httpd: unable to allocate memory for json");
+        return;
+    }
+
+    snprintf(json_data, max_json_len, json_template, type, text);
+
+    size_t json_len = strlen(json_data);
+
+    amsg.len = json_len;
+    amsg.payload = malloc(LWS_PRE + json_len);
 
     if (!amsg.payload) {
+        free(json_data);
         log_msg(LOG_WARNING, "httpd: dropping msg");
         return;
     }
 
-    memcpy((char *)amsg.payload + LWS_PRE, text, text_len);
+    memcpy((char *)amsg.payload + LWS_PRE, json_data, json_len);
 
     if (!lws_ring_insert(vhost_data->ring, &amsg, 1)) {
         destroy_message(&amsg);
+        free(json_data);
         log_msg(LOG_WARNING, "httpd: can't insert msg into ring buffer");
         return;
     }
@@ -248,6 +272,8 @@ void ws_send_text(const char* text)
     lws_start_foreach_llp(struct per_session_data **, ppss, vhost_data->pss_list) {
         lws_callback_on_writable((*ppss)->wsi);
     } lws_end_foreach_llp(ppss, pss_list);
+
+    free(json_data);
 }
 
 static void destroy_message(void *_msg)
@@ -280,7 +306,7 @@ int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
             vhd->protocol = lws_get_protocol(wsi);
             vhd->vhost = lws_get_vhost(wsi);
 
-            vhd->ring = lws_ring_create(sizeof(struct msg), 50,
+            vhd->ring = lws_ring_create(sizeof(struct msg), 250,
                                         destroy_message);
             if (!vhd->ring) {
                 log_msg(LOG_ERROR, "httpd: can't create message buffer");

@@ -3,7 +3,7 @@
 #
 
 AC_PREREQ([2.71])
-AC_INIT([driftnet],[1.5.0],[david.sephirot@gmail.com])
+AC_INIT([driftnet],[1.6.0],[david.sephirot@gmail.com])
 
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -64,13 +64,23 @@ if test "x$enable_http_display" = xno; then
 fi
 AM_CONDITIONAL(ENABLE_HTTP_DISPLAY, test "x$enable_http_display" = xyes)
 
+AC_ARG_ENABLE([http-display-in-src-statics],
+    [AS_HELP_STRING([--enable-http-display-in-src-statics],[use html statics from src instead of pkgdatadir (default is no)])],
+    [use_http_in_src_statics=yes],
+    )
+
+if test "x$use_http_in_src_statics" = xyes; then
+    AC_DEFINE([USE_HTTP_DISPLAY_IN_SRC_STATICS], [1], [Use html statics from src instead of pkgdatadir])
+fi
+AM_CONDITIONAL(ENABLE_HTTP_DISPLAY_IN_SRC_STATICS, test "x$use_http_in_src_statics" = xyes)
+
 AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--disable-debug],[disable debugging (default is no)])],
     ,
     [enable_debug=yes])
 
 if test "x$enable_debug" = xyes; then
-    CFLAGS="-O2 -g -DDEBUG"
+    CFLAGS="-g -DDEBUG"
 else
 	CFLAGS="-O2 -DNDEBUG"
 fi

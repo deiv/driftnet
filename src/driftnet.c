@@ -27,6 +27,7 @@
 #include "network/network.h"
 #include "playaudio.h"
 #include "uid.h"
+#include "media_dispatcher.h"
 #ifndef NO_DISPLAY_WINDOW
     #include "display.h"
 #endif
@@ -81,8 +82,6 @@ void setup_signals(void) {
     }
 }
 
-
-
 static void print_exit_reason(void)
 {
     if (foad == SIGCHLD) {
@@ -101,110 +100,6 @@ static void print_exit_reason(void)
 
     } else
         log_msg(LOG_INFO, "caught signal %d", foad);
-}
-
-const char* tmpfile_write_mediaffile(const char* mname, const unsigned char *data, const size_t len)
-{
-    const char* name = generate_new_tmp_filename(mname);
-
-    tmpfile_write_file(name, data, len);
-
-    return name;
-}
-
-void dispatch_image_to_stdout(const char *mname, const unsigned char *data, const size_t len)
-{
-    const char *name;
-
-    name = tmpfile_write_mediaffile(mname, data, len);
-    if (name == NULL)
-        return;
-
-    printf("%s/%s\n", get_tmpdir(), name);
-}
-
-/*
- * dispatch_image:
- * Throw some image data at the display process.
- */
-#ifndef NO_DISPLAY_WINDOW
-void dispatch_image_to_display(const char *mname, const unsigned char *data, const size_t len)
-{
-    const char *name;
-
-    name = tmpfile_write_mediaffile(mname, data, len);
-    if (name == NULL)
-        return;
-
-
-    display_send_img(name, TMPNAMELEN);
-
-}
-#endif /* !NO_DISPLAY_WINDOW */
-
-/*
- * dispatch_image:
- * Throw some image data at the http display process.
- */
-#ifndef NO_HTTP_DISPLAY
-void dispatch_image_to_httpdisplay(const char *mname, const unsigned char *data, const size_t len)
-{
-    const char *name;
-
-    name = tmpfile_write_mediaffile(mname, data, len);
-    if (name == NULL)
-        return;
-
-
-    ws_send_text(name);
-}
-#endif /* !NO_HTTP_DISPLAY */
-
-/*
- * dispatch_mpeg_audio:
- * Throw some MPEG audio into the player process or temporary directory as
- * appropriate.
- */
-void dispatch_mpeg_audio(const char *mname, const unsigned char *data, const size_t len) {
-    mpeg_submit_chunk(data, len);
-}
-
-void dispatch_http_req(const char *mname, const unsigned char *data, const size_t len) {
-    char *url;
-    const char *path, *host;
-    int pathlen, hostlen;
-    const unsigned char *p;
-
-    if (!(p = memstr(data, len, (unsigned char*)"\r\n", 2)))
-        return;
-
-    path = (const char*)(data + 4);
-    pathlen = (p - 9) - (unsigned char*)path;
-
-    if (memcmp(path, "http://", 7) == 0) {
-        url = malloc(pathlen + 1);
-        sprintf(url, "%.*s", pathlen, path);
-    } else {
-
-        if (!(p = memstr(p, len - (p - data), (unsigned char*)"\r\nHost: ", 8)))
-            return;
-
-        host = (const char*)(p + 8);
-
-        if (!(p = memstr(p + 8, len - (p + 8 - data), (unsigned char*)"\r\n", 2)))
-            return;
-
-        hostlen = p - (const unsigned char*)host;
-
-        if (hostlen == 0)
-            return;
-
-        url = malloc(hostlen + pathlen + 9);
-        sprintf(url, "http://%.*s%.*s", hostlen, host, pathlen, path);
-    }
-
-    fprintf(stderr, "\n\n  %s\n\n", url);
-    free(url);
 }
 
 /*
@@ -352,7 +247,25 @@ int main(int argc, char *argv[])
                 break;
 
             case MEDIATYPE_TEXT:
-                driver->dispatch_data = dispatch_http_req;
+                if (options->adjunct) {
+                    driver->dispatch_data = dispatch_text_to_stdout;
+
+                } else {
+#if !defined(NO_DISPLAY_WINDOW) && !defined(NO_HTTP_DISPLAY)
+                    if (options->enable_gtk_display) {
+                        driver->dispatch_data = dispatch_text_to_stdout;
+
+                    } else {
+                        driver->dispatch_data = dispatch_text_to_httpdisplay;
+                    }
+#elif !defined(NO_DISPLAY_WINDOW)
+                    driver->dispatch_data = dispatch_text_to_stdout;
+#elif !defined(NO_HTTP_DISPLAY)
+                    driver->dispatch_data = dispatch_text_to_httpdisplay;
+#else
+                    driver->dispatch_data = dispatch_text_to_stdout;
+#endif
+                }
                 break;
         }
     }
